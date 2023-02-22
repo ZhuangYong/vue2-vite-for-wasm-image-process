@@ -19,9 +19,7 @@
       this.name()
     },
     methods: {
-      name() {
-        console.log(stage)
-      }
+      name() {}
     }
   }
 </script>

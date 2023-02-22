@@ -25,6 +25,8 @@
 <script>
 import { addImage } from "./utils"
 import { fabric } from './lib/fabric.min'
+import {loadBlobWebAssembly} from "./wasmHelper"
+import add from './lib/add.wasm'
 
 export default {
   data() {
@@ -33,6 +35,9 @@ export default {
     }
   },
   mounted() {
+    loadBlobWebAssembly(add).then(instance => {
+      console.warn('测试 wasm 方法（add），333 + 555 =', instance.exports.add(333, 555))
+    })
     const canvas = new fabric.Canvas('imgRect');
     const rect = new fabric.Rect({
       left: 100,
