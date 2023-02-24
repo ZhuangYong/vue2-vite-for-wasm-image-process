@@ -6,6 +6,7 @@ import scss from 'rollup-plugin-scss'
 import commonjs from "rollup-plugin-commonjs"
 import resolve from 'rollup-plugin-node-resolve'
 import wasm from './rollup-plugin-wasm'
+import requireContext from 'rollup-plugin-require-context'
 
 export default {
   external: ['vue', 'lodash'],
@@ -20,6 +21,7 @@ export default {
   plugins: [
     json(),
     resolve(),
+    requireContext(),
     scss(),
     scss({insert: true}),
     vue({

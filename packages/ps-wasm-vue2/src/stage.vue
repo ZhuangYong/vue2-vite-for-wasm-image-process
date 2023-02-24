@@ -2,6 +2,9 @@
   <div class="stage">
     <el-container>
       <el-aside width="200px" class="left-function">
+        <div class="target-info">
+          -----
+        </div>
         <el-tabs v-model="activeName" type="card" class="left-function-tabs">
           <el-tab-pane label="特效" name="fastEffect">
             <FastEffect @fabric-filter="onFabricFilter" @do-filter="doFilter" />
@@ -22,8 +25,15 @@
         <el-main ref="main" class="main-stage">
           <canvas ref="imgRect" :width="width" :height="height" />
         </el-main>
-        <el-footer>
-
+        <el-footer height="80px">
+          <el-tabs v-model="activeResourceName" type="card" class="bottom-function-tabs">
+            <el-tab-pane label="贴纸" name="stickers">
+              <Stickers />
+            </el-tab-pane>
+            <el-tab-pane label="-------" name="---">
+              -------
+            </el-tab-pane>
+          </el-tabs>
         </el-footer>
       </el-container>
     </el-container>
@@ -31,23 +41,24 @@
 </template>
 
 <script>
-import {addImage} from "./utils"
 import {fabric} from './lib/fabric.min'
 import {loadBlobWebAssembly} from "./wasmHelper"
 import add from './lib/add.wasm'
 import FastEffect from './components/FastEffect.vue'
+import Stickers from './components/Stickers.vue'
 import {GaussBlur} from "./filters/GaussBlur"
 import Canvas2Image from "./CanvasToImage";
 
 fabric.enableGLFiltering = false
 
 export default {
-  components: { FastEffect },
+  components: { FastEffect, Stickers },
   data() {
     return {
       width: 300,
       height: 300,
       currentObject: null,
+      activeResourceName: 'stickers',
       activeName: 'fastEffect',
       canvas: null
     }
@@ -137,24 +148,38 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@mixin tabItem {
+  ::v-deep .el-tabs__item {
+    height: 22px;
+    font-size: 12px;
+    line-height: 22px;
+  }
+}
 .stage {
   border: 1px solid #dedede;
+}
+.target-info {
+  height: 46%;
 }
 .left-function {
   border-right: 1px solid #dedede;
 }
 .left-function-tabs {
   padding-top: 12px;
-  ::v-deep .el-tabs__item {
-    height: 26px;
-    line-height: 26px;
-  }
+  @include tabItem;
+}
+.bottom-function-tabs {
+  padding-top: 0;
+  @include tabItem;
 }
 .el-aside {
 }
 .el-header {
   padding: 6px 8px;
   text-align: left;
+}
+.el-footer {
+  padding: 0 8px 6px 8px;
 }
 .main-stage {
   padding: 0;

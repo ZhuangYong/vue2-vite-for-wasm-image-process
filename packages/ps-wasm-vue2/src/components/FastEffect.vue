@@ -83,13 +83,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+$itemWidth: 50px;
 .effect-list {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
 }
 .effect-item {
-  width: 80px;
+  width: $itemWidth;
   display: flex;
   cursor: pointer;
   flex-direction: column;
@@ -97,8 +98,11 @@ export default {
     font-size: 12px;
   }
   img {
-    width: 100%;
     margin: 4px;
+    width: calc(100% - 8px);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
   }
 }
 </style>

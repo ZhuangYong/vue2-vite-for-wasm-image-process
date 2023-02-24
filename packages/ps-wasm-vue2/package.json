@@ -21,6 +21,7 @@
     "@babel/preset-env": "7.13.5",
     "@babel/preset-stage-2": "7.8.3",
     "@vue/babel-preset-jsx": "1.2.4",
+    "generate-source-map": "0.0.5",
     "rollup": "2.41.0",
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-commonjs": "10.1.0",
@@ -28,6 +29,7 @@
     "rollup-plugin-image": "1.0.2",
     "rollup-plugin-json": "4.0.0",
     "rollup-plugin-node-resolve": "5.2.0",
+    "rollup-plugin-require-context": "^1.0.1",
     "rollup-plugin-scss": "3.0.0",
     "rollup-plugin-terser": "7.0.2",
     "rollup-plugin-uglify": "6.0.4",
@@ -38,6 +40,7 @@
     "vue-sticky": "3.3.4"
   },
   "dependencies": {
-    "lodash": "4.17.21"
+    "lodash": "4.17.21",
+    "sortablejs": "1.10.2"
   }
 }

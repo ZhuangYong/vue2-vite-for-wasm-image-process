@@ -1,3 +1,9 @@
+import {loadBlobWebAssembly} from "./wasmHelper"
+import add from "./lib/add.wasm";
+
+let wasmInstance
+loadBlobWebAssembly(add).then(instance => (wasmInstance = instance))
+
 //主画布
 let ps
 let layers = []
@@ -45,4 +51,13 @@ export function showCurrLayer (){
     // for(var i = 0;i < this.currLayer.length;i ++){
     //     $(".lItem:eq(" + (this.layers.length - 1 - this.currLayer[i]) + ")").addClass("blueStyle");
     // }
+}
+
+/**
+ * 测试处理图片的方法
+ * @param imageData
+ * @param args
+ */
+export function testImageFunction(imageData, args) {
+  console.warn('调用了wasm测试处理图片的方法(实际是个加法：333+555)：', wasmInstance.exports.add(333, 555))
 }
