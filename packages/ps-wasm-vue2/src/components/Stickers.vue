@@ -2,9 +2,9 @@
   <div class="resource-stickers">
     <el-scrollbar>
       <div class="quick-pick">
-        <Draggable :options="{sort: false}" class="quick-pick-draggable" @end="onDragend">
+        <Draggable :options="{sort: false}" :list="svgList.slice(0, 13)" class="quick-pick-draggable">
           <div v-for="item in svgList.slice(0, 13)" :key="item.key" class="sticker-item">
-            <img :src="item.value" alt="">
+            <img :src="item.value" :size="calcSvgSize(item.value)"  alt="">
           </div>
         </Draggable>
         <p @click="showPick" class="more-button">更多</p>
@@ -32,10 +32,11 @@
 
 <script>
 import Draggable from './Draggable'
+import {isSvgByBase64} from "../utils";
 
 const svg = require.context('../../static/svg/', true, /\.svg$/)
+console.log('>>>>>>>>', svg)
 const svgList = svg.keys().map(key => ({ key: key.split('/').pop().split('.').shift(), value: svg(key)}))
-
 export default {
   components: { Draggable },
   data() {
@@ -46,14 +47,19 @@ export default {
     }
   },
   methods: {
+    calcSvgSize(src) {
+      if (isSvgByBase64(src)) {
+        const viewBox = atob(src.split(',')[1]).match('viewBox="([0-9 ]*)"')[1]
+        const [x, y, width, height] = viewBox.split(' ').filter(Boolean)
+        return width + ',' + height
+      }
+      return ''
+    },
     showPick() {
       this.pickDialogVisible = true
     },
     closePick() {
       this.pickDialogVisible = false
-    },
-    onDragend(e) {
-      console.log(e)
     }
   }
 }
@@ -86,6 +92,9 @@ export default {
     img {
       max-width: 32px;
       max-height: 32px;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-user-drag: none;
     }
   }
   ::v-deep .el-dialog__body {

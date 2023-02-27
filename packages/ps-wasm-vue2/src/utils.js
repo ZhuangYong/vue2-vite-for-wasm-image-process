@@ -61,3 +61,28 @@ export function showCurrLayer (){
 export function testImageFunction(imageData, args) {
   console.warn('调用了wasm测试处理图片的方法(实际是个加法：333+555)：', wasmInstance.exports.add(333, 555))
 }
+
+const IMAGE_TYPES = {
+  '.jpg':  'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png':  'image/png',
+  '.gif':  'image/gif',
+  '.svg':  'image/svg+xml'
+}
+
+/**
+ * 是否是图片类型
+ * @param mimeType
+ * @returns {boolean}
+ */
+export function isImage(mimeType) {
+  return Object.values(IMAGE_TYPES).includes(mimeType)
+}
+
+/**
+ * 根据内容判断是否是svg
+ * @param src
+ */
+export function isSvgByBase64(src) {
+  return (src || '').indexOf(IMAGE_TYPES['.svg']) >= 0
+}

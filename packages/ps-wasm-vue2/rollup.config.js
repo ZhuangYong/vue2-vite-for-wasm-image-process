@@ -6,6 +6,7 @@ import scss from 'rollup-plugin-scss'
 import commonjs from "rollup-plugin-commonjs"
 import resolve from 'rollup-plugin-node-resolve'
 import wasm from './rollup-plugin-wasm'
+// import jsx from 'rollup-plugin-jsx'
 import requireContext from 'rollup-plugin-require-context'
 
 export default {
@@ -20,6 +21,7 @@ export default {
   },
   plugins: [
     json(),
+    // jsx({factory: 'Vue.prototype.$createElement'}),
     resolve(),
     requireContext(),
     scss(),
@@ -58,6 +60,7 @@ export default {
       ]
     }),
     image(),
+    // svg({ vueComponent: true }),
     wasm()
 
   ]

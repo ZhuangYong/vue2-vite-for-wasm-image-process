@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "npm run dev:ps-wasm-vue2 & vite",
+    "dev": "vite",
+    "dev:all": "npm run dev:ps-wasm-vue2 & vite",
     "dev:ps-wasm-vue2": "cd ./packages/ps-wasm-vue2 && npm run build:watch",
     "build": "vite build",
     "preview": "vite preview"
