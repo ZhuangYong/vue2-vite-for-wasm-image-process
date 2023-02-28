@@ -1,5 +1,5 @@
 import {fabric} from '../lib/fabric.min'
-import {testImageFunction} from "../utils";
+import {GaussBlurFilter} from "./index";
 
 export class GaussBlur extends fabric.Image.filters.BaseFilter {
 
@@ -8,10 +8,13 @@ export class GaussBlur extends fabric.Image.filters.BaseFilter {
   }
   applyTo2d({ imageData }) {
     // js处理
-    gaussBlur(imageData, [])
+    // gaussBlur(imageData, [])
 
     // wasm处理
-    testImageFunction(imageData, [])
+    // testImageFunction(imageData, [])
+
+    console.log(imageData)
+    GaussBlurFilter(imageData, [])
   }
 }
 /**

@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <ImagePlugin msg="Hello Vue 3 + Vite" />
+    <ImagePlugin />
   </div>
 </template>
 

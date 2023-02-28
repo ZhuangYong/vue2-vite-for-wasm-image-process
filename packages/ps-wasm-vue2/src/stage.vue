@@ -3,7 +3,7 @@
     <el-container>
       <el-aside width="200px" class="left-function">
         <div class="target-info">
-          -----
+          <ObjectProps :target="currentObject" />
         </div>
         <el-tabs v-model="activeName" type="card" class="left-function-tabs">
           <el-tab-pane label="特效" name="fastEffect">
@@ -21,7 +21,6 @@
             <el-button slot="trigger" size="mini" type="primary">选取文件</el-button>
           </el-upload>
           <el-button v-if="showExport" size="mini" type="primary" @click="onExport">导出</el-button>
-          {{highlightCanvas}}
         </el-header>
         <el-main ref="main" class="main-stage" @drop.native.prevent="onStageDrop">
           <canvas ref="imgRect" :width="width" :height="height" />
@@ -48,15 +47,16 @@ import add from './lib/add.wasm'
 import FastEffect from './components/FastEffect.vue'
 import Stickers from './components/Stickers.vue'
 import {GaussBlur} from "./filters/GaussBlur"
-import Canvas2Image from "./CanvasToImage";
-import Rectangle from "./Rectangle";
+import Canvas2Image from "./CanvasToImage"
+import Rectangle from "./Rectangle"
 import Point from "./Point";
-import {isImage} from "./utils";
+import {isImage} from "./utils"
+import ObjectProps from "./components/ObjectProps.vue"
 
 fabric.enableGLFiltering = false
 
 export default {
-  components: { FastEffect, Stickers },
+  components: { FastEffect, Stickers, ObjectProps },
   data() {
     return {
       width: 300,
@@ -68,6 +68,11 @@ export default {
       activeResourceName: 'stickers',
       activeName: 'fastEffect',
       canvas: null
+    }
+  },
+  watch: {
+    currentObject(v) {
+      console.log('--- currentObject:', v)
     }
   },
   mounted() {
@@ -135,13 +140,18 @@ export default {
     /**
      * 添加图片
      * @param file
+     * @param option
      */
-    addImage(file) {
+    addImage(file, option) {
+      option = option || {}
       if (isImage(file.type)) {
         const reader = new FileReader()
         reader.readAsDataURL(file)
         reader.onload = e => {
           fabric.Image.fromURL(e.target.result, img => {
+            const { width, height } = this
+            const scale = Math.min(width/img.width, height/img.height)
+            img.set({ scaleX: scale, scaleY: scale, ...option })
             this.canvas.add(img)
             img.on('selected', () => {
               this.currentObject = img
@@ -184,10 +194,11 @@ export default {
       if (this.startDrag === true) {
         this.startDrag = false
         const { clientX, clientY } = e.originalEvent
+        const point = Point.from(clientX, clientY)
         const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = this.canvas.lowerCanvasEl.getBoundingClientRect()
-        const intersects = Rectangle.from(canvasX, canvasY, canvasWidth, canvasHeight).contains(Point.from(clientX, clientY))
+        const intersects = Rectangle.from(canvasX, canvasY, canvasWidth, canvasHeight).contains(point)
         if (intersects) {
-          const offset = {x: clientX - canvasX, y: clientY - canvasY}
+          const offset = {x: point.x - canvasX, y: point.y - canvasY}
           const img = e.item.querySelector('img')
           fabric.Image.fromURL(img.src, shape => {
             const size = img.getAttribute('size')
@@ -197,7 +208,6 @@ export default {
               width = width * scale
               height = height * scale
               shape.set({ width, height, top: offset.y, left: offset.x, scaleX: 0.1, scaleY: 0.1 })
-              console.log({ width, height, top: offset.y, left: offset.x, scaleX: 0.1, scaleY: 0.1 })
               shape._element.height = height
               shape._element.width = width
               Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
@@ -235,8 +245,11 @@ export default {
     },
 
     onStageDrop(e) {
+      const { clientX, clientY } = e.originalEvent || e
+      const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
+      const offset = {x: clientX - canvasX, y: clientY - canvasY}
       Array.from(e.dataTransfer.files || []).forEach(file => {
-        this.addImage(file)
+        this.addImage(file, {top: offset.y, left: offset.x})
         // if (isImage(file.type)) {
         //   fabric.Image.from(e.item.querySelector('img').src, img => {
         //     this.canvas.add(img)

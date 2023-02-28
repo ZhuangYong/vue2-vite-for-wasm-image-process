@@ -41,6 +41,6 @@ function onLoadSuccess (module, imports) {
     imports.env.table = new WebAssembly.Table({ initial: 0, element: 'anyfunc' })
   }
   // 创建 WebAssembly 实例
-  return new WebAssembly.Instance(module, imports)
+  return WebAssembly.instantiate(module, imports)
 }
 

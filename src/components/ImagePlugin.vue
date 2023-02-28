@@ -9,6 +9,7 @@
 <script>
   import { stage } from 'ps-wasm-vue2'
   export default {
+    name: 'ImagePlugin',
     components: { stage },
     data() {
       return {
@@ -16,10 +17,8 @@
       }
     },
     mounted() {
-      this.name()
     },
     methods: {
-      name() {}
     }
   }
 </script>
