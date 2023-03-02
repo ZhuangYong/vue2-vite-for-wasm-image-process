@@ -11,6 +11,8 @@ loadBlobWebAssembly(imageProcess).then(instance => (wasmInstance = instance))
  */
 export function GaussBlurFilter(imageData, args) {
   const { width, height } = imageData
-  wasmInstance.exports.gaussBlur(imageData, width, height)
+  // const oldStr = imageData.data.join(',')
+  wasmInstance.exports.gaussBlur(imageData,  width, height, 3, 1)
+  // const newStr = imageData.data.join(',')
   // console.warn('调用了wasm测试处理图片的方法(实际是个加法：333+555)：', wasmInstance.exports.add(333, 555))
 }

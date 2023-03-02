@@ -2,7 +2,7 @@
   <div class="resource-stickers">
     <el-scrollbar>
       <div class="quick-pick">
-        <Draggable :options="{sort: false}" :list="svgList.slice(0, 13)" class="quick-pick-draggable">
+        <Draggable :sort="false" :list="svgList.slice(0, 13)" class="quick-pick-draggable">
           <div v-for="item in svgList.slice(0, 13)" :key="item.key" class="sticker-item">
             <img :src="item.value" :size="calcSvgSize(item.value)"  alt="">
           </div>
@@ -35,8 +35,8 @@ import Draggable from './Draggable'
 import {isSvgByBase64} from "../utils";
 
 const svg = require.context('../../static/svg/', true, /\.svg$/)
-console.log('>>>>>>>>', svg)
 const svgList = svg.keys().map(key => ({ key: key.split('/').pop().split('.').shift(), value: svg(key)}))
+
 export default {
   components: { Draggable },
   data() {
@@ -49,9 +49,13 @@ export default {
   methods: {
     calcSvgSize(src) {
       if (isSvgByBase64(src)) {
-        const viewBox = atob(src.split(',')[1]).match('viewBox="([0-9 ]*)"')[1]
-        const [x, y, width, height] = viewBox.split(' ').filter(Boolean)
-        return width + ',' + height
+        try {
+          const viewBox = atob(src.split(',')[1]).match('viewBox="([0-9 ]*)"')[1]
+          const [x, y, width, height] = viewBox.split(' ').filter(Boolean)
+          return width + ',' + height
+        } catch (e) {
+          return ''
+        }
       }
       return ''
     },

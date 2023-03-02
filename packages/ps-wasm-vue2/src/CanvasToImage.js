@@ -1,3 +1,4 @@
+import saveAs from './lib/FileSaver'
 /**
  * covert canvas to image
  * and save the image file
@@ -40,6 +41,18 @@ const Canvas2Image = function () {
 
   function saveFile (strData) {
     document.location.href = strData
+  }
+
+  function dataURLtoBlob(base64str) {
+    let arr = base64str.split(','),
+      mime = arr[0].match(/:(.*?);/)[1],
+      bstr = atob(arr[1]),
+      n = bstr.length,
+      u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
   }
 
   function genImage(strData) {
@@ -190,17 +203,21 @@ const Canvas2Image = function () {
    * @param {Number} [optional] png height
    */
   const saveAsImage = function (canvas, width, height, type) {
+    const extName = type
     if ($support.canvas && $support.dataURL) {
       if (typeof canvas == "string") { canvas = document.getElementById(canvas); }
-      if (type == undefined) { type = 'png'; }
-      type = fixType(type);
+      if (type === undefined) { type = 'png'; }
+      type = fixType(type)
       if (/bmp/.test(type)) {
         const data = getImageData(scaleCanvas(canvas, width, height));
         const strData = genBitmapImage(data);
-        saveFile(makeURI(strData, downloadMime));
+        // saveFile(makeURI(strData, downloadMime));
+        saveAs(dataURLtoBlob(strData), '导出图片' + '.' + extName)
       } else {
         const strData = getDataURL(canvas, type, width, height);
-        saveFile(strData.replace(type, downloadMime));
+        // saveFile(strData.replace(type, downloadMime));
+        saveAs(dataURLtoBlob(strData), '导出图片' + '.' + extName)
+
       }
     }
   }

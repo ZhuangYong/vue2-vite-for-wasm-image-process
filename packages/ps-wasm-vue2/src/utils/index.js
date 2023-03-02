@@ -1,5 +1,5 @@
-import {loadBlobWebAssembly} from "./wasmHelper"
-import add from "./lib/add.wasm";
+import {loadBlobWebAssembly} from "../wasmHelper"
+import add from "../lib/add.wasm";
 
 let wasmInstance
 loadBlobWebAssembly(add).then(instance => (wasmInstance = instance))
@@ -85,4 +85,17 @@ export function isImage(mimeType) {
  */
 export function isSvgByBase64(src) {
   return (src || '').indexOf(IMAGE_TYPES['.svg']) >= 0
+}
+
+/**
+ * base64图片内容转str
+ * @param base64
+ * @returns {string}
+ */
+export function base64ToStr(base64) {
+  try {
+    return atob(base64.split(',').pop())
+  } catch (e) {
+    return ''
+  }
 }

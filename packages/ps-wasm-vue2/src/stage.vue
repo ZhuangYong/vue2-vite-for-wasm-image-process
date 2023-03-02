@@ -1,11 +1,21 @@
 <template>
-  <div class="stage">
+  <div ref="stage" class="stage">
     <el-container>
       <el-aside width="200px" class="left-function">
-        <div class="target-info">
-          <ObjectProps :target="currentObject" />
-        </div>
-        <el-tabs v-model="activeName" type="card" class="left-function-tabs">
+        <!--属性-->
+        <el-tabs v-model="leftTopTab" type="card" class="left-function-tabs">
+          <el-tab-pane label="属性" name="targetProps">
+            <div class="target-info">
+              <ObjectProps :props="showProps" />
+            </div>
+          </el-tab-pane>
+          <el-tab-pane label="画笔" name="pencilProps">
+            <PencilModelPropertyPanel />
+          </el-tab-pane>
+        </el-tabs>
+
+        <!--效果-->
+        <el-tabs v-model="leftBottomTab" type="card" class="left-function-tabs">
           <el-tab-pane label="特效" name="fastEffect">
             <FastEffect @fabric-filter="onFabricFilter" @do-filter="doFilter" />
           </el-tab-pane>
@@ -16,16 +26,19 @@
 
       </el-aside>
       <el-container>
-        <el-header height="32px">
-          <el-upload action="" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" class="import-file">
-            <el-button slot="trigger" size="mini" type="primary">选取文件</el-button>
-          </el-upload>
-          <el-button v-if="showExport" size="mini" type="primary" @click="onExport">导出</el-button>
+        <el-header height="32px" class="operation-head">
+          <div class="left-head">
+            <OperationPanel :mode.sync="editMode" />
+            <Menus />
+          </div>
+          <FullscreenButton :target="$refs.stage" />
         </el-header>
-        <el-main ref="main" class="main-stage" @drop.native.prevent="onStageDrop">
-          <canvas ref="imgRect" :width="width" :height="height" />
+        <el-main ref="main" class="main-stage" :class="`${highlightCanvas && 'high-light'}`"
+                 :style="`background-image: url(${transparentSvg})`" @drop.native.prevent="onStageDrop"
+                 @dragover.native="onDragResourceOver" @mousedown.native="onStageMousedown">
+        <canvas ref="imgRect" :width="width" :height="height" />
         </el-main>
-        <el-footer height="80px">
+        <el-footer height="70px">
           <el-tabs v-model="activeResourceName" type="card" class="bottom-function-tabs">
             <el-tab-pane label="贴纸" name="stickers">
               <Stickers @start.native="onDragstart" @end.native="onDragend" />
@@ -37,6 +50,18 @@
         </el-footer>
       </el-container>
     </el-container>
+
+    <el-dialog :visible.sync="showTextDialog" title="文字" width="600px">
+      <el-form>
+        <el-form-item label="">
+          <el-input v-model="editText" type="textarea" :autosize="{ minRows: 4, maxRows: 8}" placeholder="请输入文本内容" />
+        </el-form-item>
+      </el-form>
+
+      <div slot="footer">
+        <el-button size="mini" type="primary" @click="onEditTextSure">确定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -48,31 +73,40 @@ import FastEffect from './components/FastEffect.vue'
 import Stickers from './components/Stickers.vue'
 import {GaussBlur} from "./filters/GaussBlur"
 import Canvas2Image from "./CanvasToImage"
-import Rectangle from "./Rectangle"
-import Point from "./Point";
-import {isImage} from "./utils"
 import ObjectProps from "./components/ObjectProps.vue"
-
-fabric.enableGLFiltering = false
+import imageHelper from "./ImageHelper"
+import OperationPanel from "./components/OperationPanel.vue"
+import PencilModelPropertyPanel from "./components/PencilModelPropertyPanel.vue"
+import transparentSvg from '../static/icon/transparent.svg'
+import Menus from './components/Menus/index.vue'
+import Const from "./const";
+import FullscreenButton from "./components/FullscreenButton.vue"
+import fabricEnhance from './utils/fabricEnhance'
 
 export default {
-  components: { FastEffect, Stickers, ObjectProps },
-  data() {
+  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton },
+  provide() {
     return {
-      width: 300,
-      height: 300,
-      canDrop: false, // 拖拽是否在可释放区域
-      startDrag: false,
-      startDragOffset: {x: 0, y:0}, // 开始拖动作用在对象上的偏移
-      currentObject: null,
-      activeResourceName: 'stickers',
-      activeName: 'fastEffect',
-      canvas: null
+      getCanvas: () => this.canvas,
+      getTarget: () => this.currentObject
     }
   },
-  watch: {
-    currentObject(v) {
-      console.log('--- currentObject:', v)
+  data() {
+    return {
+      transparentSvg,
+      width: 300,
+      height: 300,
+      editText: '',
+      canDrop: false, // 拖拽是否在可释放区域
+      startDrag: false,
+      showTextDialog: false,
+      editMode: Const.EDIT_MODE.MOVE.value, // 编辑模式
+      startDragOffset: {x: 0, y:0}, // 开始拖动作用在对象上的偏移
+      currentObject: null, // 当前选择的编辑对象
+      activeResourceName: 'stickers', // 选择的资源tabs
+      leftBottomTab: 'fastEffect',
+      canvas: null,
+      leftTopTab: 'targetProps'
     }
   },
   mounted() {
@@ -93,20 +127,41 @@ export default {
     // canvas.setActiveObject(rect)
     this.refreshSize()
     this.$nextTick(() => {
-      this.canvas = new fabric.Canvas(this.$refs.imgRect)
+      fabric.enableGLFiltering = false
+      const canvas = new fabric.Canvas(this.$refs.imgRect, { controlsAboveOverlay: true, preserveObjectStacking: true })
+      canvas.on('selection:updated', this.onSelect)
+      canvas.on('selection:created', this.onSelect)
+      canvas.on('selection:cleared', this.onSelect)
+      canvas.on('dragover', this.onDragResourceOver)
+      canvas.on('dragleave', this.onDragResourceLeave)
+      canvas.isDrawingMode = false
+      fabricEnhance(canvas)
+      this.canvas = canvas
+      imageHelper.canvas = this.canvas
+      // this.canvas.on('after:render', () => {
+      //   const {width, height, left, top} = this.currentObject || {}
+      //   console.log({width, height, left, top})
+      // })
       console.log(fabric, this.canvas)
     })
   },
   computed: {
-    showExport() {
-      return !!this.canvas
-    },
     /**
      * 高亮显示画布，拖拽资源时候
      * @returns {boolean}
      */
     highlightCanvas() {
       return this.canDrop && this.startDrag
+    },
+
+    showProps: {
+      get () {
+        if (!this.currentObject) {
+          return null
+        }
+        const { fontFamily, type, ...res } = this.currentObject
+        return { ...res, type, fontFamily }
+      }
     }
   },
   methods: {
@@ -118,48 +173,37 @@ export default {
         console.log(width, height)
       }
     },
-    onFileAdd(file) {
-      this.addImage(file.raw)
-      // const reader = new FileReader();
-      // reader.readAsDataURL(file.raw);
-      // reader.onload = e => {
-      //   // const img = new Image()
-      //   // img.src = this.result
-      //   // img.onload = function(){
-      //   //   addImage(img)
-      //   // }
-      //   fabric.Image.fromURL(e.target.result, img => {
-      //     this.canvas.add(img)
-      //     img.on('selected', () => {
-      //       this.currentObject = img
-      //     })
-      //   })
-      // }
+    onAddTextShow() {
+      this.showTextDialog = true
+    },
+    onEditTextSure() {
+      imageHelper.addText(this.editText)
+      this.showTextDialog = false
     },
 
-    /**
-     * 添加图片
-     * @param file
-     * @param option
-     */
-    addImage(file, option) {
-      option = option || {}
-      if (isImage(file.type)) {
-        const reader = new FileReader()
-        reader.readAsDataURL(file)
-        reader.onload = e => {
-          fabric.Image.fromURL(e.target.result, img => {
-            const { width, height } = this
-            const scale = Math.min(width/img.width, height/img.height)
-            img.set({ scaleX: scale, scaleY: scale, ...option })
-            this.canvas.add(img)
-            img.on('selected', () => {
-              this.currentObject = img
-            })
-          })
-        }
-      }
-    },
+    // /**
+    //  * 添加图片
+    //  * @param file
+    //  * @param option
+    //  */
+    // addImage(file, option) {
+    //   option = option || {}
+    //   if (isImage(file.type)) {
+    //     const reader = new FileReader()
+    //     reader.readAsDataURL(file)
+    //     reader.onload = e => {
+    //       fabric.Image.fromURL(e.target.result, img => {
+    //         const { width, height } = this
+    //         const scale = Math.min(width/img.width, height/img.height)
+    //         img.set({ scaleX: scale, scaleY: scale, ...option })
+    //         this.canvas.add(img)
+    //         img.on('selected', () => {
+    //           this.currentObject = img
+    //         })
+    //       })
+    //     }
+    //   }
+    // },
     onFabricFilter(type) {
       switch (type) {
         case 'blur':
@@ -186,55 +230,18 @@ export default {
       }
     },
 
+    onSelect() {
+      this.currentObject = this.canvas.getActiveObject()
+      console.log('----- select object', this.currentObject)
+    },
+
     onExport() {
       Canvas2Image.saveAsPNG(this.canvas.toCanvasElement(), this.width, this.height)
     },
     onDragend(e) {
-      console.log('onDragend:', e)
       if (this.startDrag === true) {
         this.startDrag = false
-        const { clientX, clientY } = e.originalEvent
-        const point = Point.from(clientX, clientY)
-        const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = this.canvas.lowerCanvasEl.getBoundingClientRect()
-        const intersects = Rectangle.from(canvasX, canvasY, canvasWidth, canvasHeight).contains(point)
-        if (intersects) {
-          const offset = {x: point.x - canvasX, y: point.y - canvasY}
-          const img = e.item.querySelector('img')
-          fabric.Image.fromURL(img.src, shape => {
-            const size = img.getAttribute('size')
-            if (size) {
-              const scale = 1.2
-              let [width, height] = size.split(',').filter(str => str.trim()).filter(Boolean).map(Number)
-              width = width * scale
-              height = height * scale
-              shape.set({ width, height, top: offset.y, left: offset.x, scaleX: 0.1, scaleY: 0.1 })
-              shape._element.height = height
-              shape._element.width = width
-              Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
-              Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
-            }
-            this.canvas.add(shape)
-            shape.on('selected', () => {
-              this.currentObject = shape
-            })
-          })
-          // if (e.item.querySelector('svg')) {
-          //   fabric.loadSVGFromURL(e.item.innerHTML, (objects, options) => {
-          //     const shape = fabric.util.groupSVGElements(objects, options);
-          //     this.canvas.add(shape)
-          //     shape.on('selected', () => {
-          //       this.currentObject = shape
-          //     })
-          //   })
-          // } else {
-          //   fabric.Image.fromURL(e.item.querySelector('img').src, img => {
-          //     this.canvas.add(img)
-          //     img.on('selected', () => {
-          //       this.currentObject = img
-          //     })
-          //   })
-          // }
-        }
+        imageHelper.addStroke(e)
       }
     },
     onDragstart(e) {
@@ -244,21 +251,33 @@ export default {
       this.startDragOffset = {x: itemX - clientX, y: itemY - clientY}
     },
 
+    onDragResourceOver(e) {
+      this.canDrop = true
+      if (e.dataTransfer && e.dataTransfer.files) {
+        this.startDrag = true
+      }
+    },
+
+    onDragResourceLeave(e) {
+      this.canDrop = false
+      if (e.dataTransfer && e.dataTransfer.files) {
+        this.startDrag = false
+      }
+    },
+
     onStageDrop(e) {
       const { clientX, clientY } = e.originalEvent || e
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const offset = {x: clientX - canvasX, y: clientY - canvasY}
       Array.from(e.dataTransfer.files || []).forEach(file => {
-        this.addImage(file, {top: offset.y, left: offset.x})
-        // if (isImage(file.type)) {
-        //   fabric.Image.from(e.item.querySelector('img').src, img => {
-        //     this.canvas.add(img)
-        //     img.on('selected', () => {
-        //       this.currentObject = img
-        //     })
-        //   })
-        // }
+        imageHelper.uploadImage(file, {top: offset.y, left: offset.x})
       })
+    },
+
+    onStageMousedown() {
+      if (this.editMode === Const.EDIT_MODE.TEXT.value) {
+        this.onAddTextShow()
+      }
     }
   }
 }
@@ -273,7 +292,16 @@ export default {
   }
 }
 .stage {
+  background-color: white;
   border: 1px solid #dedede;
+  .el-container {
+    height: 100%;
+  }
+  ::v-deep {
+    .el-tabs__header {
+      margin-bottom: 6px;
+    }
+  }
 }
 .target-info {
   height: 46%;
@@ -289,11 +317,20 @@ export default {
   padding-top: 0;
   @include tabItem;
 }
-.el-aside {
-}
-.el-header {
-  padding: 6px 8px;
-  text-align: left;
+
+.operation-head {
+  display: flex;
+  padding: 8px;
+  margin-top: 4px;
+  align-items: center;
+  justify-content: space-between;
+  .left-head {
+    display: flex;
+    align-items: center;
+  }
+  .operation-panel {
+    margin-right: 8px;
+  }
 }
 .el-footer {
   padding: 0 8px 6px 8px;
@@ -302,6 +339,9 @@ export default {
   padding: 0;
   margin: 8px;
   border: 1px solid #dedede;
+  &.high-light {
+    border: 1px solid green;
+  }
 }
 .import-file {
   display: inline-block;
