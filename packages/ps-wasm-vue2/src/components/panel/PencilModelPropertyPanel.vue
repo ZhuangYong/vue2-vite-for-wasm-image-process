@@ -1,7 +1,7 @@
 <template>
   <el-form label-width="80px" class="pencil-mode-property">
     <el-form-item label="画笔模式：">
-      <el-select v-model="drawMode" size="mini" :disabled="disabled" placeholder="请选择" @change="onChange">
+      <el-select v-model="drawMode" size="mini" :popper-append-to-body="false" :disabled="disabled" placeholder="请选择" @change="onChange">
         <el-option v-for="item in drawModeOptions" :key="item.label" :label="item.value" :value="item.label">
         </el-option>
       </el-select>
@@ -58,9 +58,9 @@
 </template>
 
 <script>
-import Const from '../const'
-import testImg from '../../static/images/effect/e1.jpg'
-import BaseFabricComponent from "./BaseFabricComponent"
+import Const from '@/const'
+import testImg from '@/../static/images/effect/e1.jpg'
+import BaseFabricComponent from "../BaseFabricComponent"
 
 
 export default {

@@ -27,8 +27,22 @@ export default {
   .menu-item {
     margin: 0 8px;
     ::v-deep {
-      .el-dropdown-link:hover {
-        color: #009987;
+      .el-dropdown-link {
+        font-size: 12px;
+        cursor: pointer;
+        &:hover {
+          color: #009987;
+        }
+      }
+      .el-dropdown-menu__item {
+        display: flex;
+        white-space: nowrap;
+        justify-content: space-between;
+        span {
+          &:nth-child(2) {
+            color: #999999;
+          }
+        }
       }
     }
   }

@@ -54,9 +54,9 @@
 </template>
 
 <script>
-import Const from '../const'
-import BaseFabricComponent from "./BaseFabricComponent"
-import VisibleSwitch from "./buttons/VisibleSwitch.vue"
+import Const from '@/const'
+import BaseFabricComponent from "../BaseFabricComponent"
+import VisibleSwitch from "../buttons/VisibleSwitch.vue"
 const defaultProps = {
   top: 0,
   left: 0,

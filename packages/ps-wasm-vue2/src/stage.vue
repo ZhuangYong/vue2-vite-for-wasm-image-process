@@ -20,10 +20,13 @@
             <FastEffect @fabric-filter="onFabricFilter" @do-filter="doFilter" />
           </el-tab-pane>
           <el-tab-pane label="调整" name="ttttt">
-            <FastEffect />
+            ----
           </el-tab-pane>
-        </el-tabs>
+          <el-tab-pane label="图层" name="layer">
+            <LayerPanel />
+          </el-tab-pane>
 
+        </el-tabs>
       </el-aside>
 
       <!--顶部菜单等-->
@@ -39,7 +42,7 @@
         <!--画布-->
         <el-main class="main-container">
           <div class="main-stage">
-            <CanvasPanel ref="canvasPanel" :current-object-props.sync="showProps" :current-select-target.sync="currentObject" />
+            <CanvasPanel ref="canvasPanel" :current-object-props.sync="showProps" :current-select-target.sync="currentObject" @initialized="onCanvasInitialized" />
           </div>
         </el-main>
 
@@ -60,37 +63,39 @@
 </template>
 
 <script>
-import {fabric} from './lib/fabric.min'
-import FastEffect from './components/FastEffect.vue'
-import Stickers from './components/Stickers.vue'
-import {GaussBlur} from "./filters/GaussBlur"
-import ObjectProps from "./components/ObjectProps.vue"
-import imageHelper from "./utils/ImageHelper"
-import OperationPanel from "./components/OperationPanel.vue"
-import PencilModelPropertyPanel from "./components/PencilModelPropertyPanel.vue"
-import Menus from './components/Menus/index.vue'
-import Const from "./const";
-import FullscreenButton from "./components/FullscreenButton.vue"
-import CanvasPanel from "./components/panel/CanvasPanel.vue"
+import {fabric} from '@/lib/fabric.min'
+import FastEffect from '@/components/panel/FastEffectPanel.vue'
+import Stickers from '@/components/panel/StickersPanel.vue'
+import {GaussBlur} from "@/filters/GaussBlur"
+import ObjectProps from "@/components/panel/ObjectPropsPanel.vue"
+import imageHelper from "@/utils/ImageHelper"
+import OperationPanel from "@/components/panel/OperationPanel.vue"
+import PencilModelPropertyPanel from "./components/panel/PencilModelPropertyPanel.vue"
+import Menus from '@/components/Menus/index.vue'
+import Const from "@/const";
+import FullscreenButton from "@/components/buttons/FullscreenButton.vue"
+import CanvasPanel from "@/components/panel/CanvasPanel.vue"
+import LayerPanel from '@/components/panel/LayerPanel.vue'
 
 export default {
   name: 'Stage',
-  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton, CanvasPanel },
+  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton, CanvasPanel, LayerPanel },
   provide() {
     return {
-      getCanvas: () => imageHelper.canvas,
+      getCanvas: () => this.canvas,
       getTarget: () => this.currentObject,
       getEditMode: () => this.editMode
     }
   },
   data() {
     return {
+      canvas: null,
       showProps: null,
       fullscreenTarget: null,
       editMode: Const.EDIT_MODE.MOVE.value, // 编辑模式
       currentObject: null, // 当前选择的编辑对象
       activeResourceName: 'stickers', // 选择的资源tabs
-      leftBottomTab: 'fastEffect',
+      leftBottomTab: 'layer',
       leftTopTab: 'targetProps'
     }
   },
@@ -124,6 +129,10 @@ export default {
           imageHelper.canvas.renderAll()
         }
       }
+    },
+
+    onCanvasInitialized(canvas) {
+      this.canvas = canvas
     }
 
   }

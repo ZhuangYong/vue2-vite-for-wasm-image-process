@@ -32,12 +32,14 @@
 </template>
 
 <script>
-import e1 from '../../static/images/effect/e1.png'
-import e2 from '../../static/images/effect/e2.png'
-import e3 from '../../static/images/effect/e3.png'
-import e4 from '../../static/images/effect/e4.png'
-import e5 from '../../static/images/effect/e1.png'
-import e6 from '../../static/images/effect/e1.png'
+
+// todo 图片与效果替换为动态
+import e1 from '../../../static/images/effect/e1.png'
+import e2 from '../../../static/images/effect/e2.png'
+import e3 from '../../../static/images/effect/e3.png'
+import e4 from '../../../static/images/effect/e4.png'
+import e5 from '../../../static/images/effect/e1.png'
+import e6 from '../../../static/images/effect/e1.png'
 const EasyReflection = {
   e1: '美肤',
   e2: "素描",

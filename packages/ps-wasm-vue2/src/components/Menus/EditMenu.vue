@@ -4,7 +4,7 @@
       <span class="el-dropdown-link">
         编辑<i class="el-icon-arrow-down el-icon--right" />
       </span>
-      <el-dropdown-menu slot="dropdown">
+      <el-dropdown-menu :append-to-body="false" slot="dropdown">
         <el-dropdown-item v-for="item in editOptions" :key="item.key" :command="item.key">
           <span>{{ item.label }}</span>
           <span v-if="item.keyMap">({{ item.keyMap }})</span>
@@ -43,13 +43,5 @@ export default {
 .el-dropdown-link {
   font-size: 12px;
   cursor: pointer;
-}
-.el-dropdown-menu__item {
-  span {
-    &:last-child {
-      margin-left: 8px;
-      color: #999999;
-    }
-  }
 }
 </style>

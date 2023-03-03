@@ -9,8 +9,8 @@
 </template>
 
 <script>
-import Const from '../const'
-import BaseFabricComponent from "./BaseFabricComponent";
+import Const from '@/const'
+import BaseFabricComponent from "../BaseFabricComponent";
 
 export default {
   mixins: [BaseFabricComponent],

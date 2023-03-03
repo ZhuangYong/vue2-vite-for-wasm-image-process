@@ -31,12 +31,12 @@
 </template>
 
 <script>
-import Draggable from './Draggable'
-import {isSvgByBase64} from "../utils";
-import imageHelper from "../utils/ImageHelper"
-import BaseFabricComponent from "./BaseFabricComponent"
+import Draggable from '../Draggable'
+import {isSvgByBase64} from "@/utils";
+import imageHelper from "@/utils/ImageHelper"
+import BaseFabricComponent from "../BaseFabricComponent"
 
-const svg = require.context('../../static/svg/', true, /\.svg$/)
+const svg = require.context('../../../static/svg/', true, /\.svg$/)
 const svgList = svg.keys().map(key => ({ key: key.split('/').pop().split('.').shift(), value: svg(key)}))
 
 export default {

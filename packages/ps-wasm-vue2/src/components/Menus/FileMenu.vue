@@ -4,7 +4,7 @@
       <span class="el-dropdown-link">
         文件<i class="el-icon-arrow-down el-icon--right" />
       </span>
-      <el-dropdown-menu slot="dropdown">
+      <el-dropdown-menu :append-to-body="false" slot="dropdown">
         <el-dropdown-item command="open">
           <el-upload action="" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" class="import-file">
             打开
@@ -23,6 +23,7 @@ import imageHelper from "../../utils/ImageHelper"
 import Canvas2Image from "../../utils/CanvasToImage"
 
 export default {
+  name: 'FileMenu',
   mixins: [BaseFabricComponent],
   methods: {
     handleCommand(command) {

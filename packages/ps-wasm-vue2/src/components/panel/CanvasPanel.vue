@@ -17,11 +17,11 @@
 </template>
 
 <script>
-import imageHelper from "../../utils/ImageHelper"
-import Const from "../../const";
-import {fabric} from "../../lib/fabric.min";
-import fabricEnhance from "../../utils/fabricEnhance";
-import transparentSvg from "../../../static/icon/transparent.svg"
+import imageHelper from "@/utils/ImageHelper"
+import Const from "@/const";
+import {fabric} from "@/lib/fabric.min";
+import fabricEnhance from "@/utils/fabricEnhance";
+import transparentSvg from "@/../static/icon/transparent.svg"
 
 export default {
   name: 'CanvasPanel',
@@ -98,6 +98,7 @@ export default {
       //   const {width, height, left, top} = this.currentObject || {}
       //   console.log({width, height, left, top})
       // })
+      this.$emit('initialized', canvas)
       console.log(fabric, this.canvas)
     })
   },

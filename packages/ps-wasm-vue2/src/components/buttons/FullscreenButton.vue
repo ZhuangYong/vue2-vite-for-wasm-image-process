@@ -5,9 +5,9 @@
 </template>
 
 <script>
-import expandSvg from "../../static/icon/fullscreen-expand.svg"
-import shrinkSvg from "../../static/icon/fullscreen-shrink.svg"
-import {base64ToStr} from "../utils"
+import expandSvg from "../../../static/icon/fullscreen-expand.svg"
+import shrinkSvg from "../../../static/icon/fullscreen-shrink.svg"
+import {base64ToStr} from "../../utils"
 export default {
   name: 'FullscreenButton',
   props: {

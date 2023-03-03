@@ -4,7 +4,7 @@
       <span class="el-dropdown-link">
         图层<i class="el-icon-arrow-down el-icon--right" />
       </span>
-      <el-dropdown-menu slot="dropdown">
+      <el-dropdown-menu :append-to-body="false" slot="dropdown">
         <el-dropdown-item command="new">
           <span>新建</span>
         </el-dropdown-item>
@@ -24,7 +24,7 @@ import BaseFabricComponent from "../BaseFabricComponent"
 import imageHelper from "../../utils/ImageHelper"
 
 export default {
-  name: 'EditMenu',
+  name: 'LayerMenu',
   mixins: [BaseFabricComponent],
   methods: {
     handleCommand(command) {
@@ -41,16 +41,4 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.el-dropdown-link {
-  font-size: 12px;
-  cursor: pointer;
-}
-.el-dropdown-menu__item {
-  span {
-    &:last-child {
-      margin-left: 8px;
-      color: #999999;
-    }
-  }
-}
 </style>

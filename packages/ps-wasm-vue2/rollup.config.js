@@ -7,7 +7,9 @@ import commonjs from "rollup-plugin-commonjs"
 import resolve from 'rollup-plugin-node-resolve'
 import wasm from './rollup-plugin-wasm'
 // import jsx from 'rollup-plugin-jsx'
+import alias from '@rollup/plugin-alias';
 import requireContext from 'rollup-plugin-require-context'
+const path = require('path')
 
 export default {
   external: ['vue', 'lodash'],
@@ -58,6 +60,11 @@ export default {
         '@babel/plugin-transform-block-scoped-functions',
         '@babel/plugin-transform-arrow-functions'
       ]
+    }),
+    alias({
+      entries: {
+        '@': path.join(__dirname, '.', 'src')
+      }
     }),
     image(),
     // svg({ vueComponent: true }),
