@@ -1,7 +1,21 @@
-import Point from "./Point";
-import Rectangle from "./Rectangle";
-import {fabric} from "./lib/fabric.min";
-import {isImage} from "./utils";
+import Point from "../Point"
+import Rectangle from "../Rectangle"
+import {fabric} from "../lib/fabric.min"
+import {isImage} from "../utils/index"
+
+export const COMMAND_TYPES = {
+  EDIT: {
+    MOVE_TOP_LAYER: {key: 'moveTopLayer', label: '置顶', keyMap: ''},
+    MOVE_BOTTOM_LAYER: {key: 'moveBottomLayer', label: '置底', keyMap: ''},
+    UP_LAYER: {key: 'upLayer', label: '上移一层', keyMap: ''},
+    DOWN_LAYER: {key: 'downLayer', label: '下移一层', keyMap: ''},
+    BACK: {key: 'back', label: '撤销', keyMap: 'ctrl + z'},
+    REDO: {key: 'redo', label: '重做', keyMap: 'ctrl + y'},
+    COPY: {key: 'copy', label: '复制', keyMap: 'ctrl + c'},
+    PASTE: {key: 'paste', label: '粘贴', keyMap: 'ctrl + v'},
+    DELETE: {key: 'delete', label: '删除', keyMap: 'del, back'}
+  }
+}
 
 /**
  * 对象类型
@@ -13,14 +27,44 @@ class ImageHelper {
     this._canvas = canvas
   }
   get canvas() {
-    if (!this._canvas) {
-      throw new Error('not set canvas yet')
-    }
     return this._canvas
   }
 
   set canvas(v) {
     this._canvas = v
+  }
+
+  handleCommand(command) {
+    const target = this.canvas.getActiveObject()
+    switch (command) {
+      case COMMAND_TYPES.EDIT.DELETE.key: {
+        if (target) {
+          if (target._objects) {
+            this.canvas.remove(...target._objects)
+          } else {
+            this.canvas.remove(target)
+          }
+          this.canvas.requestRenderAll()
+        }
+        break
+      }
+
+      case COMMAND_TYPES.EDIT.UP_LAYER.key:
+        target && target.bringForward()
+        break
+
+      case COMMAND_TYPES.EDIT.DOWN_LAYER.key:
+        target && target.sendBackwards()
+        break
+
+      case COMMAND_TYPES.EDIT.MOVE_TOP_LAYER.key:
+        target && target.bringToFront()
+        break
+
+      case COMMAND_TYPES.EDIT.MOVE_BOTTOM_LAYER.key:
+        target && target.sendToBack()
+        break
+    }
   }
 
   /**
@@ -86,5 +130,7 @@ class ImageHelper {
     this.canvas.add(new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option }))
   }
 }
+const imageHelper = new ImageHelper(null)
 
-export default new ImageHelper(null)
+
+export default imageHelper

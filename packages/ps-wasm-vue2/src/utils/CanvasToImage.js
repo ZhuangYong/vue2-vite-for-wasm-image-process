@@ -1,4 +1,4 @@
-import saveAs from './lib/FileSaver'
+import saveAs from '../lib/FileSaver'
 /**
  * covert canvas to image
  * and save the image file

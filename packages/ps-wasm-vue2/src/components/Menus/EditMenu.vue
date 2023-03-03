@@ -5,25 +5,10 @@
         编辑<i class="el-icon-arrow-down el-icon--right" />
       </span>
       <el-dropdown-menu slot="dropdown">
-        <el-dropdown-item command="back">
-          <span>撤销</span>
-          <span>(ctrl + z)</span>
-        </el-dropdown-item>
-        <el-dropdown-item command="redo">
-          <span>重做</span>
-          <span>(ctrl + y)</span>
-        </el-dropdown-item>
-        <el-dropdown-item command="copy">
-          <span>删除</span>
-          <span>(del)</span>
-        </el-dropdown-item>
-        <el-dropdown-item command="copy">
-          <span>复制</span>
-          <span>(ctrl + c)</span>
-        </el-dropdown-item>
-        <el-dropdown-item command="paste">
-          <span>粘贴</span>
-          <span>(ctrl + v)</span>
+        <el-dropdown-item v-for="item in editOptions" :key="item.key" :command="item.key">
+          <span>{{ item.label }}</span>
+          <span v-if="item.keyMap">({{ item.keyMap }})</span>
+          <span v-else />
         </el-dropdown-item>
       </el-dropdown-menu>
     </el-dropdown>
@@ -32,26 +17,25 @@
 
 <script>
 import BaseFabricComponent from "../BaseFabricComponent"
-import imageHelper from "../../ImageHelper"
-import Canvas2Image from "../../CanvasToImage";
+import imageHelper, {COMMAND_TYPES} from "../../utils/ImageHelper"
 
 export default {
   name: 'EditMenu',
   mixins: [BaseFabricComponent],
-  methods: {
-    handleCommand(command) {
-      switch (command) {
-        case 'export':
-          this.onExport()
-      }
-    },
-    onFileAdd(file) {
-      imageHelper.uploadImage(file.raw)
-    },
-    onExport() {
-      Canvas2Image.saveAsPNG(this.canvas.toCanvasElement(), this.width, this.height)
+  data() {
+    return {
+      editOptions: Object.values(COMMAND_TYPES.EDIT)
     }
   },
+  computed: {
+    active() {
+      return !!this.target
+    }
+  },
+  methods: {
+    handleCommand: imageHelper.handleCommand
+  }
+
 }
 </script>
 

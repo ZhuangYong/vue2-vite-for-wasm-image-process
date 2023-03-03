@@ -18,8 +18,7 @@
 
 <script>
 import BaseFabricComponent from "../BaseFabricComponent"
-import imageHelper from "../../ImageHelper"
-import Canvas2Image from "../../CanvasToImage";
+import imageHelper from "../../utils/ImageHelper"
 
 export default {
   name: 'EditMenu',
@@ -33,9 +32,6 @@ export default {
     },
     onFileAdd(file) {
       imageHelper.uploadImage(file.raw)
-    },
-    onExport() {
-      Canvas2Image.saveAsPNG(this.canvas.toCanvasElement(), this.width, this.height)
     }
   },
 }

@@ -8,12 +8,12 @@
       </div>
       <div class="props-line">
         <div class="props-item">
-          <span class="label">字号：</span>
+          <span class="label" style="width: 44px;">字号：</span>
           <el-input v-model="fontSize" :disabled="disabled" size="mini" style="width: 30px" />
         </div>
         <div class="props-item">
-          <span class="label" style="width: 70px">字体：</span>
-          <el-input v-model="fontFamily" :disabled="disabled" size="mini" />
+          <span class="label" style="width: 52px">字体：</span>
+          <el-input v-model="fontFamily" :disabled="disabled" size="mini" style="width: 60px" />
         </div>
       </div>
     </template>
@@ -57,23 +57,25 @@
 import Const from '../const'
 import BaseFabricComponent from "./BaseFabricComponent"
 import VisibleSwitch from "./buttons/VisibleSwitch.vue"
-
+const defaultProps = {
+  top: 0,
+  left: 0,
+  width: 0,
+  height: 0,
+  scaleX: 1,
+  scaleY: 1,
+  angle: 0,
+  text: '',
+  fontSize: 0,
+  fontFamily: ''
+}
 export default {
   name: 'ObjectProps',
   components: {VisibleSwitch},
   mixins: [BaseFabricComponent],
   data() {
     return {
-      top: 0,
-      left: 0,
-      width: 0,
-      height: 0,
-      scaleX: 1,
-      scaleY: 1,
-      angle: 0,
-      text: '',
-      fontSize: 0,
-      fontFamily: ''
+      ...defaultProps
     }
   },
   props: {
@@ -84,10 +86,10 @@ export default {
   },
   computed: {
     isText() {
-      return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes((this.props || {}).type)
+      return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes((this.target || {}).type)
     },
     disabled() {
-      return !this.props
+      return !this.target
     },
     showWidth: {
       get() {
@@ -131,12 +133,15 @@ export default {
       handler(v) {
         if (v) {
           Object.keys(v).forEach(key => {
-            if (key !== 'canvas') {
+            if (key !== 'canvas' && this[key] !== v[key]) {
               this[key] = v[key]
             }
           })
+        } else {
+          Object.keys(defaultProps).forEach(key => (this[key] = defaultProps[key]))
         }
       },
+      deep: true,
       immediate: true
     }
   },
@@ -156,9 +161,12 @@ export default {
     display: flex;
     align-items: center;
     padding: 6px 0;
+    .el-textarea {
+      padding: 0 8px;
+    }
     .label {
       color: gray;
-      min-width: 28px;
+      min-width: 33px;
       text-align: right;
       white-space: nowrap;
     }

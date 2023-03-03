@@ -1,4 +1,4 @@
-import {loadBlobWebAssembly} from "../wasmHelper"
+import {loadBlobWebAssembly} from "../utils/wasmHelper"
 import imageProcess from "../lib/imageProcess.wasm"
 
 let wasmInstance

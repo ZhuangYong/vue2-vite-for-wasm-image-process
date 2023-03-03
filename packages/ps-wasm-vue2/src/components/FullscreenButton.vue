@@ -9,9 +9,10 @@ import expandSvg from "../../static/icon/fullscreen-expand.svg"
 import shrinkSvg from "../../static/icon/fullscreen-shrink.svg"
 import {base64ToStr} from "../utils"
 export default {
+  name: 'FullscreenButton',
   props: {
-    target: {
-      type: Element,
+    el: {
+      type: Object | HTMLElement,
       default: () => {}
     }
   },
@@ -23,7 +24,7 @@ export default {
     }
   },
   watch: {
-    target: {
+    el: {
       handler(v) {
         if (v) {
           v.onfullscreenchange = () => this.expand = document.fullscreen || document.fullscreenElement !== null
@@ -39,11 +40,13 @@ export default {
   },
   methods: {
     async onClick() {
-      if (this.target && this.target.requestFullscreen) {
-        const {requestFullscreen, webkitRequestFullScreen, mozRequestFullScreen, msRequestFullscreen} = this.target
+      console.log('---')
+      const el = this.el ? (this.el.$el || this.el) : null
+      if (el && el.requestFullscreen) {
+        const {requestFullscreen, webkitRequestFullScreen, mozRequestFullScreen, msRequestFullscreen} = this.el
         try {
           if (!this.expand) {
-            await (requestFullscreen || webkitRequestFullScreen || mozRequestFullScreen || msRequestFullscreen).apply(this.target)
+            await (requestFullscreen || webkitRequestFullScreen || mozRequestFullScreen || msRequestFullscreen).apply(this.el)
           } else {
             await (document.exitFullscreen || document.webkitCancelFullScreen || document.mozCancelFullScreen || document.msExitFullscreen).apply(document)
           }

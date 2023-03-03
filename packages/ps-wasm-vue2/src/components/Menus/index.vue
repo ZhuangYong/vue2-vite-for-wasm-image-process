@@ -26,6 +26,11 @@ export default {
   display: flex;
   .menu-item {
     margin: 0 8px;
+    ::v-deep {
+      .el-dropdown-link:hover {
+        color: #009987;
+      }
+    }
   }
 }
 </style>

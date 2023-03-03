@@ -19,8 +19,8 @@
 
 <script>
 import BaseFabricComponent from "../BaseFabricComponent"
-import imageHelper from "../../ImageHelper"
-import Canvas2Image from "../../CanvasToImage";
+import imageHelper from "../../utils/ImageHelper"
+import Canvas2Image from "../../utils/CanvasToImage"
 
 export default {
   mixins: [BaseFabricComponent],

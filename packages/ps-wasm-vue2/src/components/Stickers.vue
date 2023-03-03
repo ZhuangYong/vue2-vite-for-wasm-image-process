@@ -2,7 +2,7 @@
   <div class="resource-stickers">
     <el-scrollbar>
       <div class="quick-pick">
-        <Draggable :sort="false" :list="svgList.slice(0, 13)" class="quick-pick-draggable">
+        <Draggable :sort="false" :list="svgList.slice(0, 13)" class="quick-pick-draggable" @start="onDragstart" @end="onDragend">
           <div v-for="item in svgList.slice(0, 13)" :key="item.key" class="sticker-item">
             <img :src="item.value" :size="calcSvgSize(item.value)"  alt="">
           </div>
@@ -33,16 +33,21 @@
 <script>
 import Draggable from './Draggable'
 import {isSvgByBase64} from "../utils";
+import imageHelper from "../utils/ImageHelper"
+import BaseFabricComponent from "./BaseFabricComponent"
 
 const svg = require.context('../../static/svg/', true, /\.svg$/)
 const svgList = svg.keys().map(key => ({ key: key.split('/').pop().split('.').shift(), value: svg(key)}))
 
 export default {
+  mixins: [BaseFabricComponent],
   components: { Draggable },
   data() {
     return {
       svgList,
+      startDrag: false, // 标志开始拖拽
       activeName: 'dessert',
+      startDragOffset: {x: 0, y:0}, // 开始拖动作用在对象上的偏移
       pickDialogVisible: false
     }
   },
@@ -58,6 +63,18 @@ export default {
         }
       }
       return ''
+    },
+    onDragend(e) {
+      if (this.startDrag === true) {
+        this.startDrag = false
+        imageHelper.addStroke(e)
+      }
+    },
+    onDragstart(e) {
+      this.startDrag = true
+      const { x: itemX, y: itemY } = e.item.getBoundingClientRect()
+      const { clientX, clientY } = e.originalEvent
+      this.startDragOffset = {x: itemX - clientX, y: itemY - clientY}
     },
     showPick() {
       this.pickDialogVisible = true
