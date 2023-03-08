@@ -1,8 +1,22 @@
 import Point from "../Point"
 import Rectangle from "../Rectangle"
-import {fabric} from "../lib/fabric.min"
-import {isImage} from "../utils/index"
+import {fabric} from "@/lib/fabric.min"
+import {isImage} from "@/utils/index"
 
+export const defaultProps = {
+  top: 0,
+  left: 0,
+  width: 0,
+  height: 0,
+  scaleX: 1,
+  scaleY: 1,
+  angle: 0,
+  text: '',
+  // type: '',
+  fontSize: 0,
+  fontFamily: '',
+  visible: true
+}
 export const COMMAND_TYPES = {
   EDIT: {
     MOVE_TOP_LAYER: {key: 'moveTopLayer', label: '置顶', keyMap: ''},
@@ -13,9 +27,21 @@ export const COMMAND_TYPES = {
     REDO: {key: 'redo', label: '重做', keyMap: 'ctrl + y'},
     COPY: {key: 'copy', label: '复制', keyMap: 'ctrl + c'},
     PASTE: {key: 'paste', label: '粘贴', keyMap: 'ctrl + v'},
-    DELETE: {key: 'delete', label: '删除', keyMap: 'del, back'}
+    DELETE: {key: 'delete', label: '删除', keyMap: 'del, back'},
+    VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: ''}
+  },
+  RESIZE: {
+    ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', label: '修改对象宽'},
+    ACTIVE_OBJECT_HEIGHT: {key: 'activeObjectHeight', label: '修改对象宽'},
   }
 }
+
+export const scaleXtoWidth = ({ scaleX, width }) => (scaleX * width).toFixed(2)
+export const scaleYtoHeight = ({ scaleY, height }) => (scaleY * height).toFixed(2)
+
+const ignore = ['canvas']
+const toFix = ['left', 'top', 'angle']
+const formatter = { width: scaleXtoWidth, height: scaleYtoHeight }
 
 /**
  * 对象类型
@@ -34,8 +60,12 @@ class ImageHelper {
     this._canvas = v
   }
 
-  handleCommand(command) {
-    const target = this.canvas.getActiveObject()
+  handleCommand() {
+    const [command, target, arg1, ...otherArgs] = Array.from(arguments)
+    // const target = this.canvas.getActiveObject()
+    if (!target) {
+      return
+    }
     switch (command) {
       case COMMAND_TYPES.EDIT.DELETE.key: {
         if (target) {
@@ -50,21 +80,40 @@ class ImageHelper {
       }
 
       case COMMAND_TYPES.EDIT.UP_LAYER.key:
-        target && target.bringForward()
+        target.bringForward()
         break
 
       case COMMAND_TYPES.EDIT.DOWN_LAYER.key:
-        target && target.sendBackwards()
+        target.sendBackwards()
         break
 
       case COMMAND_TYPES.EDIT.MOVE_TOP_LAYER.key:
-        target && target.bringToFront()
+        target.bringToFront()
         break
 
       case COMMAND_TYPES.EDIT.MOVE_BOTTOM_LAYER.key:
-        target && target.sendToBack()
+        target.sendToBack()
+        break
+
+      case COMMAND_TYPES.EDIT.VISIBLE.key:
+        target.visible = arg1
+        break
+
+      // 修改对象宽
+      case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_WIDTH.key:
+        if (arg1) {
+          const newWidth = arg1
+          const newScaleX = newWidth / target.width
+          if (target.canvas.getActiveObject().scaleX === newScaleX) {
+            return
+          }
+          console.log(newWidth,  target.width)
+          target.canvas.getActiveObject().scaleX = newWidth / target.width
+        }
         break
     }
+
+    target.canvas.renderAll()
   }
 
   /**
@@ -93,7 +142,7 @@ class ImageHelper {
           Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
           Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
         }
-        this.canvas.add(shape)
+        this.addToCanvas(shape)
         shape.on('selected', () => {
           this.currentObject = shape
         })
@@ -116,7 +165,7 @@ class ImageHelper {
           const { width, height } = this.canvas
           const scale = Math.min(width/img.width, height/img.height)
           img.set({ scaleX: scale, scaleY: scale, ...option })
-          this.canvas.add(img)
+          this.addToCanvas(img)
           img.on('selected', () => {
             this.currentObject = img
           })
@@ -125,9 +174,62 @@ class ImageHelper {
     }
   }
 
+  /**
+   * 监听对象修改
+   * @param target
+   * @returns {{scaleX: number, scaleY: number, fontFamily: string, visible: boolean, top: number, left: number, width: number, angle: number, fontSize: number, text: string, height: number}}
+   */
+  watchTarget(target) {
+    const result = { ...defaultProps }
+    if (target) {
+      Object.keys(defaultProps).forEach(key => {
+        if (!ignore.includes(key)) {
+          Object.defineProperty(result, key, {
+            get() {
+              // console.log('..... get key', key)
+              if (formatter[key]) {
+                return formatter[key](target)
+              } else if (toFix.includes(key)) {
+                return (Number(target[key]) || 0).toFixed(2)
+              } else {
+                return target[key]
+              }
+            },
+            set(v) {
+              console.log('..... set key>> ', key)
+              switch (key) {
+                case 'width':
+                  imageHelper.handleCommand(COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_WIDTH.key, target, v)
+                  break
+                case 'visible':
+                  imageHelper.handleCommand(COMMAND_TYPES.EDIT.VISIBLE.key, target, Boolean(v))
+                  break
+                default:
+                  result[key] = target[key]
+              }
+            }
+          })
+        }
+      })
+    }
+
+    return result
+  }
+
   addText(text, option) {
     option = option || {}
-    this.canvas.add(new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option }))
+    this.addToCanvas(new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option }))
+  }
+
+  addToCanvas() {
+    Array.from(arguments).forEach(obj => {
+      Object.keys(defaultProps).forEach(key => {
+        if (!obj.hasOwnProperty(key)) {
+          obj[key] = defaultProps[key]
+        }
+      })
+    })
+    this.canvas.add.apply(this.canvas, arguments)
   }
 }
 const imageHelper = new ImageHelper(null)

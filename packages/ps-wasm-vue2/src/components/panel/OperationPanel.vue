@@ -52,8 +52,8 @@ export default {
     .el-radio-button__inner {
       padding: 4px 12px;
       svg {
-        width: 16px;
-        height: 16px;
+        width: 12px;
+        height: 12px;
       }
     }
   }

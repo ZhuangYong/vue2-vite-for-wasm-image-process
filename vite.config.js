@@ -18,5 +18,6 @@ const crossOriginIsolation = () => ({
 });
 
 export default defineConfig({
+  assetsInclude: 'static',
   plugins: [crossOriginIsolation(), Vue2(), ScriptSetup(), eslintPlugin()]
 })

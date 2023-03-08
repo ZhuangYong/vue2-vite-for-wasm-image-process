@@ -1,6 +1,6 @@
 <template>
-  <el-button :disabled="!switchTarget" type="text" @click="onClick">
-    <div v-html="currentSvg" />
+  <el-button :disabled="disabled" type="text" @click="onClick">
+    <div v-html="layer.visible ? showIcon : hideIcon" />
   </el-button>
 </template>
 
@@ -8,13 +8,15 @@
 import eyeSvg from "@/../static/icon/eye.svg"
 import eyeCloseSvg from "@/../static/icon/eye-close.svg"
 import {base64ToStr} from "@/utils"
-import BaseFabricComponent from "../BaseFabricComponent"
 export default {
-  mixins: [BaseFabricComponent],
   props: {
     layer: {
       type: Object,
       default: null
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -24,29 +26,12 @@ export default {
     }
   },
   computed: {
-    /**
-     * 需要操作的对象
-     * @returns {Object|*}
-     */
-    switchTarget() {
-      return this.layer || this.target
-    },
-    currentSvg() {
-      return this.show ? this.showIcon : this.hideIcon
-    },
-    show() {
-      return this.layer ? this.layer.visible : this.target ? this.target.visible : false
-    }
   },
   methods: {
     async onClick() {
-      if (this.switchTarget) {
-        if (this.layer) {
-          this.$emit('update:layer', this.switchTarget)
-        } else {
-          this.$set(this.switchTarget, 'visible', !this.switchTarget.visible)
-        }
-        this.$nextTick(() => this.canvas.renderAll())
+      if (this.layer) {
+        this.$set(this.layer, 'visible', !this.layer.visible)
+        this.$emit('update:layer.visible', this.layer.visible)
       }
     }
   }

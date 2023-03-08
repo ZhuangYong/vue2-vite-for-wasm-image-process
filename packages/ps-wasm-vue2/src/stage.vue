@@ -6,7 +6,7 @@
         <el-tabs v-model="leftTopTab" type="card" class="left-function-tabs">
           <el-tab-pane label="属性" name="targetProps">
             <div class="target-info">
-              <ObjectProps :props="showProps" />
+              <ObjectProps />
             </div>
           </el-tab-pane>
           <el-tab-pane label="画笔" name="pencilProps">
@@ -42,7 +42,7 @@
         <!--画布-->
         <el-main class="main-container">
           <div class="main-stage">
-            <CanvasPanel ref="canvasPanel" :current-object-props.sync="showProps" :current-select-target.sync="currentObject" @initialized="onCanvasInitialized" />
+            <CanvasPanel ref="canvasPanel" :current-select-target.sync="currentObject" @initialized="onCanvasInitialized" />
           </div>
         </el-main>
 
@@ -68,7 +68,7 @@ import FastEffect from '@/components/panel/FastEffectPanel.vue'
 import Stickers from '@/components/panel/StickersPanel.vue'
 import {GaussBlur} from "@/filters/GaussBlur"
 import ObjectProps from "@/components/panel/ObjectPropsPanel.vue"
-import imageHelper from "@/utils/ImageHelper"
+import imageHelper, {defaultProps} from "@/utils/ImageHelper"
 import OperationPanel from "@/components/panel/OperationPanel.vue"
 import PencilModelPropertyPanel from "./components/panel/PencilModelPropertyPanel.vue"
 import Menus from '@/components/Menus/index.vue'
@@ -84,19 +84,25 @@ export default {
     return {
       getCanvas: () => this.canvas,
       getTarget: () => this.currentObject,
+      getTargetProps: () => this.targetProps,
       getEditMode: () => this.editMode
     }
   },
   data() {
     return {
       canvas: null,
-      showProps: null,
       fullscreenTarget: null,
       editMode: Const.EDIT_MODE.MOVE.value, // 编辑模式
+      targetProps: defaultProps,
       currentObject: null, // 当前选择的编辑对象
       activeResourceName: 'stickers', // 选择的资源tabs
       leftBottomTab: 'layer',
       leftTopTab: 'targetProps'
+    }
+  },
+  watch: {
+    currentObject(target) {
+      this.targetProps = imageHelper.watchTarget(target)
     }
   },
   mounted() {

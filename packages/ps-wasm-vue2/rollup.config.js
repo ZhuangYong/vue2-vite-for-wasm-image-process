@@ -6,6 +6,7 @@ import scss from 'rollup-plugin-scss'
 import commonjs from "rollup-plugin-commonjs"
 import resolve from 'rollup-plugin-node-resolve'
 import wasm from './rollup-plugin-wasm'
+import wasmImport from 'rollup-wasm-pack-import'
 // import jsx from 'rollup-plugin-jsx'
 import alias from '@rollup/plugin-alias';
 import requireContext from 'rollup-plugin-require-context'
@@ -67,6 +68,13 @@ export default {
       }
     }),
     image(),
+    wasmImport({
+      copy: true,
+      serverPath: '/',
+      mapping: {
+        'imageProcess2': 'imageProcess2.wasm'
+      }
+    }),
     // svg({ vueComponent: true }),
     wasm()
 

@@ -6,11 +6,10 @@ export class GaussBlur extends fabric.Image.filters.BaseFilter {
   applyTo(options) {
     this.applyTo2d(options)
   }
-  applyTo2d({ imageData }) {
+  applyTo2d(options) {
     // js处理
     // gaussBlur(imageData, [])
-    console.log(imageData)
-    GaussBlurFilter(imageData, [])
+    GaussBlurFilter(options, [])
   }
 }
 /**

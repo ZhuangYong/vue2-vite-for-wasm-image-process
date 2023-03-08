@@ -27,10 +27,10 @@ export default {
   name: 'CanvasPanel',
   inject: ['getEditMode'],
   props: {
-    currentObjectProps: {
-      type: Object,
-      default: () => {}
-    },
+    // currentObjectProps: {
+    //   type: Object,
+    //   default: () => {}
+    // },
 
     currentSelectTarget: {
       type: Object,
@@ -61,24 +61,24 @@ export default {
       return this.canDrop && this.startDrag
     },
 
-    showProps: {
-      get () {
-        if (!this.currentObject) {
-          return null
-        }
-        const { fontFamily, type, ...res } = this.currentObject
-        return { ...res, type, fontFamily }
-      }
-    },
+    // showProps: {
+    //   get () {
+    //     if (!this.currentObject) {
+    //       return null
+    //     }
+    //     const { fontFamily, type, visible, ...res } = this.currentObject
+    //     return { ...res, type, visible, fontFamily }
+    //   }
+    // },
     editMode() {
       return this.getEditMode ? this.getEditMode() : null
     }
   },
-  watch: {
-    showProps(v) {
-      this.$emit('update:currentObjectProps', v)
-    }
-  },
+  // watch: {
+  //   showProps(v) {
+  //     this.$emit('update:currentObjectProps', v)
+  //   }
+  // },
   mounted() {
     this.refreshSize()
     this.$nextTick(() => {
