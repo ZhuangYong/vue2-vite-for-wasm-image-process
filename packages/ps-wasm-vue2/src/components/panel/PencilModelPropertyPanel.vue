@@ -1,6 +1,6 @@
 <template>
   <el-form label-width="80px" class="pencil-mode-property">
-    <el-form-item label="画笔模式：">
+    <el-form-item label="画笔模式：" class="pencil-mode-item">
       <el-select v-model="drawMode" size="mini" :popper-append-to-body="false" :disabled="disabled" placeholder="请选择" @change="onChange">
         <el-option v-for="item in drawModeOptions" :key="item.label" :label="item.value" :value="item.label">
         </el-option>
@@ -273,7 +273,14 @@ $itemHeight: 28px;
     .el-form-item {
       margin: 0;
       height: $itemHeight;
-      overflow: hidden;
+      &:not(.pencil-mode-item) {
+        overflow: hidden;
+      }
+      &.pencil-mode-item .el-select-dropdown__item {
+        height: 22px;
+        font-size: 12px;
+        line-height: 22px;
+      }
     }
     .el-form-item__label {
       font-size: 12px;

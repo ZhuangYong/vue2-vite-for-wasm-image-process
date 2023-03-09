@@ -56,7 +56,6 @@ const EasyReflection = {
   e13: "木雕",
   e14: "粗糙"
 }
-const imgs = Object.keys(EasyReflection).map(key => import(`./static/images/effect/${key}.png`))
 export default {
   data() {
     return {
@@ -66,7 +65,6 @@ export default {
       e4,
       e5,
       e6,
-      imgs,
       easyReflection: EasyReflection
     }
   },

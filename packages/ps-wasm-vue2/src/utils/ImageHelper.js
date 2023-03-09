@@ -19,16 +19,16 @@ export const defaultProps = {
 }
 export const COMMAND_TYPES = {
   EDIT: {
-    MOVE_TOP_LAYER: {key: 'moveTopLayer', label: '置顶', keyMap: ''},
-    MOVE_BOTTOM_LAYER: {key: 'moveBottomLayer', label: '置底', keyMap: ''},
-    UP_LAYER: {key: 'upLayer', label: '上移一层', keyMap: ''},
-    DOWN_LAYER: {key: 'downLayer', label: '下移一层', keyMap: ''},
+    MOVE_TOP_LAYER: {key: 'moveTopLayer', label: '置顶', keyMap: '', disableNoTarget: true},
+    MOVE_BOTTOM_LAYER: {key: 'moveBottomLayer', label: '置底', keyMap: '', disableNoTarget: true},
+    UP_LAYER: {key: 'upLayer', label: '上移一层', keyMap: '', disableNoTarget: true},
+    DOWN_LAYER: {key: 'downLayer', label: '下移一层', keyMap: '', disableNoTarget: true},
     BACK: {key: 'back', label: '撤销', keyMap: 'ctrl + z'},
     REDO: {key: 'redo', label: '重做', keyMap: 'ctrl + y'},
     COPY: {key: 'copy', label: '复制', keyMap: 'ctrl + c'},
     PASTE: {key: 'paste', label: '粘贴', keyMap: 'ctrl + v'},
-    DELETE: {key: 'delete', label: '删除', keyMap: 'del, back'},
-    VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: ''}
+    DELETE: {key: 'delete', label: '删除', keyMap: 'del, back', disableNoTarget: true},
+    VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: '', disableNoTarget: true}
   },
   RESIZE: {
     ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', label: '修改对象宽'},
@@ -48,7 +48,11 @@ const formatter = { width: scaleXtoWidth, height: scaleYtoHeight }
  * @type {{I_TEXT: string, IMAGE: string}}
  */
 class ImageHelper {
+
   _canvas
+
+  copyTarget
+
   constructor(canvas) {
     this._canvas = canvas
   }
@@ -78,6 +82,20 @@ class ImageHelper {
         }
         break
       }
+
+      /**
+       * 拷贝
+       */
+      case COMMAND_TYPES.EDIT.COPY.key:
+        this.copyTarget = target
+        break
+
+      /**
+       * 粘贴
+       */
+      case COMMAND_TYPES.EDIT.PASTE.key:
+        this.copyTarget = target
+        break
 
       case COMMAND_TYPES.EDIT.UP_LAYER.key:
         target.bringForward()
@@ -113,7 +131,7 @@ class ImageHelper {
         break
     }
 
-    target.canvas.renderAll()
+    this.canvas.renderAll()
   }
 
   /**

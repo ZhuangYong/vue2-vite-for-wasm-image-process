@@ -23,6 +23,7 @@ import {fabric} from "@/lib/fabric.min";
 import fabricEnhance from "@/utils/fabricEnhance";
 import transparentSvg from "@/../static/icon/transparent.svg"
 
+fabricEnhance(fabric)
 export default {
   name: 'CanvasPanel',
   inject: ['getEditMode'],
@@ -90,8 +91,9 @@ export default {
       canvas.on('object:removed', this.onSelect)
       canvas.on('dragover', this.onDragResourceOver)
       canvas.on('dragleave', this.onDragResourceLeave)
+      canvas.on('object:added', e => console.log(e))
       canvas.isDrawingMode = false
-      fabricEnhance(canvas)
+      // fabricEnhance(canvas)
       this.canvas = canvas
       imageHelper.canvas = this.canvas
       // this.canvas.on('after:render', () => {
@@ -172,12 +174,17 @@ export default {
 <style lang="scss" scoped>
 .canvas-panel {
   padding: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   .high-light {
     box-shadow: inset 0 0 0 1px green;
   }
   .main-canvas {
     background-color: white;
-    border: 1px solid #dedede;
+    box-shadow: inset 0 0 0 1px #dedede;
     ::v-deep +canvas {
       background-image: none!important;
     }

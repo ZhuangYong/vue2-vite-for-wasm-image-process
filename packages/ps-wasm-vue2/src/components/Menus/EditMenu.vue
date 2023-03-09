@@ -5,7 +5,7 @@
         编辑<i class="el-icon-arrow-down el-icon--right" />
       </span>
       <el-dropdown-menu :append-to-body="false" slot="dropdown">
-        <el-dropdown-item v-for="item in editOptions" :key="item.key" :command="item.key">
+        <el-dropdown-item v-for="item in editOptions" :key="item.key" :disabled="item.disableNoTarget && !target" :command="item.key">
           <span>{{ item.label }}</span>
           <span v-if="item.keyMap">({{ item.keyMap }})</span>
           <span v-else />
@@ -33,7 +33,9 @@ export default {
     }
   },
   methods: {
-    handleCommand: imageHelper.handleCommand
+    handleCommand(command) {
+      imageHelper.handleCommand(command, this.target)
+    }
   }
 
 }

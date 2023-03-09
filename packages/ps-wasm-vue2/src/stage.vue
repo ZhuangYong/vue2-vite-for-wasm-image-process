@@ -163,6 +163,9 @@ export default {
     .el-tabs__header {
       margin-bottom: 6px;
     }
+    .el-tabs__content {
+      overflow: initial;
+    }
   }
 }
 .main-container {
