@@ -14,7 +14,7 @@
     "package.json"
   ],
   "devDependencies": {
-    "@rollup/plugin-alias": "4.0.3",
+    "@rollup/plugin-alias": "3.1.9",
     "@babel/cli": "7.1.2",
     "@babel/core": "7.14.3",
     "@babel/plugin-proposal-class-properties": "7.14.5",

@@ -138,6 +138,10 @@ class ImageHelper {
       if (!enabled) {
         return
       }
+      if (codeStart) {
+        e.stopPropagation()
+        e.preventDefault()
+      }
       const { key } = e
       const keyName = resetKey(key)
       if (!inputCode) {
@@ -167,6 +171,13 @@ class ImageHelper {
     document.addEventListener('mousemove', onMousemove)
   }
 
+  recordHistory(operate, clearRedo = true) {
+    this.back.push(operate)
+    if (clearRedo) {
+      this.redo = {}
+    }
+  }
+
 
   handleCommand() {
     const [command, target, arg1, arg2, arg3, ...otherArgs] = Array.from(arguments)
@@ -184,7 +195,7 @@ class ImageHelper {
       case COMMAND_TYPES.EDIT.REDO.key:
         const operateFromRedo = this.redo.pop()
         operateFromRedo && operateFromRedo.redo.apply(this)
-        this.back.push(operateFromRedo)
+        this.recordHistory(operateFromRedo, false)
         break
 
       case COMMAND_TYPES.EDIT.DELETE.key: {
