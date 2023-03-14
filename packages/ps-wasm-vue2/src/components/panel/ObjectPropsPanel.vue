@@ -3,7 +3,7 @@
     <template v-if="isText">
       <div class="props-line">
         <div class="props-item">
-          <el-input v-model="text" type="textarea" :autosize="{ minRows: 1, maxRows: 2}" placeholder="请输入文本内容" />
+          <el-input v-model="targetProps.text" type="textarea" :autosize="{ minRows: 1, maxRows: 2}" placeholder="请输入文本内容" />
         </div>
       </div>
       <div class="props-line">

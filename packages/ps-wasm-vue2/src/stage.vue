@@ -66,7 +66,7 @@
 import {fabric} from '@/lib/fabric.min'
 import FastEffect from '@/components/panel/FastEffectPanel.vue'
 import Stickers from '@/components/panel/StickersPanel.vue'
-import {GaussBlur} from "@/filters/GaussBlur"
+import GaussBlur from "@/filters/GaussBlur"
 import ObjectProps from "@/components/panel/ObjectPropsPanel.vue"
 import imageHelper, {defaultProps} from "@/utils/ImageHelper"
 import OperationPanel from "@/components/panel/OperationPanel.vue"

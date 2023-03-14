@@ -28,10 +28,6 @@ export default {
   name: 'CanvasPanel',
   inject: ['getEditMode'],
   props: {
-    // currentObjectProps: {
-    //   type: Object,
-    //   default: () => {}
-    // },
 
     currentSelectTarget: {
       type: Object,
@@ -47,8 +43,6 @@ export default {
       editText: '', // 文字编辑内容
       transparentSvg, // 透明背景
       showTextDialog: false,
-      // showProps: null,
-      // editMode: Const.EDIT_MODE.MOVE.value, // 编辑模式
       currentObject: null, // 当前选择的编辑对象
       startDragOffset: {x: 0, y:0}, // 开始拖动作用在对象上的偏移
     }
@@ -62,27 +56,14 @@ export default {
       return this.canDrop && this.startDrag
     },
 
-    // showProps: {
-    //   get () {
-    //     if (!this.currentObject) {
-    //       return null
-    //     }
-    //     const { fontFamily, type, visible, ...res } = this.currentObject
-    //     return { ...res, type, visible, fontFamily }
-    //   }
-    // },
     editMode() {
       return this.getEditMode ? this.getEditMode() : null
     }
   },
-  // watch: {
-  //   showProps(v) {
-  //     this.$emit('update:currentObjectProps', v)
-  //   }
-  // },
   mounted() {
     this.refreshSize()
     this.$nextTick(() => {
+      imageHelper.registerKeyEvent(this.$refs.main)
       fabric.enableGLFiltering = false
       const canvas = new fabric.Canvas(this.$refs.imgRect, { controlsAboveOverlay: true, preserveObjectStacking: true })
       canvas.on('selection:updated', this.onSelect)
@@ -93,13 +74,8 @@ export default {
       canvas.on('dragleave', this.onDragResourceLeave)
       canvas.on('object:added', e => console.log(e))
       canvas.isDrawingMode = false
-      // fabricEnhance(canvas)
       this.canvas = canvas
       imageHelper.canvas = this.canvas
-      // this.canvas.on('after:render', () => {
-      //   const {width, height, left, top} = this.currentObject || {}
-      //   console.log({width, height, left, top})
-      // })
       this.$emit('initialized', canvas)
       console.log(fabric, this.canvas)
     })
@@ -125,12 +101,7 @@ export default {
 
     onSelect() {
       this.currentObject = this.canvas.getActiveObject()
-      // if (this.currentObject) {
-      //   const { fontFamily, type, ...res } = this.currentObject
-      //   this.showProps = { ...res, type, fontFamily }
-      // } else {
-      //   this.showProps = null
-      // }
+      imageHelper.currentTarget = this.currentObject
       this.$emit('update:currentSelectTarget', this.currentObject)
       console.log('----- select object', this.currentObject)
     },

@@ -2,8 +2,35 @@ let fabric
 export default function enhance(_fabric) {
   if (_fabric) {
     fabric = _fabric
+
+    fabric.Object.prototype.transparentCorners = false
+    fabric.Object.prototype.cornerColor = '#009987'
+    fabric.Object.prototype.cornerStyle = 'circle'
+    // const createClass = fabric.util.createClass
+    // fabric.util.createClass = function() {
+    //   const klass = createClass.apply(this, arguments)
+    //   const klassInitialize = klass.prototype.initialize
+    //   klass.prototype.initialize = function() {
+    //     this._UUID = Math.random()
+    //     return klassInitialize.apply(this, arguments)
+    //   }
+    //   return klass
+    // }
+    addUUID()
     filterHidden()
     modifyFreeDraw()
+  }
+}
+
+function addUUID() {
+  if (!fabric.Canvas.prototype._old_add) {
+    fabric.Canvas.prototype._old_add = fabric.Canvas.prototype.add
+    fabric.Canvas.prototype.add = function () {
+      for (let i = 0, length = arguments.length; i < length; i++) {
+        !arguments[i].UUID && (arguments[i].UUID = Math.random())
+      }
+      return fabric.Canvas.prototype._old_add.apply(this, arguments)
+    }
   }
 }
 
@@ -30,6 +57,9 @@ function modifyFreeDraw() {
   multiDrawPencilBrush()
 }
 
+/**
+ * 铅笔改为多笔画
+ */
 function multiDrawPencilBrush() {
   fabric.PencilBrush.prototype._finalizeAndAddPath = function () {
     const ctx = this.canvas.contextTop;
@@ -49,11 +79,12 @@ function multiDrawPencilBrush() {
 
     let group = (this.canvas._chooseObjectsToRender() || []).pop() || {}
     const path = this.createPath(pathData);
-    if (group.drawGroup) {
+    if (group.drawable) {
       group.addWithUpdate(path)
     } else {
       group = new fabric.Group([path]);
-      group.drawGroup = true
+      group.drawable = true
+      group.visible = true
       group.canvas = this.canvas
       this.canvas.fire('before:path:created', { path: group })
       this.canvas.add(group);

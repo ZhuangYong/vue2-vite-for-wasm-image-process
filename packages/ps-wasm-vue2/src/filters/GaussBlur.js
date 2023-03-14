@@ -1,7 +1,9 @@
-import {fabric} from '../lib/fabric.min'
+import {fabric} from '@/lib/fabric.min'
 import {GaussBlurFilter} from "./index";
 
-export class GaussBlur extends fabric.Image.filters.BaseFilter {
+class GaussBlur extends fabric.Image.filters.BaseFilter {
+
+  type = 'GaussBlur'
 
   applyTo(options) {
     this.applyTo2d(options)
@@ -107,3 +109,7 @@ export function gaussBlur(imgData, args) {
   // imgData.data = pixes;
   return imgData;
 }
+
+export default GaussBlur
+
+fabric.Image.filters.GaussBlur = GaussBlur

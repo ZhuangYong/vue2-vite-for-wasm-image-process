@@ -10,7 +10,7 @@
             打开
           </el-upload>
         </el-dropdown-item>
-        <el-dropdown-item command="import">导入</el-dropdown-item>
+        <el-dropdown-item :disabled="true" command="import">导入</el-dropdown-item>
         <el-dropdown-item command="export">导出</el-dropdown-item>
       </el-dropdown-menu>
     </el-dropdown>

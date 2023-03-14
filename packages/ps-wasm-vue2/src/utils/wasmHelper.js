@@ -40,7 +40,6 @@ function onLoadSuccess (module, imports) {
     // 在 MVP 版本中 element 只能是 "anyfunc"
     imports.env.table = new WebAssembly.Table({ initial: 0, element: 'anyfunc' })
   }
-  console.log('-----', imports)
   // 创建 WebAssembly 实例
   return WebAssembly.instantiate(module, imports)
 }

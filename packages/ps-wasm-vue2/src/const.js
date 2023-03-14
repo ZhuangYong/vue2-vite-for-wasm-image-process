@@ -3,7 +3,7 @@ import pencilSvg from "../static/icon/pencil.svg"
 import wordSvg from "../static/icon/word.svg"
 import {base64ToStr} from "./utils"
 
-export default {
+const Const = {
   FABRIC_TYPE: {
     I_TEXT: 'i-text',
     TEXTBOX: 'textbox',
@@ -25,4 +25,15 @@ export default {
     diamond: '钻石格',
     texture: '圆格'
   }
+}
+
+export default Const
+
+/**
+ * 是否是文本类型
+ * @param type
+ * @returns {boolean}
+ */
+export function isText(type) {
+  return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(type)
 }

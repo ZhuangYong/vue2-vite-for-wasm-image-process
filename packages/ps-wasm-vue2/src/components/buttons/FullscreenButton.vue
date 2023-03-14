@@ -7,7 +7,7 @@
 <script>
 import expandSvg from "../../../static/icon/fullscreen-expand.svg"
 import shrinkSvg from "../../../static/icon/fullscreen-shrink.svg"
-import {base64ToStr} from "../../utils"
+import {base64ToStr} from "@/utils"
 export default {
   name: 'FullscreenButton',
   props: {
@@ -40,7 +40,6 @@ export default {
   },
   methods: {
     async onClick() {
-      console.log('---')
       const el = this.el ? (this.el.$el || this.el) : null
       if (el && el.requestFullscreen) {
         const {requestFullscreen, webkitRequestFullScreen, mozRequestFullScreen, msRequestFullscreen} = this.el

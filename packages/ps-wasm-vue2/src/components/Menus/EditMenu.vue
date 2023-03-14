@@ -24,7 +24,8 @@ export default {
   mixins: [BaseFabricComponent],
   data() {
     return {
-      editOptions: Object.values(COMMAND_TYPES.EDIT)
+      imageHelper,
+      editOptions: Object.values(COMMAND_TYPES.EDIT).filter(item => !item.hidden)
     }
   },
   computed: {

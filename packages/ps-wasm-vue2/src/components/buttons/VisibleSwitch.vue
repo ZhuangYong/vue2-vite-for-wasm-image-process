@@ -1,5 +1,5 @@
 <template>
-  <el-button :disabled="disabled" type="text" @click="onClick">
+  <el-button :disabled="disabled" type="text" @click.stop="onClick">
     <div v-html="layer.visible ? showIcon : hideIcon" />
   </el-button>
 </template>
