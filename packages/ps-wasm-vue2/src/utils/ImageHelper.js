@@ -174,28 +174,42 @@ class ImageHelper {
   recordHistory(operate, clearRedo = true) {
     this.back.push(operate)
     if (clearRedo) {
-      this.redo = {}
+      this.redo = []
     }
+  }
+
+  backFromHistory() {
+    const operateFromHistory = this.back.pop()
+    operateFromHistory && operateFromHistory.back.apply(this)
+    this.redo.push(operateFromHistory)
+  }
+
+  redoFromHistory() {
+    const operateFromRedo = this.redo.pop()
+    operateFromRedo && operateFromRedo.redo.apply(this)
+    this.recordHistory(operateFromRedo, false)
   }
 
 
   handleCommand() {
     const [command, target, arg1, arg2, arg3, ...otherArgs] = Array.from(arguments)
     // const target = this.canvas.getActiveObject()
-    if (typeof target === 'undefined') {
-      return
-    }
+    // if (typeof target === 'undefined') {
+    //   return
+    // }
     switch (command) {
       case COMMAND_TYPES.EDIT.BACK.key:
         console.log('----back')
-        const operateFromHistory = this.back.pop()
-        operateFromHistory && operateFromHistory.back.apply(this)
-        this.redo.push(operateFromHistory)
+        // const operateFromHistory = this.back.pop()
+        // operateFromHistory && operateFromHistory.back.apply(this)
+        // this.redo.push(operateFromHistory)
+        this.backFromHistory()
         break
       case COMMAND_TYPES.EDIT.REDO.key:
-        const operateFromRedo = this.redo.pop()
-        operateFromRedo && operateFromRedo.redo.apply(this)
-        this.recordHistory(operateFromRedo, false)
+        // const operateFromRedo = this.redo.pop()
+        // operateFromRedo && operateFromRedo.redo.apply(this)
+        // this.recordHistory(operateFromRedo, false)
+        this.redoFromHistory()
         break
 
       case COMMAND_TYPES.EDIT.DELETE.key: {
@@ -230,7 +244,8 @@ class ImageHelper {
             o.left = Math.min(x, canvasWidth)
             o.top = Math.min(y, canvasHeight)
             this.addToCanvas(o)
-            this.back.push({ back: () => this.canvas.remove(o), redo: () => this.addToCanvas(o)})
+            // this.back.push({ back: () => this.canvas.remove(o), redo: () => this.addToCanvas(o)})
+            this.recordHistory({ back: () => this.removeFromCanvas(o), redo: () => this.addToCanvas(o)})
           })
         } else {
           this.copyTarget.clone(o => {
@@ -246,7 +261,8 @@ class ImageHelper {
               o.left -= pasteOffset
             }
             this.addToCanvas(o)
-            this.back.push({ back: () => this.canvas.remove(o), redo: () => this.addToCanvas(o)})
+            this.recordHistory({ back: () => this.removeFromCanvas(o), redo: () => this.addToCanvas(o)})
+            // this.back.push({ back: () => this.canvas.remove(o), redo: () => this.addToCanvas(o)})
           })
         }
         break
@@ -277,7 +293,10 @@ class ImageHelper {
         // this.canvas._objects[newIndex] = old
         break
 
+      // 是否显示
       case COMMAND_TYPES.EDIT.VISIBLE.key:
+        const visible = target.visible
+        this.recordHistory({ back: () => target.visible = visible, redo: () => target.visible = arg1 })
         target.visible = arg1
         break
 
@@ -314,13 +333,10 @@ class ImageHelper {
         const size = img.getAttribute('size')
         // 只有svg有size
         if (size) {
-          // const scale = 1.2
           let { width, height } = img
           if (!width || !height) {
             [width, height] = size.split(',').filter(str => str.trim()).filter(Boolean).map(Number)
           }
-          // width = width * scale
-          // height = height * scale
           shape.set({ width, height, top: offset.y, left: offset.x, cornerSize: 7 })
           shape._element.height = height
           shape._element.width = width
@@ -328,9 +344,7 @@ class ImageHelper {
           Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
         }
         this.addToCanvas(shape)
-        shape.on('selected', () => {
-          this.currentObject = shape
-        })
+        this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
       })
     }
   }
@@ -351,9 +365,7 @@ class ImageHelper {
           const scale = Math.min(width/img.width, height/img.height)
           img.set({ scaleX: scale, scaleY: scale, ...option })
           this.addToCanvas(img)
-          img.on('selected', () => {
-            this.currentObject = img
-          })
+          this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
         })
       }
     }
@@ -401,9 +413,16 @@ class ImageHelper {
     return result
   }
 
+  /**
+   * 添加文字
+   * @param text
+   * @param option
+   */
   addText(text, option) {
     option = option || {}
-    this.addToCanvas(new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option }))
+    const textBox = new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option })
+    this.addToCanvas(textBox)
+    this.recordHistory({ back: () => this.removeFromCanvas(textBox), redo: () => this.addToCanvas(textBox) })
   }
 
   /**
@@ -420,6 +439,13 @@ class ImageHelper {
       // !obj.UUID && (obj.UUID = Math.random())
     })
     this.canvas.add.apply(this.canvas, arguments)
+  }
+
+  /**
+   * 从canvas中移除
+   */
+  removeFromCanvas() {
+    this.canvas.remove.apply(this.canvas, arguments)
   }
 }
 const imageHelper = new ImageHelper(null)
