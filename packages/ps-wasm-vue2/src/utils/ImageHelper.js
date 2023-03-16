@@ -2,7 +2,8 @@ import Point from "../Point"
 import Rectangle from "../Rectangle"
 import {fabric} from "@/lib/fabric.min"
 import {isImage, isMac} from "@/utils/index"
-import {resetKey} from "@/utils/KeyCode";
+import {resetKey} from "@/utils/KeyCode"
+import _ from 'lodash'
 
 /**
  * 对象默认属性
@@ -35,20 +36,25 @@ export const defaultProps = {
   visible: true
 }
 
-const CTRL_KEY = isMac() ? 'Command' : 'Control'
+const FUNCTION_KEY = isMac() ? {
+  CTRL_KEY: 'Command'
+} : {
+  CTRL_KEY: 'Control'
+}
+const FUNCTION_KEYS = Object.values(FUNCTION_KEY).map(key => resetKey(key))
 export const COMMAND_TYPES = {
   EDIT: {
-    MOVE_TOP_LAYER: {key: 'moveTopLayer', label: '置顶', keyMap: '', disableNoTarget: true},
-    MOVE_BOTTOM_LAYER: {key: 'moveBottomLayer', label: '置底', keyMap: '', disableNoTarget: true},
-    UP_LAYER: {key: 'upLayer', label: '上移一层', keyMap: '', disableNoTarget: true},
-    DOWN_LAYER: {key: 'downLayer', label: '下移一层', keyMap: '', disableNoTarget: true},
+    MOVE_TOP_LAYER: {key: 'moveTopLayer', label: '置顶', keyMap: '', disabled: () => !imageHelper.currentTarget},
+    MOVE_BOTTOM_LAYER: {key: 'moveBottomLayer', label: '置底', keyMap: '', disabled: () => !imageHelper.currentTarget},
+    UP_LAYER: {key: 'upLayer', label: '上移一层', keyMap: '', disabled: () => !imageHelper.currentTarget},
+    DOWN_LAYER: {key: 'downLayer', label: '下移一层', keyMap: '', disabled: () => !imageHelper.currentTarget},
     SWITCH_INDEX: {key: 'switchIndex', label: '交换位置', keyMap: '', hidden: true},
-    BACK: {key: 'back', label: '撤销', keyMap: `${CTRL_KEY} + z`},
-    REDO: {key: 'redo', label: '重做', keyMap: `${CTRL_KEY} + y`},
-    COPY: {key: 'copy', label: '复制', keyMap: `${CTRL_KEY} + c`, disableNoTarget: true},
-    PASTE: {key: 'paste', label: '粘贴', keyMap:`${CTRL_KEY} + v`},
-    DELETE: {key: 'delete', label: '删除', keyMap: 'del, Backspace', disableNoTarget: true},
-    VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: '', disableNoTarget: true}
+    BACK: {key: 'back', label: '撤销', keyMap: `${FUNCTION_KEY.CTRL_KEY} + z`, disabled: () => _.isEmpty(imageHelper.back)},
+    REDO: {key: 'redo', label: '重做', keyMap: `${FUNCTION_KEY.CTRL_KEY} + y`, disabled: () => _.isEmpty(imageHelper.redo)},
+    COPY: {key: 'copy', label: '复制', keyMap: `${FUNCTION_KEY.CTRL_KEY} + c`, disabled: () => !imageHelper.currentTarget },
+    PASTE: {key: 'paste', label: '粘贴', keyMap:`${FUNCTION_KEY.CTRL_KEY} + v`, disabled: () => !imageHelper.copyTarget},
+    DELETE: {key: 'delete', label: '删除', keyMap: 'del, Backspace', disabled: () => !imageHelper.currentTarget},
+    VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: '', disabled: () => !imageHelper.currentTarget}
   },
   RESIZE: {
     ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', label: '修改对象宽'},
@@ -111,30 +117,36 @@ class ImageHelper {
     let inputCode = ''
     let codeStart = false
     let checkTimer = null
-    const checkLater = (e) => {
+    const clearTimer = () => {
       if (checkTimer) {
         clearTimeout(checkTimer)
         checkTimer = null
       }
+    }
+    const checkLater = (e) => {
+      clearTimer()
+      // 延时以区分有包含关系的快捷键,如：ctrl + z 与 ctrl + z + y
       checkTimer = setTimeout(() => {
         checkTimer = null
         const find = KEY_MAP_KEY_LIST.filter(str => str === inputCode)
         if (find.length === 1) {
-          inputCode = ''
+          inputCode = inputCode.split('+').filter(keyStr => FUNCTION_KEYS.includes(keyStr)).join('+')
           const item = keyMaps[find[0]]
           this.handleCommand(item.key, this.currentTarget, e)
           console.log('>>> found', find[0])
-        } else {
-          const findStart = KEY_MAP_KEY_LIST.some(key => key.indexOf(inputCode) === 0)
-          if (!findStart) {
-            inputCode = ''
-          } else {
-            codeStart = true
-          }
         }
+        // else {
+        //   const findStart = KEY_MAP_KEY_LIST.some(key => key.indexOf(inputCode) === 0)
+        //   if (!findStart) {
+        //     inputCode = ''
+        //   } else {
+        //     codeStart = true
+        //   }
+        // }
       }, 0.6 * 100)
     }
     const onKeyDown = (e) => {
+      console.log('on key down', inputCode)
       if (!enabled) {
         return
       }
@@ -154,6 +166,20 @@ class ImageHelper {
       }
       checkLater(e)
     }
+    const onKeyup = ({ key }) => {
+      console.log('on key up', inputCode)
+      const keyName = resetKey(key)
+      if (codeStart) {
+        inputCode = inputCode.split('+').filter(keyStr => keyStr !== keyName && FUNCTION_KEYS.includes(keyStr)).join('+')
+      }
+    }
+
+    const onMouseout = () => {
+      console.log('on mouse out', inputCode)
+      clearTimer()
+      inputCode = ''
+      codeStart = false
+    }
 
     const onMousemove = (e) => {
       this.currentMouseMoveEvent = e
@@ -169,8 +195,15 @@ class ImageHelper {
 
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('mousemove', onMousemove)
+    document.addEventListener('keyup', onKeyup)
+    el && el.addEventListener('mouseout', onMouseout)
   }
 
+  /**
+   * 记录回退
+   * @param operate {{ back: Function, redo: Function }}
+   * @param clearRedo 是否情况redo
+   */
   recordHistory(operate, clearRedo = true) {
     this.back.push(operate)
     if (clearRedo) {
@@ -180,14 +213,18 @@ class ImageHelper {
 
   backFromHistory() {
     const operateFromHistory = this.back.pop()
-    operateFromHistory && operateFromHistory.back.apply(this)
-    this.redo.push(operateFromHistory)
+    if (operateFromHistory) {
+      operateFromHistory.back.apply(this)
+      this.redo.push(operateFromHistory)
+    }
   }
 
   redoFromHistory() {
     const operateFromRedo = this.redo.pop()
-    operateFromRedo && operateFromRedo.redo.apply(this)
-    this.recordHistory(operateFromRedo, false)
+    if (operateFromRedo) {
+      operateFromRedo.redo.apply(this)
+      this.recordHistory(operateFromRedo, false)
+    }
   }
 
 
@@ -331,18 +368,15 @@ class ImageHelper {
       const img = fabricDragEvent.item.querySelector('img')
       fabric.Image.fromURL(img.src, shape => {
         const size = img.getAttribute('size')
-        // 只有svg有size
-        if (size) {
-          let { width, height } = img
-          if (!width || !height) {
-            [width, height] = size.split(',').filter(str => str.trim()).filter(Boolean).map(Number)
-          }
-          shape.set({ width, height, top: offset.y, left: offset.x, cornerSize: 7 })
-          shape._element.height = height
-          shape._element.width = width
-          Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
-          Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
+        let { width, height } = img
+        if (size && (!width || !height)) {
+          [width, height] = size.split(',').filter(str => str.trim()).filter(Boolean).map(Number)
         }
+        shape.set({ width, height, top: offset.y, left: offset.x, cornerSize: 7 })
+        shape._element.height = height
+        shape._element.width = width
+        Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
+        Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
         this.addToCanvas(shape)
         this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
       })
@@ -435,6 +469,7 @@ class ImageHelper {
           obj[key] = defaultProps[key]
         }
         obj.cornerSize = 7
+        obj.perPixelTargetFind = true
       })
       // !obj.UUID && (obj.UUID = Math.random())
     })

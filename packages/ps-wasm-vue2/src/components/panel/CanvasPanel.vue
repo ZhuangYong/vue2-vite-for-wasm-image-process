@@ -65,7 +65,7 @@ export default {
     this.$nextTick(() => {
       imageHelper.registerKeyEvent(this.$refs.main)
       fabric.enableGLFiltering = false
-      const canvas = new fabric.Canvas(this.$refs.imgRect, { controlsAboveOverlay: true, preserveObjectStacking: true })
+      const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
       canvas.on('selection:updated', this.onSelect)
       canvas.on('selection:created', this.onSelect)
       canvas.on('selection:cleared', this.onSelect)
@@ -73,6 +73,19 @@ export default {
       canvas.on('dragover', this.onDragResourceOver)
       canvas.on('dragleave', this.onDragResourceLeave)
       canvas.on('object:added', e => console.log(e))
+      canvas.on('object:modified', ({ target, transform }) => {
+        console.log('object:modified', transform)
+        const previewState = {...target._stateProperties}
+        const currentState = {}
+        Object.keys(previewState).forEach(key => {
+          currentState[key] = target[key]
+        })
+
+        imageHelper.recordHistory({
+          back: () => fabric.util.object.extend(target, previewState),
+          redo: () => fabric.util.object.extend(target, currentState)
+        })
+      })
       canvas.isDrawingMode = false
       this.canvas = canvas
       imageHelper.canvas = this.canvas

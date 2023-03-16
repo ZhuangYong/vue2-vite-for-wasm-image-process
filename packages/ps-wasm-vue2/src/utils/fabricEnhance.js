@@ -1,3 +1,5 @@
+import imageHelper from "@/utils/ImageHelper";
+
 let fabric
 export default function enhance(_fabric) {
   if (_fabric) {
@@ -81,13 +83,16 @@ function multiDrawPencilBrush() {
     const path = this.createPath(pathData);
     if (group.drawable) {
       group.addWithUpdate(path)
+      imageHelper.recordHistory({back: () => group.removeWithUpdate(path), redo: () => group.addWithUpdate(path)})
     } else {
       group = new fabric.Group([path]);
       group.drawable = true
       group.visible = true
       group.canvas = this.canvas
       this.canvas.fire('before:path:created', { path: group })
-      this.canvas.add(group);
+      // this.canvas.add(group);
+      imageHelper.addToCanvas(group)
+      imageHelper.recordHistory({back: () => imageHelper.removeFromCanvas(group), redo: () => imageHelper.addToCanvas(group)})
       // fire event 'path' created
       this.canvas.fire('path:created', { path: group })
     }
