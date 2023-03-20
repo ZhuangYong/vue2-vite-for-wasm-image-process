@@ -1,11 +1,11 @@
 <template>
   <div class="layer-panel">
-    <Draggable :list="orderList" :options="{forceFallback: true, removeCloneOnHide: false}" class="quick-pick-draggable" :clone="cloneEl" @sort="onSort" @change="onSortChange">
+    <Draggable :list="orderList" :options="{swap: true, forceFallback: true, delay: 100}" class="quick-pick-draggable" @sort="onSort">
       <div v-for="(layer, index) in layers" :key="`${index}_${layer.UUID}`" class="layer-item" :class="`type-${layer.type} ${layer.active && 'active'}`"  @click="onItemClick(layer)">
         <VisibleSwitch :layer="layer" />
         <div class="preview-icon" v-html="layer.preview" />
         <div class="layer-label">
-          {{ layer.type }}
+          {{ layer.type }} {{ layer.target.UUID }}
         </div>
       </div>
     </Draggable>
@@ -62,19 +62,15 @@ export default {
     }
   },
   methods: {
-    cloneEl(el) {
-      console.log(el)
-      return el
-    },
     onItemClick(layer) {
       this.canvas.setActiveObject(layer.target)
       this.canvas.requestRenderAll()
     },
-    onSortChange(e) {
-      console.log(e)
-    },
     onSort({ oldIndex, newIndex }) {
       imageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)
+      this.$nextTick(() => {
+        this.orderList = ((this.canvas || {})._objects || []).map(item => item.UUID).reverse()
+      })
     }
   },
 }
@@ -86,27 +82,52 @@ export default {
 }
 .layer-item {
   height: 30px!important;
-  display: flex!important;
+  display: flex;
   padding: 0 4px;
   font-size: 12px;
   cursor: pointer;
   align-items: center;
   background-color: white;
   border-bottom: 1px solid #e9e9e9;
-  &:not(.sortable-fallback) {
-    transition: all ease 0.3s;
-  }
-  &.sortable-fallback {
-    margin-top: -30px!important;
-  }
-  &.sortable-ghost {
-    height: 0!important;
-    border: 1px solid green;
-    transition: none!important;
-    * {
-      display: none!important;
+  &.sortable-insert-up-highlight {
+    position: relative;
+    &:before {
+      top: 0;
+      left: 0;
+      width: 100%;
+      content: ' ';
+      position: absolute;
+      border-top: 1px solid #009987;
     }
   }
+  &.sortable-insert-down-highlight {
+    position: relative;
+    &:after {
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      content: ' ';
+      position: absolute;
+      border-bottom: 1px solid #009987;
+    }
+  }
+  &.sortable-fallback {
+    opacity: 0.4!important;
+  }
+  //&:not(.sortable-fallback) {
+  //  transition: all ease 0.3s;
+  //}
+  //&.sortable-fallback {
+  //  margin-top: -30px!important;
+  //}
+  //&.sortable-ghost {
+  //  height: 0!important;
+  //  border: 1px solid green;
+  //  transition: none!important;
+  //  * {
+  //    display: none!important;
+  //  }
+  //}
   .preview-icon {
     display: flex;
     width: 32px;

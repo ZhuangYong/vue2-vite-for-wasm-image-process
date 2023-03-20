@@ -63,7 +63,7 @@ export default {
   mounted() {
     this.refreshSize()
     this.$nextTick(() => {
-      imageHelper.registerKeyEvent(this.$refs.main)
+      // imageHelper.registerKeyEvent(this.$refs.main)
       fabric.enableGLFiltering = false
       const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
       canvas.on('selection:updated', this.onSelect)
@@ -80,7 +80,7 @@ export default {
         Object.keys(previewState).forEach(key => {
           currentState[key] = target[key]
         })
-
+        // 修改back和redo
         imageHelper.recordHistory({
           back: () => fabric.util.object.extend(target, previewState),
           redo: () => fabric.util.object.extend(target, currentState)
@@ -89,6 +89,7 @@ export default {
       canvas.isDrawingMode = false
       this.canvas = canvas
       imageHelper.canvas = this.canvas
+      canvas.renderAll()
       this.$emit('initialized', canvas)
       console.log(fabric, this.canvas)
     })

@@ -17,7 +17,7 @@
         <!--效果-->
         <el-tabs v-model="leftBottomTab" type="card" class="left-function-tabs">
           <el-tab-pane label="特效" name="fastEffect">
-            <FastEffect @fabric-filter="onFabricFilter" @do-filter="doFilter" />
+            <FastEffect @fabric-filter="onFabricFilter" />
           </el-tab-pane>
           <el-tab-pane label="调整" name="ttttt">
             ----
@@ -66,7 +66,6 @@
 import {fabric} from '@/lib/fabric.min'
 import FastEffect from '@/components/panel/FastEffectPanel.vue'
 import Stickers from '@/components/panel/StickersPanel.vue'
-import GaussBlur from "@/filters/GaussBlur"
 import ObjectProps from "@/components/panel/ObjectPropsPanel.vue"
 import imageHelper, {defaultProps} from "@/utils/ImageHelper"
 import OperationPanel from "@/components/panel/OperationPanel.vue"
@@ -106,7 +105,10 @@ export default {
     }
   },
   mounted() {
+    // 全屏对象
     this.fullscreenTarget = this.$refs.stage
+    // 注册快捷键
+    imageHelper.registerKeyEvent(this.$refs.stage)
   },
   computed: {
   },
@@ -120,20 +122,6 @@ export default {
           this.currentObject.filters.push(filter)
           this.currentObject.applyFilters()
           imageHelper.canvas.renderAll()
-      }
-    },
-
-    doFilter(filter) {
-      if (!this.currentObject) {
-        return
-      }
-      switch (filter) {
-        case 'gaussBlur': {
-          const gaussBlur = new GaussBlur({ webgl: false })
-          this.currentObject.filters.push(gaussBlur)
-          this.currentObject.applyFilters()
-          imageHelper.canvas.renderAll()
-        }
       }
     },
 

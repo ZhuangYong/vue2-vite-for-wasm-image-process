@@ -2,7 +2,7 @@
   <div class="resource-stickers">
     <el-scrollbar>
       <div class="quick-pick">
-        <Draggable :sort="false" :list="svgList.slice(0, 13)" class="quick-pick-draggable" @start="onDragstart" @end="onDragend">
+        <Draggable :sort="false" :list="svgList.slice(0, 13)" :options="{swap: false, forceFallback: true}" class="quick-pick-draggable" @start="onDragstart" @end="onDragend">
           <div v-for="item in svgList.slice(0, 13)" :key="item.key" class="sticker-item">
             <img :src="item.value" :size="calcSvgSize(item.value)"  alt="">
           </div>

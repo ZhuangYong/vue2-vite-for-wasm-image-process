@@ -1,4 +1,7 @@
 import imageHelper from "@/utils/ImageHelper";
+import CustomFilter from "@/filters/CustomFilter";
+import {photon} from "@/filters/PhotonHelper"
+import {isSvgByBase64} from "@/utils/index";
 
 let fabric
 export default function enhance(_fabric) {
@@ -19,6 +22,7 @@ export default function enhance(_fabric) {
     //   return klass
     // }
     addUUID()
+    filterEffect()
     filterHidden()
     modifyFreeDraw()
   }
@@ -32,6 +36,41 @@ function addUUID() {
         !arguments[i].UUID && (arguments[i].UUID = Math.random())
       }
       return fabric.Canvas.prototype._old_add.apply(this, arguments)
+    }
+  }
+}
+
+function filterEffect() {
+  fabric.Object.prototype.addFilter = async function () {
+    const { filters, _element } = this
+    const [fun, ...args] = Array.from(arguments)
+    if (_element.src && !isSvgByBase64(_element.src)) {
+      const oldSrc = _element.src
+      const[,base64] = oldSrc.split(',')
+      const img = photon.base64_to_image(base64)
+      fun(img, ...args)
+      const newSrc = img.get_base64 ? img.get_base64() : await ImageDataToBase64(img.get_image_data())
+      this.setSrc(newSrc, () => imageHelper.renderAll())
+      imageHelper.recordHistory({back: () => this.setSrc(oldSrc, () => imageHelper.renderAll()), redo: () => this.setSrc(newSrc, () => imageHelper.renderAll()) })
+    } else {
+      let customFilter = filters.find(item => item instanceof CustomFilter)
+      if (!customFilter) {
+        customFilter = new CustomFilter()
+        filters.push(customFilter)
+      }
+      const filter = { fun, args, id: `${Date.now()}${Math.random()}` }
+      customFilter.add(filter)
+      this.applyFilters()
+      imageHelper.renderAll()
+      imageHelper.recordHistory({back: () => {
+          customFilter.removeId(filter.id)
+          this.applyFilters()
+          imageHelper.renderAll()
+        }, redo: () => {
+          customFilter.add(filter)
+          this.applyFilters()
+          imageHelper.renderAll()
+        }})
     }
   }
 }
@@ -101,5 +140,24 @@ function multiDrawPencilBrush() {
     this._resetShadow();
     this.canvas.requestRenderAll();
   }
+}
+
+function ImageDataToBase64(imageData){
+  let w = imageData.width;
+  let h = imageData.height;
+  let canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  let ctx = canvas.getContext("2d")
+  ctx.putImageData(imageData, 0, 0)
+  return new Promise((resolve) => {
+    canvas.toBlob(blob => {
+      const reader = new FileReader()
+      reader.readAsDataURL(blob)
+      reader.onload = function (e) {
+        resolve(e.target.result);
+      }
+    })
+  })
 }
 

@@ -4,6 +4,7 @@ import {fabric} from "@/lib/fabric.min"
 import {isImage, isMac} from "@/utils/index"
 import {resetKey} from "@/utils/KeyCode"
 import _ from 'lodash'
+import Const from "@/const";
 
 /**
  * 对象默认属性
@@ -112,6 +113,11 @@ class ImageHelper {
     this.canvas = _canvas
   }
 
+  /**
+   * 注册快捷键
+   * @param el
+   * @returns unregister {function(): void}
+   */
   registerKeyEvent(el) {
     let enabled = false
     let inputCode = ''
@@ -133,21 +139,12 @@ class ImageHelper {
           inputCode = inputCode.split('+').filter(keyStr => FUNCTION_KEYS.includes(keyStr)).join('+')
           const item = keyMaps[find[0]]
           this.handleCommand(item.key, this.currentTarget, e)
-          console.log('>>> found', find[0])
+          console.log('>>> found key code: ', find[0])
         }
-        // else {
-        //   const findStart = KEY_MAP_KEY_LIST.some(key => key.indexOf(inputCode) === 0)
-        //   if (!findStart) {
-        //     inputCode = ''
-        //   } else {
-        //     codeStart = true
-        //   }
-        // }
       }, 0.6 * 100)
     }
     const onKeyDown = (e) => {
-      console.log('on key down', inputCode)
-      if (!enabled) {
+      if (!enabled || ['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
         return
       }
       if (codeStart) {
@@ -167,15 +164,15 @@ class ImageHelper {
       checkLater(e)
     }
     const onKeyup = ({ key }) => {
-      console.log('on key up', inputCode)
       const keyName = resetKey(key)
       if (codeStart) {
-        inputCode = inputCode.split('+').filter(keyStr => keyStr !== keyName && FUNCTION_KEYS.includes(keyStr)).join('+')
+        setTimeout(() => {
+          inputCode = inputCode.split('+').filter(keyStr => keyStr !== keyName && FUNCTION_KEYS.includes(keyStr)).join('+')
+        }, 200)
       }
     }
 
     const onMouseout = () => {
-      console.log('on mouse out', inputCode)
       clearTimer()
       inputCode = ''
       codeStart = false
@@ -197,6 +194,13 @@ class ImageHelper {
     document.addEventListener('mousemove', onMousemove)
     document.addEventListener('keyup', onKeyup)
     el && el.addEventListener('mouseout', onMouseout)
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('mousemove', onMousemove)
+      document.removeEventListener('keyup', onKeyup)
+      el && el.removeEventListener('mouseout', onMouseout)
+    }
   }
 
   /**
@@ -251,10 +255,14 @@ class ImageHelper {
 
       case COMMAND_TYPES.EDIT.DELETE.key: {
         if (target) {
-          if (target._objects) {
-            this.canvas.remove(...target._objects)
+          if (target.type === Const.FABRIC_TYPE.ACTIVE_SELECTION) {
+            const list = [...target._objects]
+            console.log('00000')
+            this.removeFromCanvas(...list)
+            this.recordHistory({ back: () => this.addToCanvas(...list), redo: () => this.removeFromCanvas(...list)})
           } else {
-            this.canvas.remove(target)
+            this.removeFromCanvas(target)
+            this.recordHistory({ back: () => this.addToCanvas(target), redo: () => this.removeFromCanvas(target)})
           }
         }
         break
@@ -322,12 +330,10 @@ class ImageHelper {
 
       // 交换位置
       case COMMAND_TYPES.EDIT.SWITCH_INDEX.key:
-        // const size = this.canvas._objects.length - 1
-        // const oldIndex = size - target
-        // const newIndex = size - arg1
-        // const old = this.canvas._objects[oldIndex]
-        // this.canvas._objects[oldIndex] = this.canvas._objects[newIndex]
-        // this.canvas._objects[newIndex] = old
+        const fromIndex = target
+        const toIndex = target < arg1 ? arg1 - 1 : arg1
+        this.changeLayer(fromIndex, toIndex)
+        this.recordHistory({ back: () => this.changeLayer(toIndex, fromIndex), redo: () => this.changeLayer(fromIndex, toIndex) })
         break
 
       // 是否显示
@@ -435,8 +441,8 @@ class ImageHelper {
                 case 'visible':
                   imageHelper.handleCommand(COMMAND_TYPES.EDIT.VISIBLE.key, target, Boolean(v))
                   break
-                default:
-                  result[key] = target[key]
+                // default:
+                //   result[key] = target[key]
               }
             }
           })
@@ -481,6 +487,23 @@ class ImageHelper {
    */
   removeFromCanvas() {
     this.canvas.remove.apply(this.canvas, arguments)
+  }
+
+  /**
+   * 交换layer
+   * @param fromIndex
+   * @param toIndex
+   */
+  changeLayer(fromIndex, toIndex) {
+    const size = this.canvas._objects.length
+    const currentIndex = size - fromIndex - 1
+    const [currentTarget] = this.canvas._objects.splice(currentIndex, 1)
+    this.canvas._objects.splice(size - toIndex - 1, 0, currentTarget)
+  }
+
+  renderAll() {
+    console.log('---- renderAll')
+    return this.canvas.renderAll()
   }
 }
 const imageHelper = new ImageHelper(null)

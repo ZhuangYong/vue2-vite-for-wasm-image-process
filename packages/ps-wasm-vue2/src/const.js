@@ -7,7 +7,9 @@ const Const = {
   FABRIC_TYPE: {
     I_TEXT: 'i-text',
     TEXTBOX: 'textbox',
-    IMAGE: 'image'
+    IMAGE: 'image',
+    // 选择集合
+    ACTIVE_SELECTION: 'activeSelection'
   },
   EDIT_MODE: {
     MOVE: { key: 'MOVE', value: '移动', icon: base64ToStr(moveSvg) },

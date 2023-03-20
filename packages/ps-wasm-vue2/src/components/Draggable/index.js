@@ -1,5 +1,8 @@
 import Sortable from "sortablejs";
 import { insertNodeAt, camelize, console, removeNode } from "./helper"
+import Swap from "@/components/Draggable/Swap";
+
+Sortable.mount(new Swap())
 
 function buildAttribute(object, propName, value) {
   if (value === undefined) {
