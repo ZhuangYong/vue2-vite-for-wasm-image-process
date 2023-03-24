@@ -1,37 +1,9 @@
 <template>
   <div class="effect-list">
-    <!--<div class="effect-item">
-      <el-button @click="fabricBlur">fabric blur</el-button>
-    </div>-->
-    <div v-for="filter in filters" :key="filter.key" class="effect-item" @click="doFilter(filter.key)">
+    <div v-for="filter in filters" :key="filter.key" class="effect-item" :class="`${disabled && 'disabled'}`" @click="doFilter(filter.key)">
       <img :src="filter.icon"  :alt="filter.desc"/>
       <span>{{ filter.desc }}</span>
     </div>
-    <!--<div class="effect-item" @click="doFilter('gaussBlur')">
-      <img :src="e1" />
-      <span>{{ easyReflection.e1 }}</span>
-    </div>
-    <div class="effect-item">
-      <img :src="e2" />
-      <span>{{ easyReflection.e2 }}</span>
-    </div>
-    <div class="effect-item">
-      <img :src="e3" />
-      <span>{{ easyReflection.e3 }}</span>
-    </div>
-    <div class="effect-item">
-      <img :src="e4" />
-      <span>{{ easyReflection.e4 }}</span>
-    </div>
-    <div class="effect-item">
-      <img :src="e5" />
-      <span>{{ easyReflection.e5 }}</span>
-    </div>
-    <div class="effect-item">
-      <img :src="e6" />
-      <span>{{ easyReflection.e6 }}</span>
-    </div>-->
-
   </div>
 </template>
 
@@ -47,6 +19,11 @@ export default {
       filters: Object.values(FAST_FILTERS)
     }
   },
+  computed: {
+    disabled() {
+      return !this.target
+    }
+  },
   mounted() {
     // console.log(this)
   },
@@ -55,6 +32,9 @@ export default {
       this.$emit('fabric-filter', 'blur')
     },
     doFilter(key) {
+      if (this.disabled) {
+        return
+      }
       doFilter(this.target, key)
     }
   }
@@ -73,6 +53,10 @@ $itemWidth: 50px;
   display: flex;
   cursor: pointer;
   flex-direction: column;
+  &.disabled {
+    filter: grayscale(1);
+    cursor: not-allowed;
+  }
   span {
     font-size: 12px;
   }

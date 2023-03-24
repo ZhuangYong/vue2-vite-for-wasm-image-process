@@ -15,16 +15,13 @@
       return {
         msg: 1
       }
-    },
-    mounted() {
-    },
-    methods: {
     }
   }
 </script>
 
 <style lang="scss" scoped>
   .stage-inside {
+    height: 400px;
     width: 800px;
     margin: auto;
   }

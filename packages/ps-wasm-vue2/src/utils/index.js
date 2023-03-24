@@ -36,6 +36,10 @@ export function base64ToStr(base64) {
   }
 }
 
+/**
+ * 获取系统信息
+ * @returns {{name: string, version: string}}
+ */
 export function getOsInfo() {
   const userAgent = navigator.userAgent.toLowerCase();
   let name
@@ -77,6 +81,10 @@ export function getOsInfo() {
   return { name, version };
 }
 
+/**
+ * 是否是苹果电脑
+ * @returns {boolean}
+ */
 export function isMac() {
   return getOsInfo().name === 'Mac'
 }

@@ -26,6 +26,9 @@ export default {
   methods: {
     handleCommand(command) {
       switch (command) {
+        case 'canvasSize':
+          this.emit('resizeCanvas')
+          break
         case 'export':
           this.onExport()
       }
@@ -33,7 +36,7 @@ export default {
     onFileAdd(file) {
       imageHelper.uploadImage(file.raw)
     }
-  },
+  }
 }
 </script>
 

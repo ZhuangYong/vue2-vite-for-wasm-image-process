@@ -4,6 +4,7 @@ import wordSvg from "../static/icon/word.svg"
 import {base64ToStr} from "./utils"
 
 const Const = {
+  MAIN_STAGE_CLASS: 'main-stage',
   FABRIC_TYPE: {
     I_TEXT: 'i-text',
     TEXTBOX: 'textbox',

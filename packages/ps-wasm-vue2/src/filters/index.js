@@ -80,9 +80,14 @@ import imageHelper from "@/utils/ImageHelper";
 // imageHelper.canvas.renderAll()
 export const FAST_FILTERS = {
   BEAUTIFUL: { key: 'beautiful', desc: '美肤', fun: (img) => {
-      // photon.gaussian_blur(img, 1)
+      photon.gaussian_blur(img, 1)
       photon.lighten_lch(img, 0.1)
-    }, icon: e1, args: []}
+    }, icon: e1, args: []},
+  SKETCH: { key: 'sketch', desc: '素描', fun: (img) => {
+      photon.gaussian_blur(img, 8)
+      photon.grayscale(img)
+      photon.sharpen(img)
+    }, icon: e2, args: []}
 }
 function doFilter(target, key, args) {
   // const filter = new fabric.Image.filters.Blur({ webgl: false,

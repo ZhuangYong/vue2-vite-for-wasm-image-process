@@ -5,7 +5,7 @@
         <VisibleSwitch :layer="layer" />
         <div class="preview-icon" v-html="layer.preview" />
         <div class="layer-label">
-          {{ layer.type }} {{ layer.target.UUID }}
+          {{ layer.text || layer.type }}
         </div>
       </div>
     </Draggable>
@@ -89,6 +89,27 @@ export default {
   align-items: center;
   background-color: white;
   border-bottom: 1px solid #e9e9e9;
+  .layer-label {
+    text-overflow: ellipsis;
+    max-width: calc(100% - 76px);
+    overflow: hidden;
+  }
+  &:hover {
+    background-color: #efefef;
+  }
+  &.active {
+    color: white;
+    background-color: #009987;
+    ::v-deep svg  {
+      color: white;
+    }
+    .preview-icon {
+      border-color: white;
+    }
+  }
+  &>* {
+    margin-right: 6px;
+  }
   &.sortable-insert-up-highlight {
     position: relative;
     &:before {
@@ -114,20 +135,7 @@ export default {
   &.sortable-fallback {
     opacity: 0.4!important;
   }
-  //&:not(.sortable-fallback) {
-  //  transition: all ease 0.3s;
-  //}
-  //&.sortable-fallback {
-  //  margin-top: -30px!important;
-  //}
-  //&.sortable-ghost {
-  //  height: 0!important;
-  //  border: 1px solid green;
-  //  transition: none!important;
-  //  * {
-  //    display: none!important;
-  //  }
-  //}
+
   .preview-icon {
     display: flex;
     width: 32px;
@@ -140,22 +148,7 @@ export default {
       max-width: 80px;
     }
   }
-  &:hover {
-    background-color: #efefef;
-  }
-  &.active {
-    color: white;
-    background-color: #009987;
-    ::v-deep svg  {
-      color: white;
-    }
-    .preview-icon {
-      border-color: white;
-    }
-  }
-  &>* {
-    margin-right: 6px;
-  }
+
 }
 
 </style>

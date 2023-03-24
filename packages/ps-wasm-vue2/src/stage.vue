@@ -1,5 +1,6 @@
 <template>
   <div ref="stage" class="stage">
+    <Dialogs />
     <el-container>
       <el-aside width="200px" class="left-function">
         <!--属性-->
@@ -41,9 +42,10 @@
 
         <!--画布-->
         <el-main class="main-container">
-          <div class="main-stage">
+          <!--<div class="main-stage-container" :class="mainStageClass">
             <CanvasPanel ref="canvasPanel" :current-select-target.sync="currentObject" @initialized="onCanvasInitialized" />
-          </div>
+          </div>-->
+          <CanvasPanel ref="canvasPanel" :current-select-target.sync="currentObject" @initialized="onCanvasInitialized" />
         </el-main>
 
         <!--底部贴纸-->
@@ -75,10 +77,11 @@ import Const from "@/const";
 import FullscreenButton from "@/components/buttons/FullscreenButton.vue"
 import CanvasPanel from "@/components/panel/CanvasPanel.vue"
 import LayerPanel from '@/components/panel/LayerPanel.vue'
+import Dialogs from '@/components/panel/Dialogs.vue'
 
 export default {
   name: 'Stage',
-  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton, CanvasPanel, LayerPanel },
+  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton, CanvasPanel, LayerPanel, Dialogs },
   provide() {
     return {
       getCanvas: () => this.canvas,
@@ -100,8 +103,12 @@ export default {
     }
   },
   watch: {
-    currentObject(target) {
+    currentObject(target, pre) {
       this.targetProps = imageHelper.watchTarget(target)
+      if (target !== pre && !!target) {
+        this.leftTopTab = 'targetProps'
+        this.editMode = Const.EDIT_MODE.MOVE.value
+      }
     }
   },
   mounted() {
@@ -142,6 +149,7 @@ export default {
   }
 }
 .stage {
+  height: 100%;
   background-color: white;
   border: 1px solid #dedede;
   .el-container {
@@ -158,10 +166,8 @@ export default {
 }
 .main-container {
   padding: 8px;
-  .main-stage {
+  .main-stage-container {
     height: 100%;
-    background-color: #f4f4f4;
-    box-shadow: inset 0 0 0 1px #dedede;
   }
 }
 .target-info {

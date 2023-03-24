@@ -42,9 +42,11 @@ function addUUID() {
 
 function filterEffect() {
   fabric.Object.prototype.addFilter = async function () {
+    this.filters = this.filters || []
     const { filters, _element } = this
     const [fun, ...args] = Array.from(arguments)
-    if (_element.src && !isSvgByBase64(_element.src)) {
+    // 防止大图片卡顿
+    if (_element && _element.src && !isSvgByBase64(_element.src)) {
       const oldSrc = _element.src
       const[,base64] = oldSrc.split(',')
       const img = photon.base64_to_image(base64)

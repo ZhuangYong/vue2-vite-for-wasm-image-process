@@ -1,5 +1,5 @@
 <template>
-  <div class="operation-panel">
+  <div v-if="initialed" class="operation-panel">
     <el-radio-group v-model="currentMode" size="mini" @input="onChange">
       <el-radio-button v-for="item in editModeOptions" :key="item.key" :label="item.value">
         <span v-html="item.icon" />

@@ -1,18 +1,22 @@
 <template>
-  <div ref="main" class="canvas-panel" @drop.prevent="onStageDrop" @dragover="onDragResourceOver" @mousedown="onStageMousedown">
-    <canvas ref="imgRect" :width="width" :height="height" class="main-canvas" :class="`${highlightCanvas && 'high-light'}`" :style="`background-image: url(${transparentSvg})`" />
-
-    <!--输入文字-->
-    <el-dialog :visible.sync="showTextDialog" title="文字" width="600px">
-      <el-form>
-        <el-form-item label="">
-          <el-input v-model="editText" type="textarea" :autosize="{ minRows: 4, maxRows: 8}" placeholder="请输入文本内容" />
-        </el-form-item>
-      </el-form>
-      <div slot="footer">
-        <el-button size="mini" type="primary" @click="onEditTextSure">确定</el-button>
+  <div ref="main" :class="mainStageClass" style="width: 100%; height: 100%;">
+    <div class="canvas-panel" @drop.stop.prevent="onStageDrop" @dragover="onDragResourceOver" @click.capture="onStageClick" @wheel.prevent="onWheel">
+      <div :style="`transform: matrix(1, 0, 0, 1, ${viewPort.x}, ${viewPort.y});`">
+        <div v-if="showDefault" class="default">
+          <el-upload action="" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" class="import-file">
+            <el-button size="mini" type="primary">打开</el-button>
+          </el-upload>
+          <el-button size="mini" type="primary" style="margin-left: 12px;" @click="onNew">新建</el-button>
+        </div>
+        <canvas
+          ref="imgRect"
+          :width="width"
+          :height="height"
+          class="main-canvas"
+          :class="`${highlightCanvas && 'high-light'}`"
+          :style="`background-image: url(${transparentSvg});`"/>
       </div>
-    </el-dialog>
+    </div>
   </div>
 </template>
 
@@ -22,13 +26,13 @@ import Const from "@/const";
 import {fabric} from "@/lib/fabric.min";
 import fabricEnhance from "@/utils/fabricEnhance";
 import transparentSvg from "@/../static/icon/transparent.svg"
+import {eventBus} from "@/components/BaseFabricComponent";
 
 fabricEnhance(fabric)
 export default {
   name: 'CanvasPanel',
   inject: ['getEditMode'],
   props: {
-
     currentSelectTarget: {
       type: Object,
       default: () => {}
@@ -38,13 +42,14 @@ export default {
     return {
       width: 300, // 画布宽
       height: 300, // 画布高
+      // viewScale: 1, // 显示缩放
       canDrop: false, // 拖拽是否在可释放区域
       canvas: null, // 画布实例化对象
-      editText: '', // 文字编辑内容
       transparentSvg, // 透明背景
-      showTextDialog: false,
       currentObject: null, // 当前选择的编辑对象
+      viewPort: {x: 0, y: 0},
       startDragOffset: {x: 0, y:0}, // 开始拖动作用在对象上的偏移
+      mainStageClass: Const.MAIN_STAGE_CLASS,
     }
   },
   computed: {
@@ -58,14 +63,34 @@ export default {
 
     editMode() {
       return this.getEditMode ? this.getEditMode() : null
+    },
+
+    /**
+     * 显示默认选项
+     * */
+    showDefault() {
+      return !(this.canvas || {}).originWidth
+    }
+  },
+  watch: {
+    viewPort() {
+      this.refreshReset()
     }
   },
   mounted() {
     this.refreshSize()
     this.$nextTick(() => {
       // imageHelper.registerKeyEvent(this.$refs.main)
+      this.createCanvas()
+    })
+  },
+  methods: {
+    createCanvas() {
       fabric.enableGLFiltering = false
       const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
+      canvas.originWidth = 0
+      canvas.originHeight = 0
+      canvas.viewScale = 1
       canvas.on('selection:updated', this.onSelect)
       canvas.on('selection:created', this.onSelect)
       canvas.on('selection:cleared', this.onSelect)
@@ -91,10 +116,11 @@ export default {
       imageHelper.canvas = this.canvas
       canvas.renderAll()
       this.$emit('initialized', canvas)
-      console.log(fabric, this.canvas)
-    })
-  },
-  methods: {
+      // this.$refs.main.addEventListener('wheel', e => {
+      //
+      // })
+      console.log(this.canvas, fabric)
+    },
     refreshSize() {
       if (this.$refs.main) {
         const { width, height } = this.$refs.main.getBoundingClientRect()
@@ -104,19 +130,23 @@ export default {
       }
     },
 
-    onAddTextShow() {
-      this.showTextDialog = true
+    onNew() {
+      eventBus.$emit('new')
     },
 
-    onEditTextSure() {
-      imageHelper.addText(this.editText)
-      this.showTextDialog = false
+    onFileAdd(file) {
+      imageHelper.uploadImage(file.raw)
     },
 
     onSelect() {
       this.currentObject = this.canvas.getActiveObject()
-      imageHelper.currentTarget = this.currentObject
-      this.$emit('update:currentSelectTarget', this.currentObject)
+      if (this.currentObject && this.editMode === Const.EDIT_MODE.TEXT.value && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type)) {
+        this.canvas.discardActiveObject()
+      } else {
+        imageHelper.currentTarget = this.currentObject
+        this.$emit('update:currentSelectTarget', this.currentObject)
+      }
+
       console.log('----- select object', this.currentObject)
     },
 
@@ -132,6 +162,9 @@ export default {
     },
 
     onStageDrop(e) {
+      if (this.showDefault) {
+        return
+      }
       const { clientX, clientY } = e.originalEvent || e
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const offset = {x: clientX - canvasX, y: clientY - canvasY}
@@ -147,12 +180,60 @@ export default {
       }
     },
 
-    onStageMousedown() {
-      if (this.editMode === Const.EDIT_MODE.TEXT.value) {
-        this.onAddTextShow()
+    onStageClick(e) {
+      const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
+      const currentMouseDownPoint = {x: e.clientX - canvasX, y: e.clientY - canvasY}
+      if ((!this.currentObject || (this.currentObject && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type))) && this.editMode === Const.EDIT_MODE.TEXT.value) {
+        console.log('------ addText')
+        eventBus.$emit('addText', currentMouseDownPoint)
+      }
+    },
+
+    onWheel(e) {
+      if (this.showDefault) {
+        return
+      }
+      const { wheelDelta, deltaX, deltaY, clientX, clientY } = e
+      const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
+      // todo 兼容 240 为放大缩小，其他可能是平移
+      if (Math.abs(wheelDelta) === 240 || Math.abs(wheelDelta) === 480) {
+        // const zoom = this.canvas.getZoom()
+        const scale = Math.max(0.1, this.canvas.viewScale - deltaY * 0.0004)
+        const width = scale * this.canvas.originWidth
+        const height = scale * this.canvas.originHeight
+        this.canvas.setZoom(scale)
+        this.canvas.setDimensions({ width, height })
+        this.canvas.viewScale = scale
+        // this.canvas.zoomToPoint(new fabric.Point(clientX - canvasX, clientY - canvasY), Math.max(0.1, zoom - deltaY * 0.04))
+        console.log(this.canvas.getZoom(), { width, height }, e)
+      } else {
+        this.viewPort.x += -deltaX * 0.1
+        this.viewPort.y += -deltaY * 0.1
+        // this.canvas.relativePan({x : -deltaX, y: -deltaY})
+      }
+      this.refreshReset()
+    },
+
+    refreshReset() {
+      const { width: canvasWidth, height: canvasHeight } = this.canvas
+      const { width, height } = this.$refs.main.getBoundingClientRect()
+      if (width >= canvasWidth && height >= canvasHeight) {
+        this.viewPort.x = 0
+        this.viewPort.y = 0
+      } else {
+        const nearSize = 60
+        const boundWidth = ((canvasWidth + width) / 2)
+        const boundHeight = ((canvasHeight + height) / 2)
+        if (boundWidth - Math.abs(this.viewPort.x) < nearSize) {
+          this.viewPort.x = this.viewPort.x > 0 ? boundWidth - nearSize : -(boundWidth - nearSize)
+        }
+
+        if (boundHeight - Math.abs(this.viewPort.y) < nearSize) {
+          this.viewPort.y = this.viewPort.y > 0 ? boundHeight - nearSize : -(boundHeight - nearSize)
+        }
       }
     }
-  },
+  }
 }
 </script>
 
@@ -162,8 +243,13 @@ export default {
   width: 100%;
   height: 100%;
   display: flex;
+  overflow: hidden;
+  min-height: 200px;
+  //position: relative;
   align-items: center;
   justify-content: center;
+  background-color: #acacac;
+  box-shadow: 0 0 0 1px #acacac;
   .high-light {
     box-shadow: inset 0 0 0 1px green;
   }
@@ -173,6 +259,15 @@ export default {
     ::v-deep +canvas {
       background-image: none!important;
     }
+  }
+  .default {
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: absolute;
+    align-items: center;
+    justify-content: center;
   }
 }
 </style>

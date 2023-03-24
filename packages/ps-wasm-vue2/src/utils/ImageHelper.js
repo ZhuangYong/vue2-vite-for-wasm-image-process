@@ -49,13 +49,14 @@ export const COMMAND_TYPES = {
     MOVE_BOTTOM_LAYER: {key: 'moveBottomLayer', label: '置底', keyMap: '', disabled: () => !imageHelper.currentTarget},
     UP_LAYER: {key: 'upLayer', label: '上移一层', keyMap: '', disabled: () => !imageHelper.currentTarget},
     DOWN_LAYER: {key: 'downLayer', label: '下移一层', keyMap: '', disabled: () => !imageHelper.currentTarget},
-    SWITCH_INDEX: {key: 'switchIndex', label: '交换位置', keyMap: '', hidden: true},
     BACK: {key: 'back', label: '撤销', keyMap: `${FUNCTION_KEY.CTRL_KEY} + z`, disabled: () => _.isEmpty(imageHelper.back)},
     REDO: {key: 'redo', label: '重做', keyMap: `${FUNCTION_KEY.CTRL_KEY} + y`, disabled: () => _.isEmpty(imageHelper.redo)},
     COPY: {key: 'copy', label: '复制', keyMap: `${FUNCTION_KEY.CTRL_KEY} + c`, disabled: () => !imageHelper.currentTarget },
     PASTE: {key: 'paste', label: '粘贴', keyMap:`${FUNCTION_KEY.CTRL_KEY} + v`, disabled: () => !imageHelper.copyTarget},
     DELETE: {key: 'delete', label: '删除', keyMap: 'del, Backspace', disabled: () => !imageHelper.currentTarget},
-    VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: '', disabled: () => !imageHelper.currentTarget}
+    VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: '', disabled: () => !imageHelper.currentTarget},
+    SWITCH_INDEX: {key: 'switchIndex', label: '交换位置', keyMap: '', hidden: true},
+    CHANGE_FONT_FAMILY: {key: 'changeFontFamily', label: '修改字体', keyMap: '', hidden: true}
   },
   RESIZE: {
     ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', label: '修改对象宽'},
@@ -257,7 +258,6 @@ class ImageHelper {
         if (target) {
           if (target.type === Const.FABRIC_TYPE.ACTIVE_SELECTION) {
             const list = [...target._objects]
-            console.log('00000')
             this.removeFromCanvas(...list)
             this.recordHistory({ back: () => this.addToCanvas(...list), redo: () => this.removeFromCanvas(...list)})
           } else {
@@ -355,9 +355,15 @@ class ImageHelper {
           target.canvas.getActiveObject().scaleX = newWidth / target.width
         }
         break
+      case COMMAND_TYPES.EDIT.CHANGE_FONT_FAMILY.key:
+        const oldFontFamily = target.fontFamily
+        target.set('fontFamily', arg1)
+        this.recordHistory({ back: () => target.fontFamily = oldFontFamily, redo: () => target.fontFamily = arg1 })
+        break
+
     }
 
-    this.canvas.renderAll()
+    this.canvas.requestRenderAll()
   }
 
   /**
@@ -365,12 +371,13 @@ class ImageHelper {
    * @param fabricDragEvent
    */
   addStroke(fabricDragEvent) {
+    const scale = this.canvas.viewScale
     const { clientX, clientY } = fabricDragEvent.originalEvent
     const point = Point.from(clientX, clientY)
     const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = this.canvas.lowerCanvasEl.getBoundingClientRect()
     const intersects = Rectangle.from(canvasX, canvasY, canvasWidth, canvasHeight).contains(point)
     if (intersects) {
-      const offset = {x: point.x - canvasX, y: point.y - canvasY}
+      const offset = {x: (point.x - canvasX) / scale, y: (point.y - canvasY) / scale}
       const img = fabricDragEvent.item.querySelector('img')
       fabric.Image.fromURL(img.src, shape => {
         const size = img.getAttribute('size')
@@ -378,7 +385,7 @@ class ImageHelper {
         if (size && (!width || !height)) {
           [width, height] = size.split(',').filter(str => str.trim()).filter(Boolean).map(Number)
         }
-        shape.set({ width, height, top: offset.y, left: offset.x, cornerSize: 7 })
+        shape.set({ width, height, scaleX: 1 / scale, scaleY: 1 / scale, top: offset.y, left: offset.x, cornerSize: 7 })
         shape._element.height = height
         shape._element.width = width
         Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
@@ -401,9 +408,10 @@ class ImageHelper {
       reader.readAsDataURL(file)
       reader.onload = e => {
         fabric.Image.fromURL(e.target.result, img => {
-          const { width, height } = this.canvas
-          const scale = Math.min(width/img.width, height/img.height)
-          img.set({ scaleX: scale, scaleY: scale, ...option })
+          // const { width, height } = this.canvas
+          // const scale = Math.min(width/img.width, height/img.height)
+          // img.set({ scaleX: scale, scaleY: scale, ...option })
+          img.set(option)
           this.addToCanvas(img)
           this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
         })
@@ -414,7 +422,19 @@ class ImageHelper {
   /**
    * 监听对象修改
    * @param target
-   * @returns {{scaleX: number, scaleY: number, fontFamily: string, visible: boolean, top: number, left: number, width: number, angle: number, fontSize: number, text: string, height: number}}
+   * @returns {{
+   * scaleX: number,
+   * scaleY: number,
+   * fontFamily: string,
+   * visible: boolean,
+   * top: number,
+   * left: number,
+   * width: number,
+   * angle: number,
+   * fontSize: number,
+   * text: string,
+   * height: number
+   * }}
    */
   watchTarget(target) {
     const result = { ...defaultProps }
@@ -441,6 +461,8 @@ class ImageHelper {
                 case 'visible':
                   imageHelper.handleCommand(COMMAND_TYPES.EDIT.VISIBLE.key, target, Boolean(v))
                   break
+                case 'fontFamily':
+                  imageHelper.handleCommand(COMMAND_TYPES.EDIT.CHANGE_FONT_FAMILY.key, target, v)
                 // default:
                 //   result[key] = target[key]
               }
@@ -451,6 +473,10 @@ class ImageHelper {
     }
 
     return result
+  }
+
+  debounce(fun) {
+
   }
 
   /**
@@ -469,6 +495,9 @@ class ImageHelper {
    * 添加到canvas中
    */
   addToCanvas() {
+    if (!_.isEmpty(arguments) && !this.canvas.originWidth) {
+      this.initial(arguments[0])
+    }
     Array.from(arguments).forEach(obj => {
       Object.keys(defaultProps).forEach(key => {
         if (!obj.hasOwnProperty(key)) {
@@ -480,6 +509,27 @@ class ImageHelper {
       // !obj.UUID && (obj.UUID = Math.random())
     })
     this.canvas.add.apply(this.canvas, arguments)
+  }
+
+  initial(target) {
+    target.left = 0
+    target.top = 0
+    let scale = 1
+    const { width, height } = target
+    let boundEl = this.canvas.lowerCanvasEl
+    while (boundEl && !boundEl.classList.contains(Const.MAIN_STAGE_CLASS) && boundEl.parentNode !== boundEl) {
+      boundEl = boundEl.parentNode
+    }
+    if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
+      const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
+
+      scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
+    }
+    this.canvas.viewScale = scale
+    this.canvas.originWidth = width
+    this.canvas.originHeight = height
+    this.canvas.setZoom(scale)
+    this.canvas.setDimensions({ width: width * scale, height: height * scale })
   }
 
   /**

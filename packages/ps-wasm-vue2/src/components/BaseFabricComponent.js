@@ -1,3 +1,6 @@
+import Vue from 'vue'
+const EventBus = new Vue()
+
 export default {
   inject: ['getCanvas', 'getTarget', 'getTargetProps'],
   computed: {
@@ -17,8 +20,23 @@ export default {
         return this.getTargetProps ? this.getTargetProps() : {}
       },
       set() { console.error('can not set targetProps direct!') }
+    },
+
+    /**
+     * 是否初始化过
+     * */
+    initialed() {
+      return (this.canvas || {}).originWidth
     }
   },
-  watch: {
-  }
+  methods: {
+    on() {
+      return EventBus.$on(...arguments)
+    },
+    emit(type, ...args) {
+      return EventBus.$emit(type, ...args)
+    }
+  },
 }
+
+export const eventBus = EventBus
