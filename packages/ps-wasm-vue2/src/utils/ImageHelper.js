@@ -495,10 +495,11 @@ class ImageHelper {
    * 添加到canvas中
    */
   addToCanvas() {
-    if (!_.isEmpty(arguments) && !this.canvas.originWidth) {
-      this.initial(arguments[0])
-    }
+    // if (!_.isEmpty(arguments) && !this.canvas.originWidth) {
+    //   this.initial(arguments[0])
+    // }
     Array.from(arguments).forEach(obj => {
+      this.initial(arguments[0])
       Object.keys(defaultProps).forEach(key => {
         if (!obj.hasOwnProperty(key)) {
           obj[key] = defaultProps[key]
@@ -512,24 +513,38 @@ class ImageHelper {
   }
 
   initial(target) {
-    target.left = 0
-    target.top = 0
-    let scale = 1
     const { width, height } = target
-    let boundEl = this.canvas.lowerCanvasEl
-    while (boundEl && !boundEl.classList.contains(Const.MAIN_STAGE_CLASS) && boundEl.parentNode !== boundEl) {
-      boundEl = boundEl.parentNode
+    // 未初始化过
+    if (this.canvas.originWidth) {
+      const { viewScale, width: canvasWidth, height: canvasHeight } = this.canvas
+      // 如果添加元素比画布大进行缩放
+      if (width * viewScale > canvasWidth || height * viewScale > canvasHeight) {
+        const scale = Math.min(1, Math.min(canvasWidth / (width  * viewScale), canvasHeight / (height  * viewScale)))
+        target.scaleX = scale
+        target.scaleY = scale
+      }
+    } else {
+      let scale = 1
+      // 找到最外层显示视窗宽高限制元素
+      let boundEl = this.canvas.lowerCanvasEl
+      while (boundEl && !boundEl.classList.contains(Const.MAIN_STAGE_CLASS) && boundEl.parentNode !== boundEl) {
+        boundEl = boundEl.parentNode
+      }
+      // 计算缩放，图片宽高默认不超过最外层限制视窗
+      if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
+        const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
+        scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
+      }
+      // 元素必须在初始位置
+      target.top = 0
+      target.left = 0
+      // 初始化画布，大小按初始元素而定
+      this.canvas.viewScale = scale
+      this.canvas.originWidth = width
+      this.canvas.originHeight = height
+      this.canvas.setZoom(scale)
+      this.canvas.setDimensions({ width: width * scale, height: height * scale })
     }
-    if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
-      const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
-
-      scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
-    }
-    this.canvas.viewScale = scale
-    this.canvas.originWidth = width
-    this.canvas.originHeight = height
-    this.canvas.setZoom(scale)
-    this.canvas.setDimensions({ width: width * scale, height: height * scale })
   }
 
   /**

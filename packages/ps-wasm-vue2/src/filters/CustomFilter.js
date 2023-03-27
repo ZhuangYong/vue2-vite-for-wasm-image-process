@@ -31,27 +31,41 @@ class CustomFilter extends fabric.Image.filters.BaseFilter {
 
   applyTo2d({ imageData }) {
     console.log('>>>>>>>>>>>>>>>>>>>>>>> applyTo2d start ')
-    const { width, height } = imageData
-    const un8arr = photon.to_raw_pixels(imageData)
-    const img = new photon.PhotonImage(un8arr, width, height)
-    this.filters.forEach(item => item.fun && item.fun(img, ...item.args))
-    // wasmImportJs.offset(img, 0, 30)
-    // wasmImportJs.filter(img)
-    const data = img.get_image_data().data
-    for (let i = 0; i < un8arr.length; i++) {
-      imageData.data[i] = data[i]
-    }
+    // const { width, height } = imageData
+    // const un8arr = photon.to_raw_pixels(imageData)
+    // const img = new photon.PhotonImage(un8arr, width, height)
+    // this.filters.forEach(item => item.fun && item.fun(img, ...item.args))
+    // const data = img.get_image_data().data
+    // for (let i = 0; i < un8arr.length; i++) {
+    //   imageData.data[i] = data[i]
+    // }
+
+    this.filters.forEach(item => {
+      if (item.fun){
+        if (item.photon) {
+          const { width, height } = imageData
+          const un8arr = photon.to_raw_pixels(imageData)
+          const img = new photon.PhotonImage(un8arr, width, height)
+          item.fun(img, ...item.args)
+          const data = img.get_image_data().data
+          for (let i = 0; i < un8arr.length; i++) {
+            imageData.data[i] = data[i]
+          }
+        } else {
+          item.fun(imageData, ...item.args)
+        }
+      }
+    })
+
     console.log('<<<<<<<<<<<<<<<<<<<<<<<< applyTo2d end ')
   }
 
   /**
    * 添加子滤镜
-   * @param id
-   * @param args
-   * @param fun
+   * @param item {{photon: boolean, args: any[], id: string, fun: any}}
    */
-  add({id, args, fun }) {
-    this.filters.push({id, args, fun})
+  add(item) {
+    this.filters.push(item)
   }
 
   /**

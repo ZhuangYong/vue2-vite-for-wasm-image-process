@@ -47,11 +47,19 @@ function filterEffect() {
     const [fun, ...args] = Array.from(arguments)
     // 防止大图片卡顿
     if (_element && _element.src && !isSvgByBase64(_element.src)) {
+      let newSrc
       const oldSrc = _element.src
-      const[,base64] = oldSrc.split(',')
-      const img = photon.base64_to_image(base64)
-      fun(img, ...args)
-      const newSrc = img.get_base64 ? img.get_base64() : await ImageDataToBase64(img.get_image_data())
+      if (fun.photon) {
+        const[,base64] = oldSrc.split(',')
+        const img = photon.base64_to_image(base64)
+        fun(img, ...args)
+        newSrc = img.get_base64 ? img.get_base64() : await ImageDataToBase64(img.get_image_data())
+      } else {
+        const imageData = this.toCanvasElement({ withoutTransform: true }).getContext('2d').getImageData(0, 0, this.width, this.height)
+        console.log(imageData)
+        fun(imageData, ...args)
+        newSrc = await ImageDataToBase64(imageData)
+      }
       this.setSrc(newSrc, () => imageHelper.renderAll())
       imageHelper.recordHistory({back: () => this.setSrc(oldSrc, () => imageHelper.renderAll()), redo: () => this.setSrc(newSrc, () => imageHelper.renderAll()) })
     } else {
@@ -60,7 +68,7 @@ function filterEffect() {
         customFilter = new CustomFilter()
         filters.push(customFilter)
       }
-      const filter = { fun, args, id: `${Date.now()}${Math.random()}` }
+      const filter = { fun, photon: fun.photon, args, id: `${Date.now()}${Math.random()}` }
       customFilter.add(filter)
       this.applyFilters()
       imageHelper.renderAll()
@@ -144,6 +152,12 @@ function multiDrawPencilBrush() {
   }
 }
 
+/**
+ * 将imageData转换为base64
+ * @param imageData
+ * @returns {Promise<unknown>}
+ * @constructor
+ */
 function ImageDataToBase64(imageData){
   let w = imageData.width;
   let h = imageData.height;
