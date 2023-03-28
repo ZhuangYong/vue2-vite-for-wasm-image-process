@@ -111,7 +111,8 @@ export default {
     },
 
     newPicture() {
-
+      this.newDialog = false
+      imageHelper.newPicture(this.sizeForm)
     },
 
     /**

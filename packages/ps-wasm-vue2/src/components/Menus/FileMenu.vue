@@ -7,12 +7,17 @@
       <el-dropdown-menu :append-to-body="false" slot="dropdown">
         <el-dropdown-item command="new">新建</el-dropdown-item>
         <el-dropdown-item command="open">
-          <el-upload action="" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" class="import-file">
+          <el-upload action="" accept="image/*" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" class="import-file">
             打开
           </el-upload>
         </el-dropdown-item>
-        <el-dropdown-item :disabled="true" command="import">导入</el-dropdown-item>
+        <el-dropdown-item command="import">
+          <el-upload action="" :auto-upload="false" :show-file-list="false" :on-change="onImportJson" class="import-file">
+            导入
+          </el-upload>
+        </el-dropdown-item>
         <el-dropdown-item command="export">导出</el-dropdown-item>
+        <el-dropdown-item command="download">下载</el-dropdown-item>
       </el-dropdown-menu>
     </el-dropdown>
   </div>
@@ -29,24 +34,29 @@ export default {
   methods: {
     handleCommand(command) {
       switch (command) {
-        case 'export':
-          this.onExport()
-          break
         case 'new':
           this.emit('new')
           break
+        case 'download':
+          this.onDownload()
+          break
+        case 'export':
+          this.onExport()
+          break
       }
+    },
+    async onImportJson(file) {
+      const text = await file.raw.text()
+      imageHelper.importFromJson(text)
     },
     onFileAdd(file) {
       imageHelper.uploadImage(file.raw)
     },
+    onDownload() {
+      imageHelper.downloadPng()
+    },
     onExport() {
-      const zoom = this.canvas.getZoom()
-      this.canvas.setZoom(1)
-      const width = this.canvas.originWidth || this.width
-      const height = this.canvas.originHeight || this.height
-      Canvas2Image.saveAsPNG(this.canvas.toCanvasElement(1, {width, height}), width, height)
-      this.canvas.setZoom(zoom)
+      imageHelper.downloadJson()
     }
   },
 }

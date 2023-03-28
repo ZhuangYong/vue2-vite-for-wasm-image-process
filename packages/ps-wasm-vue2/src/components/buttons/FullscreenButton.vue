@@ -8,6 +8,7 @@
 import expandSvg from "../../../static/icon/fullscreen-expand.svg"
 import shrinkSvg from "../../../static/icon/fullscreen-shrink.svg"
 import {base64ToStr} from "@/utils"
+import imageHelper from "@/utils/ImageHelper";
 export default {
   name: 'FullscreenButton',
   props: {
@@ -31,6 +32,11 @@ export default {
         }
       },
       immediate: true
+    },
+    expand(v, ov) {
+      if (v !== ov) {
+        this.$nextTick(() => imageHelper.refreshStageView())
+      }
     }
   },
   computed: {

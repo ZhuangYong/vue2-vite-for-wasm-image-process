@@ -3,7 +3,10 @@
     <div class="canvas-panel" @drop.stop.prevent="onStageDrop" @dragover="onDragResourceOver" @click.capture="onStageClick" @wheel.prevent="onWheel">
       <div :style="`transform: matrix(1, 0, 0, 1, ${viewPort.x}, ${viewPort.y});`">
         <div v-if="showDefault" class="default">
-          <el-upload action="" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" class="import-file">
+          <el-upload action="" accept="application/json" :auto-upload="false" :show-file-list="false" :on-change="onImport">
+            <el-button size="mini" type="warning">导入</el-button>
+          </el-upload>
+          <el-upload action="" accept="image/*" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" style="margin-left: 12px;">
             <el-button size="mini" type="primary">打开</el-button>
           </el-upload>
           <el-button size="mini" type="primary" style="margin-left: 12px;" @click="onNew">新建</el-button>
@@ -42,7 +45,6 @@ export default {
     return {
       width: 300, // 画布宽
       height: 300, // 画布高
-      // viewScale: 1, // 显示缩放
       canDrop: false, // 拖拽是否在可释放区域
       canvas: null, // 画布实例化对象
       transparentSvg, // 透明背景
@@ -70,10 +72,16 @@ export default {
      * */
     showDefault() {
       return !(this.canvas || {}).originWidth
+    },
+    canvasState() {
+      const { viewPort, canvas } = this
+      const {x, y} = viewPort || {}
+      const { width, height } = canvas || {}
+      return { width, height, x, y }
     }
   },
   watch: {
-    viewPort() {
+    canvasState() {
       this.refreshReset()
     }
   },
@@ -130,6 +138,11 @@ export default {
       }
     },
 
+    async onImport(file) {
+      console.log(file)
+      const text = await file.raw.text()
+      imageHelper.importFromJson(text)
+    },
     onNew() {
       eventBus.$emit('new')
     },
@@ -209,9 +222,10 @@ export default {
       } else {
         this.viewPort.x += -deltaX * 0.1
         this.viewPort.y += -deltaY * 0.1
+        // this.refreshReset()
         // this.canvas.relativePan({x : -deltaX, y: -deltaY})
       }
-      this.refreshReset()
+      // this.refreshReset()
     },
 
     refreshReset() {

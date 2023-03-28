@@ -5,6 +5,8 @@ import {isImage, isMac} from "@/utils/index"
 import {resetKey} from "@/utils/KeyCode"
 import _ from 'lodash'
 import Const from "@/const";
+import Canvas2Image from "@/utils/CanvasToImage";
+import saveAs from "@/lib/FileSaver";
 
 /**
  * 对象默认属性
@@ -279,21 +281,18 @@ class ImageHelper {
        * 粘贴
        */
       case COMMAND_TYPES.EDIT.PASTE.key:
+        if (!this.copyTarget) {
+          return
+        }
         const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = this.canvas.lowerCanvasEl.getBoundingClientRect()
-        if (arg1 instanceof KeyboardEvent && this.currentMouseMoveEvent) {
-          this.copyTarget.clone(o => {
+        const handlePosition = o => {
+          if (arg1 instanceof KeyboardEvent && this.currentMouseMoveEvent) {
             const { clientX, clientY } = this.currentMouseMoveEvent
             const x = Math.max(0, clientX - canvasX)
             const y = Math.max(0, clientY - canvasY)
-
             o.left = Math.min(x, canvasWidth)
             o.top = Math.min(y, canvasHeight)
-            this.addToCanvas(o)
-            // this.back.push({ back: () => this.canvas.remove(o), redo: () => this.addToCanvas(o)})
-            this.recordHistory({ back: () => this.removeFromCanvas(o), redo: () => this.addToCanvas(o)})
-          })
-        } else {
-          this.copyTarget.clone(o => {
+          } else {
             const pasteOffset = 20
             if (o.left < (1 / 2) * canvasWidth) {
               o.left += pasteOffset
@@ -305,11 +304,28 @@ class ImageHelper {
             } else {
               o.left -= pasteOffset
             }
+          }
+          return o
+        }
+        this.copyTarget.clone(o => {
+          handlePosition(o)
+          if (_.isEmpty(o._objects)) {
             this.addToCanvas(o)
             this.recordHistory({ back: () => this.removeFromCanvas(o), redo: () => this.addToCanvas(o)})
-            // this.back.push({ back: () => this.canvas.remove(o), redo: () => this.addToCanvas(o)})
-          })
-        }
+          } else {
+            o.canvas = this.canvas
+            this.addToCanvas(o._objects)
+            this.canvas.setActiveObject(o)
+            this.recordHistory({
+              back: () => {
+                this.removeFromCanvas(o._objects)
+                this.canvas.discardActiveObject()
+              }, redo: () => {
+                this.addToCanvas(o._objects)
+              }
+            })
+          }
+        })
         break
 
       case COMMAND_TYPES.EDIT.UP_LAYER.key:
@@ -479,6 +495,70 @@ class ImageHelper {
 
   }
 
+  refreshStageView() {
+    console.log('-----refreshStageView')
+    let { originWidth: width, originHeight: height } = this.canvas
+    width = width || this.canvas.width
+    height = height || this.canvas.height
+    let scale = 1
+    // 找到最外层显示视窗宽高限制元素
+    let boundEl = this.canvas.lowerCanvasEl
+    while (boundEl && !boundEl.classList.contains(Const.MAIN_STAGE_CLASS) && boundEl.parentNode !== boundEl) {
+      boundEl = boundEl.parentNode
+    }
+    // 计算缩放，图片宽高默认不超过最外层限制视窗
+    if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
+      const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
+      scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
+    }
+    this.canvas.viewScale = scale
+    this.canvas.setZoom(scale)
+    this.canvas.setDimensions({ width: width * scale, height: height * scale })
+  }
+
+  newSage(option) {
+    const {width, height} = option
+    this.canvas.originWidth = width
+    this.canvas.originHeight = height
+    this.canvas.clear()
+    this.refreshStageView()
+  }
+
+  newPicture(option) {
+    this.newSage(option)
+    this.addText('Hi welcome')
+  }
+
+  /**
+   * 从json中加载
+   * @param json
+   * @param callback
+   * @param reviver
+   */
+  importFromJson(json, callback, reviver) {
+    if (typeof  json === 'string') {
+      json = JSON.parse(json)
+    }
+    const { viewScale: scale, originWidth: width, originHeight: height } = json
+    this.canvas.loadFromJSON(json, callback, reviver)
+    this.canvas.setZoom(scale)
+    this.canvas.setDimensions({ width: width * scale, height: height * scale })
+  }
+
+  downloadPng() {
+    const zoom = this.canvas.getZoom()
+    this.canvas.setZoom(1)
+    const { originWidth: width, originHeight: height } = this.canvas
+    Canvas2Image.saveAsPNG(this.canvas.toCanvasElement(1, {width, height}), width, height)
+    this.canvas.setZoom(zoom)
+  }
+
+  downloadJson() {
+    const json = this.canvas.toJSON(['UUID', 'originWidth', 'originHeight', 'viewScale', 'width', 'height'])
+    console.log(json)
+    saveAs(new Blob([JSON.stringify(json)], {type: 'text/plain'}), '导出' + '.json')
+  }
+
   /**
    * 添加文字
    * @param text
@@ -498,8 +578,9 @@ class ImageHelper {
     // if (!_.isEmpty(arguments) && !this.canvas.originWidth) {
     //   this.initial(arguments[0])
     // }
-    Array.from(arguments).forEach(obj => {
-      this.initial(arguments[0])
+    const objs = arguments[0] instanceof Array ? arguments[0] : Array.from(arguments)
+    objs.forEach(obj => {
+      this.initial(obj)
       Object.keys(defaultProps).forEach(key => {
         if (!obj.hasOwnProperty(key)) {
           obj[key] = defaultProps[key]
@@ -509,7 +590,15 @@ class ImageHelper {
       })
       // !obj.UUID && (obj.UUID = Math.random())
     })
-    this.canvas.add.apply(this.canvas, arguments)
+    this.canvas.add.apply(this.canvas, objs)
+  }
+
+  /**
+   * 从canvas中移除
+   */
+  removeFromCanvas() {
+    const objs = arguments[0] instanceof Array ? arguments[0] : arguments
+    this.canvas.remove.apply(this.canvas, objs)
   }
 
   initial(target) {
@@ -524,34 +613,29 @@ class ImageHelper {
         target.scaleY = scale
       }
     } else {
-      let scale = 1
-      // 找到最外层显示视窗宽高限制元素
-      let boundEl = this.canvas.lowerCanvasEl
-      while (boundEl && !boundEl.classList.contains(Const.MAIN_STAGE_CLASS) && boundEl.parentNode !== boundEl) {
-        boundEl = boundEl.parentNode
-      }
-      // 计算缩放，图片宽高默认不超过最外层限制视窗
-      if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
-        const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
-        scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
-      }
+      // let scale = 1
+      // // 找到最外层显示视窗宽高限制元素
+      // let boundEl = this.canvas.lowerCanvasEl
+      // while (boundEl && !boundEl.classList.contains(Const.MAIN_STAGE_CLASS) && boundEl.parentNode !== boundEl) {
+      //   boundEl = boundEl.parentNode
+      // }
+      // // 计算缩放，图片宽高默认不超过最外层限制视窗
+      // if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
+      //   const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
+      //   scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
+      // }
       // 元素必须在初始位置
       target.top = 0
       target.left = 0
-      // 初始化画布，大小按初始元素而定
-      this.canvas.viewScale = scale
-      this.canvas.originWidth = width
-      this.canvas.originHeight = height
-      this.canvas.setZoom(scale)
-      this.canvas.setDimensions({ width: width * scale, height: height * scale })
-    }
-  }
 
-  /**
-   * 从canvas中移除
-   */
-  removeFromCanvas() {
-    this.canvas.remove.apply(this.canvas, arguments)
+      this.newSage({ width, height})
+      // 初始化画布，大小按初始元素而定
+      // this.canvas.viewScale = scale
+      // this.canvas.originWidth = width
+      // this.canvas.originHeight = height
+      // this.canvas.setZoom(scale)
+      // this.canvas.setDimensions({ width: width * scale, height: height * scale })
+    }
   }
 
   /**
