@@ -131,9 +131,10 @@ export default {
     changeCanvasSize() {
       this.editCanvasSizeDialog = false
       const { width, height } = this.sizeForm
-      this.canvas.originWidth = width
-      this.canvas.originHeight = height
-      this.canvas.setDimensions({ width: width * this.canvas.viewScale, height: height * this.canvas.viewScale })
+      // this.canvas.originWidth = width
+      // this.canvas.originHeight = height
+      // this.canvas.setDimensions({ width: width * this.canvas.viewScale, height: height * this.canvas.viewScale })
+      imageHelper.resizeCanvas(width, height)
     }
   },
 }

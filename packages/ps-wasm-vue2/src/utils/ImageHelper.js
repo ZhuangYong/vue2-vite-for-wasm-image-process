@@ -7,6 +7,7 @@ import _ from 'lodash'
 import Const from "@/const";
 import Canvas2Image from "@/utils/CanvasToImage";
 import saveAs from "@/lib/FileSaver";
+import testImg from "../../static/images/effect/e1.jpg";
 
 /**
  * 对象默认属性
@@ -112,8 +113,12 @@ class ImageHelper {
   // 当前鼠标移动事件对象
   currentMouseMoveEvent
 
+  // 画笔
+  brushes = { vLinePatternBrush: null, hLinePatternBrush: null,squarePatternBrush: null,diamondPatternBrush: null,texturePatternBrush: null }
+
   constructor(_canvas) {
     this.canvas = _canvas
+    this.initialBrush()
   }
 
   /**
@@ -388,27 +393,35 @@ class ImageHelper {
    */
   addStroke(fabricDragEvent) {
     const scale = this.canvas.viewScale
-    const { clientX, clientY } = fabricDragEvent.originalEvent
-    const point = Point.from(clientX, clientY)
-    const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = this.canvas.lowerCanvasEl.getBoundingClientRect()
-    const intersects = Rectangle.from(canvasX, canvasY, canvasWidth, canvasHeight).contains(point)
-    if (intersects) {
-      const offset = {x: (point.x - canvasX) / scale, y: (point.y - canvasY) / scale}
-      const img = fabricDragEvent.item.querySelector('img')
-      fabric.Image.fromURL(img.src, shape => {
-        const size = img.getAttribute('size')
-        let { width, height } = img
-        if (size && (!width || !height)) {
-          [width, height] = size.split(',').filter(str => str.trim()).filter(Boolean).map(Number)
-        }
-        shape.set({ width, height, scaleX: 1 / scale, scaleY: 1 / scale, top: offset.y, left: offset.x, cornerSize: 7 })
-        shape._element.height = height
-        shape._element.width = width
-        Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
-        Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
+    if (typeof fabricDragEvent === 'string') {
+      fabric.Image.fromURL(fabricDragEvent, shape => {
+        shape.set({ scaleX: 1 / scale, scaleY: 1 / scale, top: this.canvas.width * 0.3 / scale, left: this.canvas.width * 0.3 / scale, cornerSize: 7 })
         this.addToCanvas(shape)
         this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
       })
+    } else {
+      const { clientX, clientY } = fabricDragEvent.originalEvent
+      const point = Point.from(clientX, clientY)
+      const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = this.canvas.lowerCanvasEl.getBoundingClientRect()
+      const intersects = Rectangle.from(canvasX, canvasY, canvasWidth, canvasHeight).contains(point)
+      if (intersects) {
+        const offset = {x: (point.x - canvasX) / scale, y: (point.y - canvasY) / scale}
+        const img = fabricDragEvent.item.querySelector('img')
+        fabric.Image.fromURL(img.src, shape => {
+          const size = img.getAttribute('size')
+          let { width, height } = img
+          if (size && (!width || !height)) {
+            [width, height] = size.split(',').filter(str => str.trim()).filter(Boolean).map(Number)
+          }
+          shape.set({ width, height, scaleX: 1 / scale, scaleY: 1 / scale, top: offset.y, left: offset.x, cornerSize: 7 })
+          shape._element.height = height
+          shape._element.width = width
+          Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
+          Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
+          this.addToCanvas(shape)
+          this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
+        })
+      }
     }
   }
 
@@ -653,6 +666,134 @@ class ImageHelper {
   renderAll() {
     console.log('---- renderAll')
     return this.canvas.renderAll()
+  }
+
+  /**
+   * 初始化画笔
+   */
+  initialBrush() {
+    const { canvas } = this
+    const vLinePatternBrush = new fabric.PatternBrush(canvas)
+    vLinePatternBrush.getPatternSrc = function() {
+
+      const patternCanvas = fabric.document.createElement('canvas');
+      patternCanvas.width = patternCanvas.height = 10;
+      const ctx = patternCanvas.getContext('2d');
+
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(0, 5);
+      ctx.lineTo(10, 5);
+      ctx.closePath();
+      ctx.stroke();
+
+      return patternCanvas;
+    };
+
+    const hLinePatternBrush = new fabric.PatternBrush(canvas);
+    hLinePatternBrush.getPatternSrc = function() {
+
+      const patternCanvas = fabric.document.createElement('canvas');
+      patternCanvas.width = patternCanvas.height = 10;
+      const ctx = patternCanvas.getContext('2d');
+
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(5, 0);
+      ctx.lineTo(5, 10);
+      ctx.closePath();
+      ctx.stroke();
+
+      return patternCanvas;
+    };
+
+    const squarePatternBrush = new fabric.PatternBrush(canvas);
+    squarePatternBrush.getPatternSrc = function() {
+
+      const squareWidth = 10, squareDistance = 2;
+
+      const patternCanvas = fabric.document.createElement('canvas');
+      patternCanvas.width = patternCanvas.height = squareWidth + squareDistance;
+      const ctx = patternCanvas.getContext('2d');
+
+      ctx.fillStyle = this.color;
+      ctx.fillRect(0, 0, squareWidth, squareWidth);
+
+      return patternCanvas;
+    };
+
+    const diamondPatternBrush = new fabric.PatternBrush(canvas);
+    diamondPatternBrush.getPatternSrc = function() {
+
+      const squareWidth = 10, squareDistance = 5;
+      const patternCanvas = fabric.document.createElement('canvas');
+      const rect = new fabric.Rect({
+        width: squareWidth,
+        height: squareWidth,
+        angle: 45,
+        fill: this.color
+      });
+
+      const canvasWidth = rect.getBoundingRect().width;
+
+      patternCanvas.width = patternCanvas.height = canvasWidth + squareDistance;
+      rect.set({ left: canvasWidth / 2, top: canvasWidth / 2 });
+
+      const ctx = patternCanvas.getContext('2d');
+      rect.render(ctx);
+
+      return patternCanvas;
+    };
+
+    const img = new Image();
+    img.src = testImg
+
+    const texturePatternBrush = new fabric.PatternBrush(canvas);
+    texturePatternBrush.source = img;
+
+    this.brushes['vLinePatternBrush'] = vLinePatternBrush
+    this.brushes['hLinePatternBrush'] = hLinePatternBrush
+    this.brushes['squarePatternBrush'] = squarePatternBrush
+    this.brushes['diamondPatternBrush'] = diamondPatternBrush
+    this.brushes['texturePatternBrush'] = texturePatternBrush
+  }
+
+  getBrush(type) {
+    let brush
+    switch (type) {
+      case "vLine":
+        brush = this.brushes.vLinePatternBrush
+        break
+      case "hLine":
+        brush = this.brushes.hLinePatternBrush
+        break
+      case "square":
+        brush = this.brushes.squarePatternBrush
+        break;
+      case "diamond":
+        brush = this.brushes.diamondPatternBrush
+        break;
+      case "texture":
+        brush = this.brushes.texturePatternBrush
+        break;
+      default:
+        brush = new fabric[type + 'Brush'](this.canvas)
+    }
+    return brush
+  }
+
+  /**
+   * 修改canvas宽高
+   * @param width
+   * @param height
+   */
+  resizeCanvas(width, height) {
+    const { viewScale } = this.canvas
+    this.canvas.originWidth = width
+    this.canvas.originHeight = height
+    this.canvas.setDimensions({ width: width * viewScale, height: height * viewScale })
   }
 }
 const imageHelper = new ImageHelper(null)

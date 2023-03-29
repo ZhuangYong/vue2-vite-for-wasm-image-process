@@ -13,7 +13,7 @@
     <el-dialog title="点击选择贴纸" :visible.sync="pickDialogVisible">
       <el-tabs v-model="activeName" type="card" class="left-function-tabs">
         <el-tab-pane label="甜点铺子" name="dessert">
-          <div v-for="item in svgList" :key="item.key" class="sticker-item sticker-big-item">
+          <div v-for="item in svgList" :key="item.key" class="sticker-item sticker-big-item" @click="addToStage(item)">
             <img :src="item.value" alt="">
             <span class="title">{{ item.key }}</span>
           </div>
@@ -81,6 +81,10 @@ export default {
     },
     closePick() {
       this.pickDialogVisible = false
+    },
+    addToStage(item) {
+      this.closePick()
+      imageHelper.addStroke(item.value)
     }
   }
 }
@@ -126,6 +130,8 @@ export default {
     width: 82px;
     margin: 8px;
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
     img {
       max-width: 82px;
       max-height: 82px;

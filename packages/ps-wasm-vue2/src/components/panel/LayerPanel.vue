@@ -40,7 +40,7 @@ export default {
         if (isText(type)) {
           result.preview = base64ToStr(textSvg)
         } else {
-          result.preview = `<svg viewBox="${left} ${top} ${width * scaleX} ${height * scaleY}">${target.toClipPathSVG()}</svg>`
+          result.preview = `<svg viewBox="0 0 ${width} ${height}">${target.toSVG()}</svg>`
         }
         if (this.target) {
           result.active = UUID && (this.target.UUID === UUID || (this.target._objects || []).some(item => item.UUID && item.UUID === UUID))
@@ -146,6 +146,14 @@ export default {
     ::v-deep svg {
       height: 20px;
       max-width: 80px;
+      path, g {
+        transform: none!important;
+      }
+      image {
+        x: 0!important;
+        y: 0!important;
+        transform: none!important;
+      }
     }
   }
 

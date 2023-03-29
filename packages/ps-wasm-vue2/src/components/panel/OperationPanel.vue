@@ -1,6 +1,6 @@
 <template>
   <div v-if="initialed" class="operation-panel">
-    <el-radio-group v-model="currentMode" size="mini" @input="onChange">
+    <el-radio-group v-model="currentMode" size="mini">
       <el-radio-button v-for="item in editModeOptions" :key="item.key" :label="item.value">
         <span v-html="item.icon" />
       </el-radio-button>
@@ -36,13 +36,9 @@ export default {
     },
     currentMode(v) {
       this.$emit('update:mode', v)
-    }
-  },
-  methods: {
-    onChange() {
       this.$set(this.canvas, 'isDrawingMode', this.currentMode === Const.EDIT_MODE.PENCIL.value)
     }
-  },
+  }
 }
 </script>
 

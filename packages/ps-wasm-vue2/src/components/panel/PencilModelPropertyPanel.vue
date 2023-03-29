@@ -61,6 +61,7 @@
 import Const from '@/const'
 import testImg from '@/../static/images/effect/e1.jpg'
 import BaseFabricComponent from "../BaseFabricComponent"
+import imageHelper from "@/utils/ImageHelper";
 
 
 export default {
@@ -77,7 +78,7 @@ export default {
       },
       disabled: true, // 是否禁用
       brushShadow: null, // 阴影
-      brushObjects: null,
+      brushObjects: imageHelper.brushes,
       drawMode: 'Pencil',
       drawModeOptions: Object.keys(Const.DRAW_MODE).map(key => ({ label: key, value: Const.DRAW_MODE[key] })),
     }
@@ -92,11 +93,11 @@ export default {
     }
   },
   watch: {
-    canvas(v) {
-      if (v && !this.brushObjects) {
-        this.initialBrush()
-      }
-    },
+    // canvas(v) {
+    //   if (v && !this.brushObjects) {
+    //     this.initialBrush()
+    //   }
+    // },
     'canvas.isDrawingMode'(v) {
       this.disabled = !v
     },
@@ -122,28 +123,7 @@ export default {
   },
   methods: {
     onChange() {
-      let brush
-      switch (this.drawMode) {
-        case "vLine":
-          brush = this.brushObjects.vLinePatternBrush
-          break
-        case "hLine":
-          brush = this.brushObjects.hLinePatternBrush
-          break
-        case "square":
-          brush = this.brushObjects.squarePatternBrush
-          break;
-        case "diamond":
-          brush = this.brushObjects.diamondPatternBrush
-          break;
-        case "texture":
-          brush = this.brushObjects.texturePatternBrush
-          break;
-        default:
-          brush = new fabric[this.drawMode + 'Brush'](this.canvas)
-      }
-      this.canvas.freeDrawingBrush = brush
-
+      this.canvas.freeDrawingBrush = imageHelper.getBrush(this.drawMode)
     },
     refreshBrushShadow(rest) {
       const blur = parseInt(this.props.shadowSize, 10) || 0
@@ -159,98 +139,8 @@ export default {
           this.freeDrawingBrush.shadow.color = this.props.shadowColor
         }
       }
-    },
-    initialBrush() {
-      const { canvas } = this
-      const vLinePatternBrush = new fabric.PatternBrush(canvas)
-      vLinePatternBrush.getPatternSrc = function() {
-
-        const patternCanvas = fabric.document.createElement('canvas');
-        patternCanvas.width = patternCanvas.height = 10;
-        const ctx = patternCanvas.getContext('2d');
-
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(0, 5);
-        ctx.lineTo(10, 5);
-        ctx.closePath();
-        ctx.stroke();
-
-        return patternCanvas;
-      };
-
-      const hLinePatternBrush = new fabric.PatternBrush(canvas);
-      hLinePatternBrush.getPatternSrc = function() {
-
-        const patternCanvas = fabric.document.createElement('canvas');
-        patternCanvas.width = patternCanvas.height = 10;
-        const ctx = patternCanvas.getContext('2d');
-
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 5;
-        ctx.beginPath();
-        ctx.moveTo(5, 0);
-        ctx.lineTo(5, 10);
-        ctx.closePath();
-        ctx.stroke();
-
-        return patternCanvas;
-      };
-
-      const squarePatternBrush = new fabric.PatternBrush(canvas);
-      squarePatternBrush.getPatternSrc = function() {
-
-        const squareWidth = 10, squareDistance = 2;
-
-        const patternCanvas = fabric.document.createElement('canvas');
-        patternCanvas.width = patternCanvas.height = squareWidth + squareDistance;
-        const ctx = patternCanvas.getContext('2d');
-
-        ctx.fillStyle = this.color;
-        ctx.fillRect(0, 0, squareWidth, squareWidth);
-
-        return patternCanvas;
-      };
-
-      const diamondPatternBrush = new fabric.PatternBrush(canvas);
-      diamondPatternBrush.getPatternSrc = function() {
-
-        const squareWidth = 10, squareDistance = 5;
-        const patternCanvas = fabric.document.createElement('canvas');
-        const rect = new fabric.Rect({
-          width: squareWidth,
-          height: squareWidth,
-          angle: 45,
-          fill: this.color
-        });
-
-        const canvasWidth = rect.getBoundingRect().width;
-
-        patternCanvas.width = patternCanvas.height = canvasWidth + squareDistance;
-        rect.set({ left: canvasWidth / 2, top: canvasWidth / 2 });
-
-        const ctx = patternCanvas.getContext('2d');
-        rect.render(ctx);
-
-        return patternCanvas;
-      };
-
-      const img = new Image();
-      img.src = testImg
-
-      const texturePatternBrush = new fabric.PatternBrush(canvas);
-      texturePatternBrush.source = img;
-
-      const brushObjects = {}
-      brushObjects['vLinePatternBrush'] = vLinePatternBrush
-      brushObjects['hLinePatternBrush'] = hLinePatternBrush
-      brushObjects['squarePatternBrush'] = squarePatternBrush
-      brushObjects['diamondPatternBrush'] = diamondPatternBrush
-      brushObjects['texturePatternBrush'] = texturePatternBrush
-      this.brushObjects = brushObjects
     }
-  },
+  }
 }
 </script>
 
