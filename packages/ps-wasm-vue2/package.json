@@ -23,6 +23,7 @@
     "@babel/preset-stage-2": "7.8.3",
     "@vue/babel-preset-jsx": "1.2.4",
     "generate-source-map": "0.0.5",
+    "postcss": "^7.0.11",
     "rollup": "2.41.0",
     "rollup-wasm-pack-import": "^2.0.0",
     "rollup-plugin-babel": "4.4.0",

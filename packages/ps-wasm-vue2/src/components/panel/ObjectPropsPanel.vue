@@ -61,6 +61,7 @@ import Const from '@/const'
 import BaseFabricComponent from "../BaseFabricComponent"
 import VisibleSwitch from "../buttons/VisibleSwitch.vue"
 import { fontOptions } from '@/utils/FontHelper'
+import imageHelper, {defaultProps} from "@/utils/ImageHelper";
 
 const watchProps = ['showWidth', 'showHeight']
 export default {
@@ -69,7 +70,8 @@ export default {
   mixins: [BaseFabricComponent],
   data() {
     return {
-      fontOptions
+      fontOptions,
+      targetProps: defaultProps,
       // showProps: defaultProps
     }
   },
@@ -82,6 +84,9 @@ export default {
     },
   },
   watch: {
+    target(v) {
+      this.targetProps = imageHelper.watchTarget(v)
+    }
   },
   methods: {
 

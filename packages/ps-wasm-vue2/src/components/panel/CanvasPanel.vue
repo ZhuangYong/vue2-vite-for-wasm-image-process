@@ -144,7 +144,7 @@ export default {
       imageHelper.importFromJson(text)
     },
     onNew() {
-      eventBus.$emit('new')
+      eventBus.trigger('new')
     },
 
     onFileAdd(file) {
@@ -198,7 +198,7 @@ export default {
       const currentMouseDownPoint = {x: e.clientX - canvasX, y: e.clientY - canvasY}
       if ((!this.currentObject || (this.currentObject && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type))) && this.editMode === Const.EDIT_MODE.TEXT.value) {
         console.log('------ addText')
-        eventBus.$emit('addText', currentMouseDownPoint)
+        eventBus.trigger('addText', currentMouseDownPoint)
       }
     },
 

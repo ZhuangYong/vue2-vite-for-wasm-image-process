@@ -1,8 +1,9 @@
-import Vue from 'vue'
-const EventBus = new Vue()
+// import Vue from 'vue'
+// const EventBus = new Vue()
+import EventBus from '@/utils/Event'
 
 export default {
-  inject: ['getCanvas', 'getTarget', 'getTargetProps'],
+  inject: ['getCanvas', 'getTarget'],
   computed: {
     canvas: {
       get() { return this.getCanvas ? this.getCanvas() : null },
@@ -15,12 +16,12 @@ export default {
       },
       set() { console.error('can not set target direct!') }
     },
-    targetProps: {
-      get() {
-        return this.getTargetProps ? this.getTargetProps() : {}
-      },
-      set() { console.error('can not set targetProps direct!') }
-    },
+    // targetProps: {
+    //   get() {
+    //     return this.getTargetProps ? this.getTargetProps() : {}
+    //   },
+    //   set() { console.error('can not set targetProps direct!') }
+    // },
 
     /**
      * 是否初始化过
@@ -31,10 +32,10 @@ export default {
   },
   methods: {
     on() {
-      return EventBus.$on(...arguments)
+      return EventBus.on(...arguments)
     },
     emit(type, ...args) {
-      return EventBus.$emit(type, ...args)
+      return EventBus.trigger(type, ...args)
     }
   },
 }

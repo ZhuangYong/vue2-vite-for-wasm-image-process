@@ -5,7 +5,7 @@
       <el-aside width="200px" class="left-function">
         <!--属性-->
         <el-tabs v-model="leftTopTab" type="card" class="left-function-tabs">
-          <el-tab-pane label="属性" name="targetProps">
+          <el-tab-pane label="属性" name="objectProps">
             <div class="target-info">
               <ObjectProps />
             </div>
@@ -86,7 +86,7 @@ export default {
     return {
       getCanvas: () => this.canvas,
       getTarget: () => this.currentObject,
-      getTargetProps: () => this.targetProps,
+      // getTargetProps: () => this.targetProps,
       getEditMode: () => this.editMode
     }
   },
@@ -95,18 +95,18 @@ export default {
       canvas: null,
       fullscreenTarget: null,
       editMode: Const.EDIT_MODE.MOVE.value, // 编辑模式
-      targetProps: defaultProps,
+      // targetProps: defaultProps,
       currentObject: null, // 当前选择的编辑对象
       activeResourceName: 'stickers', // 选择的资源tabs
       leftBottomTab: 'layer',
-      leftTopTab: 'targetProps'
+      leftTopTab: 'objectProps'
     }
   },
   watch: {
     currentObject(target, pre) {
-      this.targetProps = imageHelper.watchTarget(target)
+      // this.targetProps = imageHelper.watchTarget(target)
       if (target !== pre && !!target) {
-        this.leftTopTab = 'targetProps'
+        this.leftTopTab = 'objectProps'
         this.editMode = Const.EDIT_MODE.MOVE.value
       }
     }
