@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import imageHelper from "@/utils/ImageHelper"
+import ImageHelper from "@/utils/ImageHelper"
 import Const from "@/const";
 import {fabric} from "@/lib/fabric.min";
 import fabricEnhance from "@/utils/fabricEnhance";
@@ -114,14 +114,14 @@ export default {
           currentState[key] = target[key]
         })
         // 修改back和redo
-        imageHelper.recordHistory({
+        ImageHelper.recordHistory({
           back: () => fabric.util.object.extend(target, previewState),
           redo: () => fabric.util.object.extend(target, currentState)
         })
       })
       canvas.isDrawingMode = false
       this.canvas = canvas
-      imageHelper.canvas = this.canvas
+      ImageHelper.canvas = this.canvas
       canvas.renderAll()
       this.$emit('initialized', canvas)
       // this.$refs.main.addEventListener('wheel', e => {
@@ -141,14 +141,14 @@ export default {
     async onImport(file) {
       console.log(file)
       const text = await file.raw.text()
-      imageHelper.importFromJson(text)
+      ImageHelper.importFromJson(text)
     },
     onNew() {
       eventBus.trigger('new')
     },
 
     onFileAdd(file) {
-      imageHelper.uploadImage(file.raw)
+      ImageHelper.uploadImage(file.raw)
     },
 
     onSelect() {
@@ -156,7 +156,7 @@ export default {
       if (this.currentObject && this.editMode === Const.EDIT_MODE.TEXT.value && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type)) {
         this.canvas.discardActiveObject()
       } else {
-        imageHelper.currentTarget = this.currentObject
+        ImageHelper.currentTarget = this.currentObject
         this.$emit('update:currentSelectTarget', this.currentObject)
       }
 
@@ -182,7 +182,7 @@ export default {
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const offset = {x: clientX - canvasX, y: clientY - canvasY}
       Array.from(e.dataTransfer.files || []).forEach(file => {
-        imageHelper.uploadImage(file, {top: offset.y, left: offset.x})
+        ImageHelper.uploadImage(file, {top: offset.y, left: offset.x})
       })
     },
 

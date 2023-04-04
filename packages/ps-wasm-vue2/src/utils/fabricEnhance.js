@@ -5,7 +5,11 @@ import {isSvgByBase64} from "@/utils/index";
 
 let fabric
 export default function enhance(_fabric) {
+  if (_fabric.enhanced) {
+    return
+  }
   if (_fabric) {
+    _fabric.enhanced = true
     fabric = _fabric
 
     fabric.Object.prototype.transparentCorners = false

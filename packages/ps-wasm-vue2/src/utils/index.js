@@ -1,3 +1,5 @@
+import Const from "../const";
+
 const IMAGE_TYPES = {
   '.jpg':  'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -21,6 +23,15 @@ export function isImage(mimeType) {
  */
 export function isSvgByBase64(src) {
   return (src || '').indexOf(IMAGE_TYPES['.svg']) >= 0
+}
+
+/**
+ * 是否是文本类型
+ * @param type
+ * @returns {boolean}
+ */
+export function isText(type) {
+  return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(type)
 }
 
 /**

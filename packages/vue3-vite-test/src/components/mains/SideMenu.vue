@@ -1,7 +1,7 @@
 <template>
   <div class="sm">
     <div class="logo-box">
-      <img :src="Logo" class="logo" alt="">
+      logo
     </div>
     <el-menu active-text-color="#ffd04b" background-color="#545c64" class="el-menu-vertical-demo" :default-active="$route.path" text-color="#fff" unique-opened router :collapse="isZhedie" v-if="userInfo">
       <el-menu-item index="/home">
@@ -175,7 +175,6 @@
 </template>
 
 <script setup>
-  import Logo from '@/assets/images/logo.png'
   import {
     Avatar,
     Lock,

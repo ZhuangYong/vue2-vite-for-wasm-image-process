@@ -1,6 +1,6 @@
 <template>
   <div class="layer-panel">
-    <Draggable :list="orderList" :options="{swap: true, forceFallback: true, delay: 100}" class="quick-pick-draggable" @sort="onSort">
+    <Draggable :list="orderList" :swap="true" :force-fallback="true" :delay="100" class="quick-pick-draggable" @sort="onSort">
       <div v-for="(layer, index) in layers" :key="`${index}_${layer.UUID}`" class="layer-item" :class="`type-${layer.type} ${layer.active && 'active'}`"  @click="onItemClick(layer)">
         <VisibleSwitch :layer="layer" />
         <div class="preview-icon" v-html="layer.preview" />

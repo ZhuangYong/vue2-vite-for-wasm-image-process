@@ -113,6 +113,8 @@ class ImageHelper {
   // 当前鼠标移动事件对象
   currentMouseMoveEvent
 
+  defaultProps = defaultProps
+
   // 画笔
   brushes = { vLinePatternBrush: null, hLinePatternBrush: null,squarePatternBrush: null,diamondPatternBrush: null,texturePatternBrush: null }
 
@@ -508,6 +510,9 @@ class ImageHelper {
 
   }
 
+  /**
+   * 刷新舞台可视尺寸
+   */
   refreshStageView() {
     console.log('-----refreshStageView')
     let { originWidth: width, originHeight: height } = this.canvas
@@ -529,11 +534,19 @@ class ImageHelper {
     this.canvas.setDimensions({ width: width * scale, height: height * scale })
   }
 
+  /**
+   * 新建文件
+   * @param option
+   */
   newSage(option) {
     const {width, height} = option
     this.canvas.originWidth = width
     this.canvas.originHeight = height
+    // 清空所有对象
     this.canvas.clear()
+    // 清空历史记录
+    this.redo = this.back = []
+    // 刷新舞台显示大小
     this.refreshStageView()
   }
 

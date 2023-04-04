@@ -1,6 +1,6 @@
 <template>
   <div class="layer-panel">
-    <Draggable :list="orderList" :options="{swap: true, forceFallback: true, delay: 100}" class="quick-pick-draggable" @sort="onSort">
+    <Draggable :list="orderList" :options="{swap: true}" :swap="true" :delay="100" :force-fallback="true" class="quick-pick-draggable" @sort="onSort">
       <div v-for="(layer, index) in layers" :key="`${index}_${layer.UUID}`" class="layer-item" :class="`type-${layer.type} ${layer.active && 'active'}`"  @click="onItemClick(layer)">
         <VisibleSwitch :layer="layer" />
         <div class="preview-icon" v-html="layer.preview" />
@@ -13,13 +13,12 @@
 </template>
 
 <script>
+import {VueDraggableNext as Draggable, Sortable} from '@/components/Draggable'
 import VisibleSwitch from "@/components/buttons/VisibleSwitch.vue"
-import imageHelper, {COMMAND_TYPES} from "@/utils/ImageHelper";
-import {Const} from "ps-wasm-vue2";
+import {Utils, BaseFabricComponent, ImageHelper, COMMAND_TYPES, Swap} from "ps-wasm-vue2"
 import textSvg from '@/../static/icon/text.svg'
-import {base64ToStr} from "@/utils";
-import Draggable from "@/components/Draggable";
-import {BaseFabricComponent} from "ps-wasm-vue2"
+
+Sortable.mount(new Swap())
 
 export default {
   name: 'LayerPanel',
@@ -34,11 +33,11 @@ export default {
     layers() {
       return ((this.canvas || {})._objects || []).map(target => {
         const { UUID, type, left, top, width, height, scaleX = 1, scaleY = 1, text } = target
-        const result = imageHelper.watchTarget(target)
+        const result = ImageHelper.watchTarget(target)
         result.type = target.type
         result._element = target._element
-        if (Const.isText(type)) {
-          result.preview = base64ToStr(textSvg)
+        if (Utils.isText(type)) {
+          result.preview = Utils.base64ToStr(textSvg)
         } else {
           result.preview = `<svg viewBox="0 0 ${width} ${height}">${target.toSVG()}</svg>`
         }
@@ -67,7 +66,8 @@ export default {
       this.canvas.requestRenderAll()
     },
     onSort({ oldIndex, newIndex }) {
-      imageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)
+      console.log('>>>>> sort', { oldIndex, newIndex })
+      ImageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)
       this.$nextTick(() => {
         this.orderList = ((this.canvas || {})._objects || []).map(item => item.UUID).reverse()
       })

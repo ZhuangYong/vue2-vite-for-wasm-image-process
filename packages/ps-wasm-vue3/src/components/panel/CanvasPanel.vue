@@ -24,14 +24,9 @@
 </template>
 
 <script>
-import imageHelper from "@/utils/ImageHelper"
-import {Const} from "ps-wasm-vue2"
-import {fabric} from "@/lib/fabric.min";
-import fabricEnhance from "@/utils/fabricEnhance";
+import {Const, ImageHelper, fabric, Event as eventBus} from "ps-wasm-vue2"
 import transparentSvg from "@/../static/icon/transparent.svg"
-import {eventBus} from "@/components/BaseFabricComponent";
 
-fabricEnhance(fabric)
 export default {
   name: 'CanvasPanel',
   inject: ['getEditMode'],
@@ -107,21 +102,20 @@ export default {
       canvas.on('dragleave', this.onDragResourceLeave)
       canvas.on('object:added', e => console.log(e))
       canvas.on('object:modified', ({ target, transform }) => {
-        console.log('object:modified', transform)
         const previewState = {...target._stateProperties}
         const currentState = {}
         Object.keys(previewState).forEach(key => {
           currentState[key] = target[key]
         })
         // 修改back和redo
-        imageHelper.recordHistory({
+        ImageHelper.recordHistory({
           back: () => fabric.util.object.extend(target, previewState),
           redo: () => fabric.util.object.extend(target, currentState)
         })
       })
       canvas.isDrawingMode = false
       this.canvas = canvas
-      imageHelper.canvas = this.canvas
+      ImageHelper.canvas = this.canvas
       canvas.renderAll()
       this.$emit('initialized', canvas)
       // this.$refs.main.addEventListener('wheel', e => {
@@ -141,14 +135,14 @@ export default {
     async onImport(file) {
       console.log(file)
       const text = await file.raw.text()
-      imageHelper.importFromJson(text)
+      ImageHelper.importFromJson(text)
     },
     onNew() {
       eventBus.trigger('new')
     },
 
     onFileAdd(file) {
-      imageHelper.uploadImage(file.raw)
+      ImageHelper.uploadImage(file.raw)
     },
 
     onSelect() {
@@ -156,7 +150,7 @@ export default {
       if (this.currentObject && this.editMode === Const.EDIT_MODE.TEXT.value && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type)) {
         this.canvas.discardActiveObject()
       } else {
-        imageHelper.currentTarget = this.currentObject
+        ImageHelper.currentTarget = this.currentObject
         this.$emit('update:currentSelectTarget', this.currentObject)
       }
 
@@ -182,7 +176,7 @@ export default {
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const offset = {x: clientX - canvasX, y: clientY - canvasY}
       Array.from(e.dataTransfer.files || []).forEach(file => {
-        imageHelper.uploadImage(file, {top: offset.y, left: offset.x})
+        ImageHelper.uploadImage(file, {top: offset.y, left: offset.x})
       })
     },
 

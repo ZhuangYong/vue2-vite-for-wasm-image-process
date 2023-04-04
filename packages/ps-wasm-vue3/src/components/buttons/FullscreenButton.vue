@@ -7,7 +7,7 @@
 <script>
 import expandSvg from "@/../static/icon/fullscreen-expand.svg"
 import shrinkSvg from "@/../static/icon/fullscreen-shrink.svg"
-import {base64ToStr} from "@/utils"
+import {Utils} from "ps-wasm-vue2"
 import imageHelper from "@/utils/ImageHelper";
 export default {
   name: 'FullscreenButton',
@@ -20,8 +20,8 @@ export default {
   data() {
     return {
       expand: false,
-      expandIcon: base64ToStr(expandSvg),
-      shrinkIcon: base64ToStr(shrinkSvg)
+      expandIcon: Utils.base64ToStr(expandSvg),
+      shrinkIcon: Utils.base64ToStr(shrinkSvg)
     }
   },
   watch: {

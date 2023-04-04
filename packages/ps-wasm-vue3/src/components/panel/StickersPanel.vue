@@ -2,7 +2,7 @@
   <div class="resource-stickers">
     <el-scrollbar>
       <div v-if="initialed" class="quick-pick">
-        <Draggable :sort="false" :list="svgList.slice(0, 13)" :swap="false" :force-fallback="true" class="quick-pick-draggable" @start="onDragstart" @end="onDragend">
+        <Draggable :sort="false" :list="svgList.slice(0, 13)" :options="{swap: false}" :force-fallback="true" class="quick-pick-draggable" @start="onDragstart" @end="onDragend">
           <div v-for="item in svgList.slice(0, 13)" :key="item.key" class="sticker-item">
             <img :src="item.value" :size="calcSvgSize(item.value)"  alt="">
           </div>
@@ -31,11 +31,8 @@
 </template>
 
 <script>
-import Draggable from '../Draggable'
-import {isSvgByBase64} from "@/utils";
-import imageHelper from "@/utils/ImageHelper"
-import BaseFabricComponent from "../BaseFabricComponent"
-
+import {Utils, BaseFabricComponent, ImageHelper} from "ps-wasm-vue2"
+import {VueDraggableNext as Draggable} from '@/components/Draggable'
 const svg = require.context('../../../static/svg/', true, /\.svg$/)
 const svgList = svg.keys().map(key => ({ key: key.split('/').pop().split('.').shift(), value: svg(key)}))
 
@@ -53,7 +50,7 @@ export default {
   },
   methods: {
     calcSvgSize(src) {
-      if (isSvgByBase64(src)) {
+      if (Utils.isSvgByBase64(src)) {
         try {
           const viewBox = atob(src.split(',')[1]).match('viewBox="([0-9 ]*)"')[1]
           const [x, y, width, height] = viewBox.split(' ').filter(Boolean)
@@ -67,7 +64,7 @@ export default {
     onDragend(e) {
       if (this.startDrag === true) {
         this.startDrag = false
-        imageHelper.addStroke(e)
+        ImageHelper.addStroke(e)
       }
     },
     onDragstart(e) {
@@ -84,7 +81,7 @@ export default {
     },
     addToStage(item) {
       this.closePick()
-      imageHelper.addStroke(item.value)
+      ImageHelper.addStroke(item.value)
     }
   }
 }
