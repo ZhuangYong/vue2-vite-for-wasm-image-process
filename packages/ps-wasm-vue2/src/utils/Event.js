@@ -1,5 +1,5 @@
-const event = {
-  _eventData: null,
+export class Event {
+  _eventData = null
 
   on(name, func) {
     this._eventData = this._eventData || {}
@@ -14,7 +14,7 @@ const event = {
     if (!listened) {
       this._eventData[name].push(func)
     }
-  },
+  }
 
   off(name, func) {
     this._eventData = this._eventData || {}
@@ -26,7 +26,7 @@ const event = {
     } else {
       this._eventData[name] = []
     }
-  },
+  }
 
   trigger(name) {
     this._eventData = this._eventData || {}
@@ -43,4 +43,4 @@ const event = {
   }
 }
 
-export default event
+export default new Event()

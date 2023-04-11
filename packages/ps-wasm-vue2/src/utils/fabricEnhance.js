@@ -1,7 +1,7 @@
 import imageHelper from "@/utils/ImageHelper";
 import CustomFilter from "@/filters/CustomFilter";
 import {photon} from "@/filters/PhotonHelper"
-import {isSvgByBase64} from "@/utils/index";
+import {ImageDataToBase64, isSvgByBase64} from "@/utils";
 
 let fabric
 export default function enhance(_fabric) {
@@ -156,28 +156,4 @@ function multiDrawPencilBrush() {
   }
 }
 
-/**
- * 将imageData转换为base64
- * @param imageData
- * @returns {Promise<unknown>}
- * @constructor
- */
-function ImageDataToBase64(imageData){
-  let w = imageData.width;
-  let h = imageData.height;
-  let canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  let ctx = canvas.getContext("2d")
-  ctx.putImageData(imageData, 0, 0)
-  return new Promise((resolve) => {
-    canvas.toBlob(blob => {
-      const reader = new FileReader()
-      reader.readAsDataURL(blob)
-      reader.onload = function (e) {
-        resolve(e.target.result);
-      }
-    })
-  })
-}
 

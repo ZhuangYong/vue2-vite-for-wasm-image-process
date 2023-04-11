@@ -1,13 +1,18 @@
 import Point from "../Point"
 import Rectangle from "../Rectangle"
 import {fabric} from "@/lib/fabric.min"
-import {isImage, isMac} from "@/utils/index"
+import {ImageDataToBase64, isGif, isImage, isMac} from "@/utils"
 import {resetKey} from "@/utils/KeyCode"
 import _ from 'lodash'
 import Const from "@/const";
 import Canvas2Image from "@/utils/CanvasToImage";
 import saveAs from "@/lib/FileSaver";
-import testImg from "../../static/images/effect/e1.jpg";
+import testImg from "../../static/images/effect/e1.jpg"
+import LibGif from '@/lib/libgif'
+import TimeLinePlayer from '@/utils/TimeLinePlayer'
+import Frame from "@/utils/Frame"
+import FrameGroup from "@/utils/FrameGroup"
+import { Event } from "@/utils/Event"
 
 /**
  * 对象默认属性
@@ -64,6 +69,9 @@ export const COMMAND_TYPES = {
   RESIZE: {
     ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', label: '修改对象宽'},
     ACTIVE_OBJECT_HEIGHT: {key: 'activeObjectHeight', label: '修改对象宽'},
+  },
+  CONTROL: {
+    PLAY_OR_STOP: {key: 'playOrStrop', label: '播放/暂停', keyMap: `space`},
   }
 }
 
@@ -94,7 +102,7 @@ const KEY_MAP_KEY_LIST = Object.keys(keyMaps)
  * 对象类型
  * @type {{I_TEXT: string, IMAGE: string}}
  */
-class ImageHelper {
+class ImageHelper extends Event {
   // 回退历史记录操作
   back = []
 
@@ -119,6 +127,7 @@ class ImageHelper {
   brushes = { vLinePatternBrush: null, hLinePatternBrush: null,squarePatternBrush: null,diamondPatternBrush: null,texturePatternBrush: null }
 
   constructor(_canvas) {
+    super()
     this.canvas = _canvas
     this.initialBrush()
   }
@@ -384,6 +393,9 @@ class ImageHelper {
         this.recordHistory({ back: () => target.fontFamily = oldFontFamily, redo: () => target.fontFamily = arg1 })
         break
 
+      case COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key:
+        TimeLinePlayer.togglePlay()
+        break
     }
 
     this.canvas.requestRenderAll()
@@ -427,24 +439,78 @@ class ImageHelper {
     }
   }
 
+  async uploadGif(file, option) {
+    option = option || {}
+    const rawFrames = await this.splitGif(file)
+    if (!_.isEmpty(frames)) {
+      let preFrame
+      const frames = rawFrames.map(frame => {
+        const item = {
+          UUID: Math.random(),
+          duration: frame.delay * 10,
+          url: frame.data,
+          startTime: 0
+        }
+        if (preFrame) {
+          item.startTime = preFrame.startTime + preFrame.duration
+        }
+        preFrame = item
+        return item
+      })
+
+      await Promise.all(frames.map(async (frame) => {
+        frame.url = await ImageDataToBase64(frame.url)
+        frame.img = await new Promise(resolve => fabric.Image.fromURL(frame.url, img => resolve(img)))
+      }))
+      const frameTimes = {}
+      frames.forEach(frame => {
+        frameTimes[frame.duration] = frameTimes[frame.duration] || 0
+        frameTimes[frame.duration] += 1
+      })
+      const max = Object.values(frameTimes).sort().pop()
+      const maxTime = Object.keys(frameTimes).filter(duration => frameTimes[duration] === max).reduce((a, b) => a > b ? a : b)
+      const frameTime = Object.keys(frameTimes).find(key => key === maxTime)
+      const duration = frames.reduce((a, b) => a + b.duration, 0)
+      const keyFrameTime = frames.map(frame => frame.startTime)
+      const frameGroup = new FrameGroup(frames.map(frame => {
+        const keyFrame = new Frame()
+        frame.img.set(option)
+        keyFrame.duration = frame.duration
+        keyFrame.startTime = frame.startTime
+        keyFrame.add(frame.img)
+        return keyFrame
+      }))
+      TimeLinePlayer.reset({ frameTime, duration, keyFrameTime, frameGroups: [frameGroup] })
+      this.canvas.gifMode = true
+    }
+  }
+
   /**
    * 添加图片文件
    * @param file
    * @param option
    */
-  uploadImage(file, option) {
+  async uploadImage(file, option) {
     option = option || {}
-    if (isImage(file.type)) {
+    if (isGif(file.type)) {
+      await this.uploadGif(file, option)
+    } else if (isImage(file.type)) {
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = e => {
         fabric.Image.fromURL(e.target.result, img => {
-          // const { width, height } = this.canvas
-          // const scale = Math.min(width/img.width, height/img.height)
-          // img.set({ scaleX: scale, scaleY: scale, ...option })
-          img.set(option)
-          this.addToCanvas(img)
-          this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
+          if (this.canvas.gifMode) {
+            const keyFrame = new Frame()
+            img.set(option)
+            keyFrame.duration = TimeLinePlayer.duration
+            keyFrame.startTime = 0
+            keyFrame.add(img)
+            TimeLinePlayer.addFrameGroup(new FrameGroup([keyFrame]))
+          } else {
+            img.set(option)
+            this.addToCanvas(img)
+            this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
+          }
         })
       }
     }
@@ -571,6 +637,9 @@ class ImageHelper {
     this.canvas.setDimensions({ width: width * scale, height: height * scale })
   }
 
+  /**
+   * 导出为png
+   */
   downloadPng() {
     const zoom = this.canvas.getZoom()
     this.canvas.setZoom(1)
@@ -579,6 +648,9 @@ class ImageHelper {
     this.canvas.setZoom(zoom)
   }
 
+  /**
+   * 导出源文件
+   */
   downloadJson() {
     const json = this.canvas.toJSON(['UUID', 'originWidth', 'originHeight', 'viewScale', 'width', 'height'])
     console.log(json)
@@ -625,6 +697,18 @@ class ImageHelper {
   removeFromCanvas() {
     const objs = arguments[0] instanceof Array ? arguments[0] : arguments
     this.canvas.remove.apply(this.canvas, objs)
+  }
+
+  /**
+   * 清空画布
+   */
+  cleanCanvas() {
+    this.canvas.clear()
+    this.requestRenderAll()
+  }
+
+  requestRenderAll() {
+    this.canvas.requestRenderAll()
   }
 
   initial(target) {
@@ -807,6 +891,32 @@ class ImageHelper {
     this.canvas.originWidth = width
     this.canvas.originHeight = height
     this.canvas.setDimensions({ width: width * viewScale, height: height * viewScale })
+  }
+
+  /**
+   * 将gif拆分
+   * @param file
+   */
+  splitGif(file) {
+    return new Promise(resolve => {
+      const gifImg = document.createElement('img')
+      gifImg.style.position = 'fixed'
+      gifImg.style.width = '1px'
+      gifImg.style.height = '1px'
+      gifImg.style.opacity = '0.001'
+      gifImg.setAttribute('rel:animated_src', URL.createObjectURL(file))
+      gifImg.setAttribute('rel:auto_play', '0')
+      document.body.appendChild(gifImg)
+      const gif = new LibGif({ gif: gifImg, loadOnly: true, show_progress_bar: false })
+      gif.load(() => {
+        // const img_list = []
+        // for (let i=1; i <= rub.get_length(); i++) {
+        //   rub.move_to(i)
+        //   let cur_file = this.convertCanvasToImage(rub.get_canvas(), file.name.replace('.gif', '') + `-${i}`)
+        // }
+        resolve([...gif.get_frames()])
+      })
+    })
   }
 }
 const imageHelper = new ImageHelper(null)

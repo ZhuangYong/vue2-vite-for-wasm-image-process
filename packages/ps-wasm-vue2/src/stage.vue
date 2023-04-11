@@ -49,16 +49,16 @@
         </el-main>
 
         <!--底部贴纸-->
-        <el-footer height="70px">
+        <div style="padding: 0 6px;">
           <el-tabs v-model="activeResourceName" type="card" class="bottom-function-tabs">
             <el-tab-pane label="贴纸" name="stickers">
               <Stickers />
             </el-tab-pane>
-            <el-tab-pane label="-------" name="---">
-              -------
+            <el-tab-pane label="时间轴" name="time">
+              <TimeLinePanel />
             </el-tab-pane>
           </el-tabs>
-        </el-footer>
+        </div>
       </el-container>
     </el-container>
   </div>
@@ -77,11 +77,12 @@ import Const from "@/const";
 import FullscreenButton from "@/components/buttons/FullscreenButton.vue"
 import CanvasPanel from "@/components/panel/CanvasPanel.vue"
 import LayerPanel from '@/components/panel/LayerPanel.vue'
+import TimeLinePanel from "@/components/panel/TimeLinePanel.vue"
 import Dialogs from '@/components/panel/Dialogs.vue'
 
 export default {
   name: 'Stage',
-  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton, CanvasPanel, LayerPanel, Dialogs },
+  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton, CanvasPanel, LayerPanel, TimeLinePanel, Dialogs },
   provide() {
     return {
       getCanvas: () => this.canvas,
@@ -97,7 +98,7 @@ export default {
       editMode: Const.EDIT_MODE.MOVE.value, // 编辑模式
       // targetProps: defaultProps,
       currentObject: null, // 当前选择的编辑对象
-      activeResourceName: 'stickers', // 选择的资源tabs
+      activeResourceName: 'time', // 选择的资源tabs
       leftBottomTab: 'layer',
       leftTopTab: 'objectProps'
     }
@@ -150,6 +151,7 @@ export default {
 }
 .stage {
   height: 100%;
+  user-select: none;
   background-color: white;
   border: 1px solid #dedede;
   .el-container {

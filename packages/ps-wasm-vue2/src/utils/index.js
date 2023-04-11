@@ -18,6 +18,15 @@ export function isImage(mimeType) {
 }
 
 /**
+ * 是否是gif
+ * @param mimeType
+ * @returns {boolean}
+ */
+export function isGif(mimeType) {
+  return IMAGE_TYPES['.gif'] === mimeType
+}
+
+/**
  * 根据内容判断是否是svg
  * @param src
  */
@@ -98,4 +107,30 @@ export function getOsInfo() {
  */
 export function isMac() {
   return getOsInfo().name === 'Mac'
+}
+
+
+/**
+ * 将imageData转换为base64
+ * @param imageData
+ * @returns {Promise<unknown>}
+ * @constructor
+ */
+export function ImageDataToBase64(imageData){
+  let w = imageData.width;
+  let h = imageData.height;
+  let canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  let ctx = canvas.getContext("2d")
+  ctx.putImageData(imageData, 0, 0)
+  return new Promise((resolve) => {
+    canvas.toBlob(blob => {
+      const reader = new FileReader()
+      reader.readAsDataURL(blob)
+      reader.onload = function (e) {
+        resolve(e.target.result);
+      }
+    })
+  })
 }

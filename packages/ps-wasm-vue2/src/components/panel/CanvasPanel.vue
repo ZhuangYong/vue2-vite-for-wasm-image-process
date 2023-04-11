@@ -99,13 +99,14 @@ export default {
       canvas.originWidth = 0
       canvas.originHeight = 0
       canvas.viewScale = 1
+      canvas.gifMode = false
       canvas.on('selection:updated', this.onSelect)
       canvas.on('selection:created', this.onSelect)
       canvas.on('selection:cleared', this.onSelect)
       canvas.on('object:removed', this.onSelect)
       canvas.on('dragover', this.onDragResourceOver)
       canvas.on('dragleave', this.onDragResourceLeave)
-      canvas.on('object:added', e => console.log(e))
+      // canvas.on('object:added', e => console.log(e))
       canvas.on('object:modified', ({ target, transform }) => {
         console.log('object:modified', transform)
         const previewState = {...target._stateProperties}
@@ -124,6 +125,7 @@ export default {
       ImageHelper.canvas = this.canvas
       canvas.renderAll()
       this.$emit('initialized', canvas)
+      ImageHelper.trigger('initialized', canvas)
       // this.$refs.main.addEventListener('wheel', e => {
       //
       // })

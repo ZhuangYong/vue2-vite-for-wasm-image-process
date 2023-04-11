@@ -1,4 +1,12 @@
+/**
+ * 返回统一小写
+ * @param name
+ * @returns {string}
+ */
 export function resetKey(name) {
+  if (name === ' ') {
+    return 'space'
+  }
   name = (name || '').trim().toLowerCase()
   switch (name) {
     case 'meta':
