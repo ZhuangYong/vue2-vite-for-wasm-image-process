@@ -20,9 +20,12 @@
           <el-tab-pane label="特效" name="fastEffect">
             <FastEffect @fabric-filter="onFabricFilter" />
           </el-tab-pane>
-          <el-tab-pane label="调整" name="ttttt">
-            ----
+          <el-tab-pane label="动画" name="animate">
+            <AnimatePanel />
           </el-tab-pane>
+          <!--<el-tab-pane label="调整" name="ttttt">
+            &#45;&#45;&#45;&#45;
+          </el-tab-pane>-->
           <el-tab-pane label="图层" name="layer">
             <LayerPanel />
           </el-tab-pane>
@@ -79,10 +82,24 @@ import CanvasPanel from "@/components/panel/CanvasPanel.vue"
 import LayerPanel from '@/components/panel/LayerPanel.vue'
 import TimeLinePanel from "@/components/panel/TimeLinePanel.vue"
 import Dialogs from '@/components/panel/Dialogs.vue'
+import AnimatePanel from "@/components/panel/AnimatePanel.vue"
 
 export default {
   name: 'Stage',
-  components: { FastEffect, Stickers, ObjectProps, OperationPanel, PencilModelPropertyPanel, Menus, FullscreenButton, CanvasPanel, LayerPanel, TimeLinePanel, Dialogs },
+  components: {
+    FastEffect,
+    Stickers,
+    ObjectProps,
+    OperationPanel,
+    PencilModelPropertyPanel,
+    Menus,
+    FullscreenButton,
+    CanvasPanel,
+    LayerPanel,
+    TimeLinePanel,
+    Dialogs,
+    AnimatePanel
+  },
   provide() {
     return {
       getCanvas: () => this.canvas,

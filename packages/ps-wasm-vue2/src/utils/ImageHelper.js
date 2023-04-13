@@ -72,6 +72,9 @@ export const COMMAND_TYPES = {
   },
   CONTROL: {
     PLAY_OR_STOP: {key: 'playOrStrop', label: '播放/暂停', keyMap: `space`},
+  },
+  ANIMATE: {
+    SHAKE: {key: 'animateShake', label: '抖动'},
   }
 }
 
@@ -396,6 +399,13 @@ class ImageHelper extends Event {
       case COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key:
         TimeLinePlayer.togglePlay()
         break
+
+      case COMMAND_TYPES.ANIMATE.SHAKE.key:
+        const frameGroup = TimeLinePlayer.findGroupByTarget(target)
+        if (frameGroup) {
+          frameGroup.applyAnimate(TimeLinePlayer.keyFrameTime).then(() => this.trigger('applyAnimate'))
+        }
+        break
     }
 
     this.canvas.requestRenderAll()
@@ -407,6 +417,7 @@ class ImageHelper extends Event {
    */
   addStroke(fabricDragEvent) {
     const scale = this.canvas.viewScale
+    // 直接添加base64
     if (typeof fabricDragEvent === 'string') {
       fabric.Image.fromURL(fabricDragEvent, shape => {
         shape.set({ scaleX: 1 / scale, scaleY: 1 / scale, top: this.canvas.width * 0.3 / scale, left: this.canvas.width * 0.3 / scale, cornerSize: 7 })
@@ -432,10 +443,30 @@ class ImageHelper extends Event {
           shape._element.width = width
           Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
           Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
-          this.addToCanvas(shape)
-          this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
+          if (this.canvas.gifMode) {
+            TimeLinePlayer.addObjectAsFrameGroup(shape)
+          } else {
+            this.addToCanvas(shape)
+            this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
+          }
         })
       }
+    }
+  }
+
+  /**
+   * 添加文字
+   * @param text
+   * @param option
+   */
+  addText(text, option) {
+    option = option || {}
+    const textBox = new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option })
+    if (this.canvas.gifMode) {
+      TimeLinePlayer.addObjectAsFrameGroup(textBox)
+    } else {
+      this.addToCanvas(textBox)
+      this.recordHistory({ back: () => this.removeFromCanvas(textBox), redo: () => this.addToCanvas(textBox) })
     }
   }
 
@@ -498,14 +529,26 @@ class ImageHelper extends Event {
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = e => {
-        fabric.Image.fromURL(e.target.result, img => {
+        fabric.Image.fromURL(e.target.result, async (img) => {
           if (this.canvas.gifMode) {
-            const keyFrame = new Frame()
+            // const groupList = []
+            // await Promise.all(TimeLinePlayer.keyFrameTime.map(async (frameTime, index) => {
+            //   const cloneImg = await new Promise(resolve => img.clone(resolve))
+            //   cloneImg.set(option)
+            //   this.initial(cloneImg)
+            //   const keyFrame = new Frame()
+            //   keyFrame.duration = (TimeLinePlayer.keyFrameTime[index + 1] || TimeLinePlayer.duration) - TimeLinePlayer.keyFrameTime[index]
+            //   keyFrame.startTime = frameTime
+            //   keyFrame.add(cloneImg)
+            //   groupList.push(keyFrame)
+            // }))
             img.set(option)
-            keyFrame.duration = TimeLinePlayer.duration
-            keyFrame.startTime = 0
-            keyFrame.add(img)
-            TimeLinePlayer.addFrameGroup(new FrameGroup([keyFrame]))
+            // const keyFrame = new Frame()
+            // keyFrame.add(img)
+            // keyFrame.startTime = 0
+            // keyFrame.duration = TimeLinePlayer.duration
+            // TimeLinePlayer.addFrameGroup(new FrameGroup([keyFrame]))
+            TimeLinePlayer.addObjectAsFrameGroup(img)
           } else {
             img.set(option)
             this.addToCanvas(img)
@@ -652,21 +695,9 @@ class ImageHelper extends Event {
    * 导出源文件
    */
   downloadJson() {
-    const json = this.canvas.toJSON(['UUID', 'originWidth', 'originHeight', 'viewScale', 'width', 'height'])
+    const json = this.canvas.toJSON(['UUID', 'originWidth', 'originHeight', 'viewScale', 'width', 'height', 'gifMode'])
     console.log(json)
     saveAs(new Blob([JSON.stringify(json)], {type: 'text/plain'}), '导出' + '.json')
-  }
-
-  /**
-   * 添加文字
-   * @param text
-   * @param option
-   */
-  addText(text, option) {
-    option = option || {}
-    const textBox = new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option })
-    this.addToCanvas(textBox)
-    this.recordHistory({ back: () => this.removeFromCanvas(textBox), redo: () => this.addToCanvas(textBox) })
   }
 
   /**
@@ -717,10 +748,11 @@ class ImageHelper extends Event {
     if (this.canvas.originWidth) {
       const { viewScale, width: canvasWidth, height: canvasHeight } = this.canvas
       // 如果添加元素比画布大进行缩放
-      if (width * viewScale > canvasWidth || height * viewScale > canvasHeight) {
+      if (!target.initialed && (width * viewScale > canvasWidth || height * viewScale > canvasHeight)) {
         const scale = Math.min(1, Math.min(canvasWidth / (width  * viewScale), canvasHeight / (height  * viewScale)))
         target.scaleX = scale
         target.scaleY = scale
+        target.initialed = true
       }
     } else {
       // let scale = 1

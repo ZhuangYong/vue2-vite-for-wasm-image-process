@@ -1,6 +1,8 @@
 import _ from 'lodash'
 import { Event } from '@/utils/Event'
 import ImageHelper from "@/utils/ImageHelper"
+import Frame from "@/utils/Frame";
+import FrameGroup from "@/utils/FrameGroup";
 class TimeLinePlayer extends Event {
 
   /**
@@ -22,25 +24,25 @@ class TimeLinePlayer extends Event {
   duration = 0
 
   /**
-   * 每一帧持时间
+   * 每一帧持续时间
    * @type {number}
    */
   frameTime = 100
 
   /**
-   * 当前时间
+   * 当前时间， 播放用
    * @type {number}
    */
   currentTime = 0
 
   /**
-   * 开始时间
+   * 开始时间， 播放用
    * @type {number}
    */
   startTime = 0
 
   /**
-   * 关键帧（时间）: [100, 200, 240, 300, ......]
+   * 关键帧（时间,开始时间/startTime）: [100, 200, 240, 300, ......]
    * @type {[]}
    */
   keyFrameTime = []
@@ -75,13 +77,32 @@ class TimeLinePlayer extends Event {
     this.requestFrame()
   }
 
+  /**
+   * 将对象添加为动画片段
+   * @param obj
+   */
+  addObjectAsFrameGroup(obj) {
+    const keyFrame = new Frame()
+    keyFrame.add(obj)
+    keyFrame.startTime = 0
+    keyFrame.duration = this.duration
+    this.addFrameGroup(new FrameGroup([keyFrame]))
+  }
+
   addFrameGroup(frameGroup) {
     this.frameGroups.push(frameGroup)
     this.requestFrame()
   }
 
+  findGroupByTarget(target) {
+    return this.frameGroups.find(group => group.includes(target))
+  }
+
   requestFrame(time) {
-    time = time || this.currentTime || 0
+    if (typeof time === 'undefined') {
+      time = this.currentTime
+    }
+    time = time || 0
     ImageHelper.cleanCanvas()
     this.frameGroups.forEach(frameGroup => frameGroup.renderFrame(time))
     this.currentTime = time

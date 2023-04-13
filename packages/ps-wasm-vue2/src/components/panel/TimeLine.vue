@@ -31,16 +31,20 @@ export default {
     ImageHelper.canvas.on('object:removed', this.refreshFrames)
     ImageHelper.canvas.on('object:added', this.refreshFrames)
     ImageHelper.canvas.on('object:modified', this.refreshFrames)
+    ImageHelper.canvas.on('update:snapshot', this.refreshFrames)
+    ImageHelper.on('applyAnimate', this.refreshFrames)
     this.refreshFrames()
   },
   beforeDestroy() {
     ImageHelper.canvas.off('object:removed', this.refreshFrames)
     ImageHelper.canvas.off('object:added', this.refreshFrames)
     ImageHelper.canvas.off('object:modified', this.refreshFrames)
+    ImageHelper.canvas.off('update:snapshot', this.refreshFrames)
+    ImageHelper.off('applyAnimate', this.refreshFrames)
   },
   methods: {
-    async refreshFrames() {
-      console.log('refreshFrames')
+    async refreshFrames(e) {
+      console.log('refreshFrames', e)
       const arr = []
       await Promise.all(this.TimeLinePlayer.keyFrameTime.map(async (keyTime) => {
         const snapshot = await this.frameGroup.getSnapshot(keyTime)

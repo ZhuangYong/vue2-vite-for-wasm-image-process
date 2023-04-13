@@ -116,8 +116,8 @@ export default {
         })
         // 修改back和redo
         ImageHelper.recordHistory({
-          back: () => fabric.util.object.extend(target, previewState),
-          redo: () => fabric.util.object.extend(target, currentState)
+          back: () => fabric.util.object.extend(target, previewState) && target.fire('modified'),
+          redo: () => fabric.util.object.extend(target, currentState) && target.fire('modified')
         })
       })
       canvas.isDrawingMode = false

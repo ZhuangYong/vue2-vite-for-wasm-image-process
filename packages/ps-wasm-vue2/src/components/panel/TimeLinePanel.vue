@@ -7,7 +7,7 @@
         <TimeLine :frame-group="frameGroup" />
       </div>
     </div>
-    <div v-if="showScrollBar" class="scroll-bar" :style="`width: ${scrollBar.width}px;transform: translateX(${scrollBar.x}px)`" />
+    <div v-if="showTimeAssetsLine && showScrollBar" class="scroll-bar" :style="`width: ${scrollBar.width}px;transform: translateX(${scrollBar.x}px)`" />
   </div>
 </template>
 
@@ -90,6 +90,9 @@ export default {
       this.refreshPlayTime(e)
     },
     onMousemove(e) {
+      if (this.moveOutTimer) {
+        clearTimeout(this.moveOutTimer)
+      }
       if (!this.showTimeAssetsLine) {
         this.showTimeAssetsLine = true
       }
@@ -100,7 +103,12 @@ export default {
       this.leaveChangeTime()
     },
     onMouseout() {
-      this.showTimeAssetsLine = false
+      if (this.moveOutTimer) {
+        clearTimeout(this.moveOutTimer)
+      }
+      this.moveOutTimer = setTimeout(() => {
+        this.showTimeAssetsLine = false
+      }, 400)
     },
     onWheel(e) {
       e.stopPropagation()
