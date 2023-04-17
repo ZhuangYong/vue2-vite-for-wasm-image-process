@@ -1,6 +1,7 @@
 import ImageHelper from "@/utils/ImageHelper";
 import TimeLinePlayer from "@/utils/TimeLinePlayer";
 import Frame from "@/utils/Frame";
+import animates from "@/animate";
 
 export default class FrameGroup {
 
@@ -13,7 +14,7 @@ export default class FrameGroup {
 
   /**
    * 动画
-   * @type {[{animate: Function, limit: [], delay: 0 }]}
+   * @type {[BaseAnimate]}
    */
   animates = []
 
@@ -103,32 +104,37 @@ export default class FrameGroup {
   /**
    * 在关键帧上应用动画
    * @param keyFrameTimes
+   * @param animateName {string}
    */
-  async applyAnimate(keyFrameTimes) {
+  async applyAnimate(keyFrameTimes, animateName) {
     await this.addIfAbsentKeyFrames(keyFrameTimes)
-    const easeInOutQuad = fabric.util.ease.easeInOutQuad
-    let toTop = 100
-    let newTop = 0
-    const animateDuration = 200
-    let animateCurrentTime = 0
-    this.frames.forEach(frame => {
-      frame._objects.forEach(target => {
-        const from = target.top
-        const to = target.top + 100
-        // const from = toTop > 0 ? target.top : target.top + 100
-        // const to = toTop > 0 ? target.top + 100 : target.top
-        newTop = easeInOutQuad(animateCurrentTime, from, to, animateDuration)
-        console.log(animateCurrentTime, toTop, newTop)
-
-        target.top = newTop
-      })
-
-      if (animateCurrentTime >= 1.5 * animateDuration) {
-        animateCurrentTime = 0
-        // toTop *= -1
-      }
-      animateCurrentTime += frame.duration
-    })
+    const { Constructor } = animates.find(({ key }) => key === animateName) || {}
+    const animate = new Constructor(keyFrameTimes)
+    this.animates.push(animate)
+    animate.doAnimates.forEach(item => item.accept(this.findFrameByStartTime(item.time)))
+    // const easeInOutQuad = fabric.util.ease.easeInOutQuad
+    // let toTop = 100
+    // let newTop = 0
+    // const animateDuration = 200
+    // let animateCurrentTime = 0
+    // this.frames.forEach(frame => {
+    //   frame._objects.forEach(target => {
+    //     const from = target.top
+    //     const to = target.top + 100
+    //     // const from = toTop > 0 ? target.top : target.top + 100
+    //     // const to = toTop > 0 ? target.top + 100 : target.top
+    //     newTop = easeInOutQuad(animateCurrentTime, from, to, animateDuration)
+    //     console.log(animateCurrentTime, toTop, newTop)
+    //
+    //     target.top = newTop
+    //   })
+    //
+    //   if (animateCurrentTime >= 1.5 * animateDuration) {
+    //     animateCurrentTime = 0
+    //     // toTop *= -1
+    //   }
+    //   animateCurrentTime += frame.duration
+    // })
   }
 
   useEase(time, frame) {

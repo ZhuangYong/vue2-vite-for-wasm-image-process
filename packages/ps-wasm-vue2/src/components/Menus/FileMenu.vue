@@ -53,7 +53,7 @@ export default {
       imageHelper.uploadImage(file.raw)
     },
     onDownload() {
-      imageHelper.downloadPng()
+      imageHelper.download()
     },
     onExport() {
       imageHelper.downloadJson()

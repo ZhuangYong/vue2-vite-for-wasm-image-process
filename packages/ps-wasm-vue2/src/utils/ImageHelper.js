@@ -74,7 +74,7 @@ export const COMMAND_TYPES = {
     PLAY_OR_STOP: {key: 'playOrStrop', label: '播放/暂停', keyMap: `space`},
   },
   ANIMATE: {
-    SHAKE: {key: 'animateShake', label: '抖动'},
+    APPLY: {key: 'applyAnimate', label: '应用动画'},
   }
 }
 
@@ -400,10 +400,11 @@ class ImageHelper extends Event {
         TimeLinePlayer.togglePlay()
         break
 
-      case COMMAND_TYPES.ANIMATE.SHAKE.key:
+      case COMMAND_TYPES.ANIMATE.APPLY.key:
+        const animateName = arg1
         const frameGroup = TimeLinePlayer.findGroupByTarget(target)
         if (frameGroup) {
-          frameGroup.applyAnimate(TimeLinePlayer.keyFrameTime).then(() => this.trigger('applyAnimate'))
+          frameGroup.applyAnimate(TimeLinePlayer.keyFrameTime, animateName).then(() => this.trigger('applyAnimate'))
         }
         break
     }
@@ -505,7 +506,7 @@ class ImageHelper extends Event {
       const keyFrameTime = frames.map(frame => frame.startTime)
       const frameGroup = new FrameGroup(frames.map(frame => {
         const keyFrame = new Frame()
-        frame.img.set(option)
+        frame.img.set({...option, selectable: false, hoverCursor: 'default'})
         keyFrame.duration = frame.duration
         keyFrame.startTime = frame.startTime
         keyFrame.add(frame.img)
@@ -680,6 +681,14 @@ class ImageHelper extends Event {
     this.canvas.setDimensions({ width: width * scale, height: height * scale })
   }
 
+  download() {
+    if (this.canvas.gifMode) {
+      this.downloadGif()
+    } else {
+      this.downloadPng()
+    }
+  }
+
   /**
    * 导出为png
    */
@@ -689,6 +698,10 @@ class ImageHelper extends Event {
     const { originWidth: width, originHeight: height } = this.canvas
     Canvas2Image.saveAsPNG(this.canvas.toCanvasElement(1, {width, height}), width, height)
     this.canvas.setZoom(zoom)
+  }
+
+  downloadGif() {
+    TimeLinePlayer.exportAsGif()
   }
 
   /**
@@ -923,6 +936,15 @@ class ImageHelper extends Event {
     this.canvas.originWidth = width
     this.canvas.originHeight = height
     this.canvas.setDimensions({ width: width * viewScale, height: height * viewScale })
+  }
+
+  async cloneClearCanvas() {
+    const canvasClone = await new Promise(resolve => this.canvas.clone(resolve))
+    canvasClone.clear();
+    canvasClone.originWidth = this.canvas.originWidth
+    canvasClone.originHeight = this.canvas.originHeight
+    // canvasClone.setZoom(this.canvas.getZoom())
+    return canvasClone
   }
 
   /**

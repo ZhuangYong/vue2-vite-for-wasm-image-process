@@ -6,6 +6,7 @@ import scss from 'rollup-plugin-scss'
 import commonjs from "rollup-plugin-commonjs"
 import resolve from 'rollup-plugin-node-resolve'
 import wasm from './rollup-plugin-wasm'
+import worker from './rollup-plugin-worker'
 // import wasmImport from 'rollup-wasm-pack-import'
 // import jsx from 'rollup-plugin-jsx'
 import alias from '@rollup/plugin-alias';
@@ -76,7 +77,8 @@ export default {
     //   }
     // }),
     // svg({ vueComponent: true }),
-    wasm()
+    wasm(),
+    worker({include: 'src/lib/*.worker.js'})
 
   ]
 }

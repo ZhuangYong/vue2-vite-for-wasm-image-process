@@ -1,8 +1,12 @@
 import _ from 'lodash'
-import { Event } from '@/utils/Event'
+import {Event} from '@/utils/Event'
 import ImageHelper from "@/utils/ImageHelper"
 import Frame from "@/utils/Frame";
 import FrameGroup from "@/utils/FrameGroup";
+import GIF from "@/lib/gif"
+import gifWorker from '@/lib/gif.worker'
+import saveAs from "@/lib/FileSaver";
+
 class TimeLinePlayer extends Event {
 
   /**
@@ -98,6 +102,51 @@ class TimeLinePlayer extends Event {
     return this.frameGroups.find(group => group.includes(target))
   }
 
+  async exportAsGif() {
+    const canvasClone = await ImageHelper.cloneClearCanvas()
+    const { originWidth: width, originHeight: height } = canvasClone
+    const gif = new GIF({ workers: 2, quality: 1, width, height, workerScript: gifWorker });
+    for (let i = 0; i < this.keyFrameTime.length; i++) {
+      const time = this.keyFrameTime[i]
+      const delay = (this.keyFrameTime[i + 1] || this.duration) - time
+      const canvas = await this.timeToCanvas(time, canvasClone)
+      gif.addFrame(canvas, {delay})
+    }
+    gif.on('finished', blob => saveAs(blob, '导出' + '.gif'));
+    gif.render()
+  }
+
+  /**
+   * 时间帧转为canvas对象
+   * @param time
+   * @param canvasClone
+   * @returns {Promise<void>}
+   */
+  async timeToCanvas(time, canvasClone) {
+    canvasClone = canvasClone || await ImageHelper.cloneClearCanvas()
+    const cloneList = []
+    for (let i = 0; i < this.frameGroups.length; i++) {
+      const frameGroup = this.frameGroups[i]
+      const frame = frameGroup.getFrameInTime(time)
+      await Promise.all(frame._objects.map(obj => new Promise(resolve => obj.clone((clone) => {
+        cloneList.push(clone)
+        resolve()
+      }))))
+    }
+    canvasClone.clear()
+    canvasClone.add(...cloneList)
+    // canvasClone.setZoom(1)
+    canvasClone.requestRenderAll()
+    const { originWidth: width, originHeight: height } = canvasClone
+    return canvasClone.toCanvasElement(1, {width, height})
+    // Canvas2Image.saveAsPNG(canvasClone.toCanvasElement(1, {width, height}), width, height)
+    // return canvasClone
+  }
+
+  /**
+   * 渲染time时刻
+   * @param time
+   */
   requestFrame(time) {
     if (typeof time === 'undefined') {
       time = this.currentTime
@@ -109,6 +158,9 @@ class TimeLinePlayer extends Event {
     this.trigger('requestFrame')
   }
 
+  /**
+   * 渲染下一帧
+   */
   requestNextFrame() {
     console.log('------- requestNextFrame')
     if (this.start) {

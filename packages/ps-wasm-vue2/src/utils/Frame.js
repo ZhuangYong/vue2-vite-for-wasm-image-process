@@ -73,9 +73,10 @@ export default class Frame {
       if (_.isEmpty(this._objects)) {
         this._snapshot = null
       } else {
-        const canvasClone = await new Promise(resolve => ImageHelper.canvas.clone(resolve))
-        canvasClone.clear();
-        canvasClone.setZoom(ImageHelper.canvas.getZoom())
+        // const canvasClone = await new Promise(resolve => ImageHelper.canvas.clone(resolve))
+        // canvasClone.clear();
+        // canvasClone.setZoom(ImageHelper.canvas.getZoom())
+        const canvasClone = await ImageHelper.cloneClearCanvas()
         const cloneList = []
         await Promise.all(this._objects.map(obj => new Promise(resolve => obj.clone((clone) => {
           cloneList.push(clone)
