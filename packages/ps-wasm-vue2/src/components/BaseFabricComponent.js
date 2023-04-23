@@ -3,7 +3,7 @@
 import EventBus from '@/utils/Event'
 
 export default {
-  inject: ['getCanvas', 'getTarget'],
+  inject: ['getCanvas', 'getTarget', 'waiting'],
   computed: {
     canvas: {
       get() { return this.getCanvas ? this.getCanvas() : null },

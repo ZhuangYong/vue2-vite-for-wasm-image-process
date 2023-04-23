@@ -12,7 +12,9 @@ import LibGif from '@/lib/libgif'
 import TimeLinePlayer from '@/utils/TimeLinePlayer'
 import Frame from "@/utils/Frame"
 import FrameGroup from "@/utils/FrameGroup"
-import { Event } from "@/utils/Event"
+import {Event} from "@/utils/Event"
+import GIF from "@/lib/gif";
+import gifWorker from "@/lib/gif.worker";
 
 /**
  * 对象默认属性
@@ -68,7 +70,10 @@ export const COMMAND_TYPES = {
   },
   RESIZE: {
     ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', label: '修改对象宽'},
-    ACTIVE_OBJECT_HEIGHT: {key: 'activeObjectHeight', label: '修改对象宽'},
+    ACTIVE_OBJECT_HEIGHT: {key: 'activeObjectHeight', label: '修改对象高'},
+    ACTIVE_OBJECT_LEFT: {key: 'activeObjectLeft', label: '修改对象左边距'},
+    ACTIVE_OBJECT_TOP: {key: 'activeObjectTop', label: '修改对象上边距'},
+    ACTIVE_OBJECT_ANGLE: {key: 'activeObjectAngle', label: '修改对象角度'},
   },
   CONTROL: {
     PLAY_OR_STOP: {key: 'playOrStrop', label: '播放/暂停', keyMap: `space`},
@@ -133,6 +138,40 @@ class ImageHelper extends Event {
     super()
     this.canvas = _canvas
     this.initialBrush()
+  }
+
+  createCanvas(el) {
+    fabric.enableGLFiltering = false
+    const canvas = new fabric.Canvas(el, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
+    canvas.originWidth = 0
+    canvas.originHeight = 0
+    canvas.viewScale = 1
+    canvas.gifMode = false
+    // canvas.on('selection:updated', this.onSelect)
+    // canvas.on('selection:created', this.onSelect)
+    // canvas.on('selection:cleared', this.onSelect)
+    // canvas.on('object:removed', this.onSelect)
+    // canvas.on('dragover', this.onDragResourceOver)
+    // canvas.on('dragleave', this.onDragResourceLeave)
+    // canvas.on('object:added', e => console.log(e))
+    canvas.on('object:modified', ({ target }) => {
+      console.log('object:modified', target)
+      const previewState = { ...target._stateProperties }
+      const currentState = {}
+      Object.keys(previewState).forEach(key => {
+        currentState[key] = target[key]
+      })
+      // 修改back和redo
+      this.recordHistory({
+        back: () => fabric.util.object.extend(target, previewState) && target.fire('modified'),
+        redo: () => fabric.util.object.extend(target, currentState) && target.fire('modified')
+      })
+      this.trigger('object:modified', { target })
+    })
+    canvas.isDrawingMode = false
+    this.canvas = canvas
+    this.trigger('initialized', canvas)
+    return canvas
   }
 
   /**
@@ -254,7 +293,8 @@ class ImageHelper extends Event {
   }
 
 
-  handleCommand() {
+  async handleCommand() {
+    let modifyObject = false
     const [command, target, arg1, arg2, arg3, ...otherArgs] = Array.from(arguments)
     // const target = this.canvas.getActiveObject()
     // if (typeof target === 'undefined') {
@@ -304,6 +344,7 @@ class ImageHelper extends Event {
           return
         }
         const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = this.canvas.lowerCanvasEl.getBoundingClientRect()
+        // 粘贴时处理对象位置
         const handlePosition = o => {
           if (arg1 instanceof KeyboardEvent && this.currentMouseMoveEvent) {
             const { clientX, clientY } = this.currentMouseMoveEvent
@@ -347,18 +388,22 @@ class ImageHelper extends Event {
         })
         break
 
+      // 图层上移
       case COMMAND_TYPES.EDIT.UP_LAYER.key:
         target.bringForward()
         break
 
+      // 图层下移
       case COMMAND_TYPES.EDIT.DOWN_LAYER.key:
         target.sendBackwards()
         break
 
+      // 图层移动到顶部
       case COMMAND_TYPES.EDIT.MOVE_TOP_LAYER.key:
         target.bringToFront()
         break
 
+      // 图层移动到底部
       case COMMAND_TYPES.EDIT.MOVE_BOTTOM_LAYER.key:
         target.sendToBack()
         break
@@ -373,43 +418,86 @@ class ImageHelper extends Event {
 
       // 是否显示
       case COMMAND_TYPES.EDIT.VISIBLE.key:
-        const visible = target.visible
-        this.recordHistory({ back: () => target.visible = visible, redo: () => target.visible = arg1 })
-        target.visible = arg1
+        // const visible = target.visible
+        if (target.visible !== arg1) {
+          target.visible = arg1
+          modifyObject = true
+          // this.recordHistory({ back: () => target.visible = visible, redo: () => target.visible = arg1 })
+        }
         break
 
       // 修改对象宽
       case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_WIDTH.key:
-        if (arg1) {
-          const newWidth = arg1
-          const newScaleX = newWidth / target.width
-          if (target.canvas.getActiveObject().scaleX === newScaleX) {
-            return
-          }
-          console.log(newWidth,  target.width)
-          target.canvas.getActiveObject().scaleX = newWidth / target.width
+        const newScaleX = arg1 / target.width
+        if (target.canvas.getActiveObject().scaleX !== newScaleX) {
+          target.canvas.getActiveObject().scaleX = newScaleX
+          modifyObject = true
         }
         break
-      case COMMAND_TYPES.EDIT.CHANGE_FONT_FAMILY.key:
-        const oldFontFamily = target.fontFamily
-        target.set('fontFamily', arg1)
-        this.recordHistory({ back: () => target.fontFamily = oldFontFamily, redo: () => target.fontFamily = arg1 })
+
+      // 修改对象高
+      case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_HEIGHT.key:
+        const newScaleY = arg1 / target.height
+        if (target.canvas.getActiveObject().scaleX !== newScaleY) {
+          target.canvas.getActiveObject().scaleY = newScaleY
+          modifyObject = true
+        }
         break
 
+      // 修改对象顶部距离
+      case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_TOP.key:
+        if (target.canvas.getActiveObject().top !== arg1) {
+          target.canvas.getActiveObject().top = arg1
+          modifyObject = true
+        }
+        break
+
+      // 修改对象左边距离
+      case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_LEFT.key:
+        if (target.canvas.getActiveObject().left !== arg1) {
+          target.canvas.getActiveObject().left = arg1
+          modifyObject = true
+        }
+        break
+
+      case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_ANGLE.key:
+        if (target.canvas.getActiveObject().angle !== arg1) {
+          target.canvas.getActiveObject().angle = arg1
+          modifyObject = true
+        }
+        break
+
+      // 修改字体
+      case COMMAND_TYPES.EDIT.CHANGE_FONT_FAMILY.key:
+        const oldFontFamily = target.fontFamily
+        if (oldFontFamily !== arg1) {
+          target.set('fontFamily', arg1)
+          this.recordHistory({ back: () => target.fontFamily = oldFontFamily, redo: () => target.fontFamily = arg1 })
+          modifyObject = true
+        }
+        break
+
+      // 播放或暂停
       case COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key:
         TimeLinePlayer.togglePlay()
         break
 
+      // 应用动画
       case COMMAND_TYPES.ANIMATE.APPLY.key:
         const animateName = arg1
         const frameGroup = TimeLinePlayer.findGroupByTarget(target)
         if (frameGroup) {
-          frameGroup.applyAnimate(TimeLinePlayer.keyFrameTime, animateName).then(() => this.trigger('applyAnimate'))
+          await frameGroup.applyAnimate(TimeLinePlayer.keyFrameTime, animateName).then(() => this.trigger('applyAnimate'))
         }
         break
     }
 
-    this.canvas.requestRenderAll()
+    // 如果修改过
+    if (modifyObject) {
+      this.canvas.fire('object:modified', { target })
+    }
+    // 渲染
+    this.requestRenderAll()
   }
 
   /**
@@ -444,10 +532,11 @@ class ImageHelper extends Event {
           shape._element.width = width
           Object.defineProperty(shape._element, 'naturalWidth', { get: () => width })
           Object.defineProperty(shape._element, 'naturalHeight', { get: () => height })
+
+          this.addToCanvas(shape)
           if (this.canvas.gifMode) {
             TimeLinePlayer.addObjectAsFrameGroup(shape)
           } else {
-            this.addToCanvas(shape)
             this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
           }
         })
@@ -463,14 +552,20 @@ class ImageHelper extends Event {
   addText(text, option) {
     option = option || {}
     const textBox = new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option })
+    this.addToCanvas(textBox)
     if (this.canvas.gifMode) {
       TimeLinePlayer.addObjectAsFrameGroup(textBox)
     } else {
-      this.addToCanvas(textBox)
       this.recordHistory({ back: () => this.removeFromCanvas(textBox), redo: () => this.addToCanvas(textBox) })
     }
   }
 
+  /**
+   * 将文件当作gif解析并上传
+   * @param file
+   * @param option
+   * @returns {Promise<void>}
+   */
   async uploadGif(file, option) {
     option = option || {}
     const rawFrames = await this.splitGif(file)
@@ -506,10 +601,11 @@ class ImageHelper extends Event {
       const keyFrameTime = frames.map(frame => frame.startTime)
       const frameGroup = new FrameGroup(frames.map(frame => {
         const keyFrame = new Frame()
-        frame.img.set({...option, selectable: false, hoverCursor: 'default'})
+        frame.img.set({...option, ignore: true, selectable: false, hoverCursor: 'default'})
         keyFrame.duration = frame.duration
         keyFrame.startTime = frame.startTime
         keyFrame.add(frame.img)
+        this.addToCanvas(frame.img)
         return keyFrame
       }))
       TimeLinePlayer.reset({ frameTime, duration, keyFrameTime, frameGroups: [frameGroup] })
@@ -531,28 +627,11 @@ class ImageHelper extends Event {
       reader.readAsDataURL(file)
       reader.onload = e => {
         fabric.Image.fromURL(e.target.result, async (img) => {
+          img.set(option)
+          this.addToCanvas(img)
           if (this.canvas.gifMode) {
-            // const groupList = []
-            // await Promise.all(TimeLinePlayer.keyFrameTime.map(async (frameTime, index) => {
-            //   const cloneImg = await new Promise(resolve => img.clone(resolve))
-            //   cloneImg.set(option)
-            //   this.initial(cloneImg)
-            //   const keyFrame = new Frame()
-            //   keyFrame.duration = (TimeLinePlayer.keyFrameTime[index + 1] || TimeLinePlayer.duration) - TimeLinePlayer.keyFrameTime[index]
-            //   keyFrame.startTime = frameTime
-            //   keyFrame.add(cloneImg)
-            //   groupList.push(keyFrame)
-            // }))
-            img.set(option)
-            // const keyFrame = new Frame()
-            // keyFrame.add(img)
-            // keyFrame.startTime = 0
-            // keyFrame.duration = TimeLinePlayer.duration
-            // TimeLinePlayer.addFrameGroup(new FrameGroup([keyFrame]))
             TimeLinePlayer.addObjectAsFrameGroup(img)
           } else {
-            img.set(option)
-            this.addToCanvas(img)
             this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
           }
         })
@@ -681,9 +760,9 @@ class ImageHelper extends Event {
     this.canvas.setDimensions({ width: width * scale, height: height * scale })
   }
 
-  download() {
+  async download() {
     if (this.canvas.gifMode) {
-      this.downloadGif()
+      await this.downloadGif()
     } else {
       this.downloadPng()
     }
@@ -700,8 +779,8 @@ class ImageHelper extends Event {
     this.canvas.setZoom(zoom)
   }
 
-  downloadGif() {
-    TimeLinePlayer.exportAsGif()
+  async downloadGif() {
+    await this.exportAsGif()
   }
 
   /**
@@ -709,8 +788,30 @@ class ImageHelper extends Event {
    */
   downloadJson() {
     const json = this.canvas.toJSON(['UUID', 'originWidth', 'originHeight', 'viewScale', 'width', 'height', 'gifMode'])
-    console.log(json)
     saveAs(new Blob([JSON.stringify(json)], {type: 'text/plain'}), '导出' + '.json')
+  }
+
+  /**
+   * 导出gif
+   * @returns {Promise<void>}
+   */
+  async exportAsGif() {
+    const canvasClone = await this.cloneClearCanvas()
+    const { originWidth: width, originHeight: height } = canvasClone
+    const gif = new GIF({ workers: 2, quality: 1, width, height, workerScript: gifWorker, background: canvasClone.backgroundColor });
+    const [start, end] = TimeLinePlayer.getLimit()
+    for (let i = 0; i < TimeLinePlayer.keyFrameTime.length; i++) {
+      const time = TimeLinePlayer.keyFrameTime[i]
+      if (time >= start && time <= end) {
+        const delay = (TimeLinePlayer.keyFrameTime[i + 1] || TimeLinePlayer.duration) - time
+        const canvas = await TimeLinePlayer.timeToCanvas(time, canvasClone)
+        gif.addFrame(canvas, {delay})
+      }
+    }
+    return new Promise(resolve => {
+      gif.on('finished', blob => resolve(saveAs(blob, '导出' + '.gif')));
+      gif.render()
+    })
   }
 
   /**
@@ -722,7 +823,7 @@ class ImageHelper extends Event {
     // }
     const objs = arguments[0] instanceof Array ? arguments[0] : Array.from(arguments)
     objs.forEach(obj => {
-      this.initial(obj)
+      this.initialObject(obj)
       Object.keys(defaultProps).forEach(key => {
         if (!obj.hasOwnProperty(key)) {
           obj[key] = defaultProps[key]
@@ -755,7 +856,7 @@ class ImageHelper extends Event {
     this.canvas.requestRenderAll()
   }
 
-  initial(target) {
+  initialObject(target) {
     const { width, height } = target
     // 未初始化过
     if (this.canvas.originWidth) {
@@ -807,7 +908,7 @@ class ImageHelper extends Event {
 
   renderAll() {
     console.log('---- renderAll')
-    return this.canvas.renderAll()
+    return this.canvas && this.canvas.renderAll()
   }
 
   /**
@@ -943,6 +1044,7 @@ class ImageHelper extends Event {
     canvasClone.clear();
     canvasClone.originWidth = this.canvas.originWidth
     canvasClone.originHeight = this.canvas.originHeight
+    canvasClone.backgroundColor = this.canvas.backgroundColor
     // canvasClone.setZoom(this.canvas.getZoom())
     return canvasClone
   }
@@ -971,6 +1073,15 @@ class ImageHelper extends Event {
         resolve([...gif.get_frames()])
       })
     })
+  }
+
+  /**
+   * 清空对象选择
+   * @param e
+   */
+  clearActiveObjects(e) {
+    this.canvas.discardActiveObject(e)
+    this.requestRenderAll()
   }
 }
 const imageHelper = new ImageHelper(null)

@@ -880,6 +880,7 @@
       }
       parent.insertBefore(div, gif);
       parent.removeChild(gif);
+      parent.removeChild(div);
 
       if (options.c_w && options.c_h) setSizes(options.c_w, options.c_h);
       initialized=true;

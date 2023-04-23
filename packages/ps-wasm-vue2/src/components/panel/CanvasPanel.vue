@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import ImageHelper from "@/utils/ImageHelper"
+import imageHelper from "@/utils/ImageHelper"
 import Const from "@/const";
 import {fabric} from "@/lib/fabric.min";
 import fabricEnhance from "@/utils/fabricEnhance";
@@ -94,38 +94,45 @@ export default {
   },
   methods: {
     createCanvas() {
-      fabric.enableGLFiltering = false
-      const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
-      canvas.originWidth = 0
-      canvas.originHeight = 0
-      canvas.viewScale = 1
-      canvas.gifMode = false
+      // fabric.enableGLFiltering = false
+      // const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
+      // canvas.originWidth = 0
+      // canvas.originHeight = 0
+      // canvas.viewScale = 1
+      // canvas.gifMode = false
+      // canvas.on('selection:updated', this.onSelect)
+      // canvas.on('selection:created', this.onSelect)
+      // canvas.on('selection:cleared', this.onSelect)
+      // canvas.on('object:removed', this.onSelect)
+      // canvas.on('dragover', this.onDragResourceOver)
+      // canvas.on('dragleave', this.onDragResourceLeave)
+      // // canvas.on('object:added', e => console.log(e))
+      // canvas.on('object:modified', ({ target, transform }) => {
+      //   console.log('object:modified', transform)
+      //   const previewState = {...target._stateProperties}
+      //   const currentState = {}
+      //   Object.keys(previewState).forEach(key => {
+      //     currentState[key] = target[key]
+      //   })
+      //   // 修改back和redo
+      //   imageHelper.recordHistory({
+      //     back: () => fabric.util.object.extend(target, previewState) && target.fire('modified'),
+      //     redo: () => fabric.util.object.extend(target, currentState) && target.fire('modified')
+      //   })
+      // })
+      // canvas.isDrawingMode = false
+      const canvas = imageHelper.createCanvas(this.$refs.imgRect)
       canvas.on('selection:updated', this.onSelect)
       canvas.on('selection:created', this.onSelect)
       canvas.on('selection:cleared', this.onSelect)
       canvas.on('object:removed', this.onSelect)
       canvas.on('dragover', this.onDragResourceOver)
       canvas.on('dragleave', this.onDragResourceLeave)
-      // canvas.on('object:added', e => console.log(e))
-      canvas.on('object:modified', ({ target, transform }) => {
-        console.log('object:modified', transform)
-        const previewState = {...target._stateProperties}
-        const currentState = {}
-        Object.keys(previewState).forEach(key => {
-          currentState[key] = target[key]
-        })
-        // 修改back和redo
-        ImageHelper.recordHistory({
-          back: () => fabric.util.object.extend(target, previewState) && target.fire('modified'),
-          redo: () => fabric.util.object.extend(target, currentState) && target.fire('modified')
-        })
-      })
-      canvas.isDrawingMode = false
-      this.canvas = canvas
-      ImageHelper.canvas = this.canvas
       canvas.renderAll()
+      this.canvas = canvas
+      // imageHelper.canvas = this.canvas
       this.$emit('initialized', canvas)
-      ImageHelper.trigger('initialized', canvas)
+      // imageHelper.trigger('initialized', canvas)
       // this.$refs.main.addEventListener('wheel', e => {
       //
       // })
@@ -143,14 +150,14 @@ export default {
     async onImport(file) {
       console.log(file)
       const text = await file.raw.text()
-      ImageHelper.importFromJson(text)
+      imageHelper.importFromJson(text)
     },
     onNew() {
       eventBus.trigger('new')
     },
 
     onFileAdd(file) {
-      ImageHelper.uploadImage(file.raw)
+      imageHelper.uploadImage(file.raw)
     },
 
     onSelect() {
@@ -158,7 +165,7 @@ export default {
       if (this.currentObject && this.editMode === Const.EDIT_MODE.TEXT.value && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type)) {
         this.canvas.discardActiveObject()
       } else {
-        ImageHelper.currentTarget = this.currentObject
+        imageHelper.currentTarget = this.currentObject
         this.$emit('update:currentSelectTarget', this.currentObject)
       }
 
@@ -184,7 +191,7 @@ export default {
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const offset = {x: clientX - canvasX, y: clientY - canvasY}
       Array.from(e.dataTransfer.files || []).forEach(file => {
-        ImageHelper.uploadImage(file, {top: offset.y, left: offset.x})
+        imageHelper.uploadImage(file, {top: offset.y, left: offset.x})
       })
     },
 
@@ -196,6 +203,10 @@ export default {
     },
 
     onStageClick(e) {
+      if (e.target.classList.contains('canvas-panel')) {
+        imageHelper.clearActiveObjects(e)
+        return
+      }
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const currentMouseDownPoint = {x: e.clientX - canvasX, y: e.clientY - canvasY}
       if ((!this.currentObject || (this.currentObject && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type))) && this.editMode === Const.EDIT_MODE.TEXT.value) {

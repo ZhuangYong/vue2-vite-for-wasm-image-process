@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import ImageHelper from '@/utils/ImageHelper'
-import {fabric} from "../lib/fabric.min";
+// import ImageHelper from '@/utils/ImageHelper'
+// import {fabric} from "../lib/fabric.min";
 export default class Frame {
 
   UUID = `frame-${Math.random()}`
@@ -36,18 +36,54 @@ export default class Frame {
    */
   add() {
     this._objects.push(...arguments)
-    this._objects.forEach(obj => obj.on('modified', () => {
-      this._snapshot = null
-      this.snapshot().then(() => {
-        if (this.timer) {
-          clearTimeout(this.timer)
-        }
-        this.timer = setTimeout(() => {
-          ImageHelper.canvas.fire('update:snapshot')
-          this.timer = null
-        }, 400)
-      })
-    }))
+    this._objects.forEach(obj => this.initialObj(obj))
+    // this._objects.forEach(obj => obj.on('modified', () => {
+    //   console.log('------- on modify in frame')
+    //   this._snapshot = null
+    //   this.snapshot().then(() => {
+    //     if (this.timer) {
+    //       clearTimeout(this.timer)
+    //     }
+    //     this.timer = setTimeout(() => {
+    //       ImageHelper.canvas.fire('update:snapshot')
+    //       this.timer = null
+    //     }, 400)
+    //   })
+    // }))
+  }
+
+  clearRender() {
+    this._objects.forEach(obj => obj.ignore = true)
+  }
+
+  render() {
+    this._objects.forEach(obj => obj.ignore = false)
+    this.canvas.requestRenderAll()
+  }
+
+  /**
+   * 初始话对象
+   */
+  initialObj(obj) {
+    const onObjModified = this.onObjModified.bind(this)
+    obj.on('removed', () => {
+      obj.off('modified', onObjModified)
+    })
+    obj.on('modified', onObjModified)
+  }
+
+  onObjModified() {
+    console.log('------- on modify in frame')
+    this._snapshot = null
+    this.snapshot().then(() => {
+      if (this.timer) {
+        clearTimeout(this.timer)
+      }
+      this.timer = setTimeout(() => {
+        this.canvas.fire('update:snapshot')
+        this.timer = null
+      }, 400)
+    })
   }
 
   /**
@@ -73,10 +109,7 @@ export default class Frame {
       if (_.isEmpty(this._objects)) {
         this._snapshot = null
       } else {
-        // const canvasClone = await new Promise(resolve => ImageHelper.canvas.clone(resolve))
-        // canvasClone.clear();
-        // canvasClone.setZoom(ImageHelper.canvas.getZoom())
-        const canvasClone = await ImageHelper.cloneClearCanvas()
+        const canvasClone = await this.cloneClearCanvas()
         const cloneList = []
         await Promise.all(this._objects.map(obj => new Promise(resolve => obj.clone((clone) => {
           cloneList.push(clone)
@@ -91,12 +124,18 @@ export default class Frame {
     return this._snapshot
   }
 
-  // requestNextFrame(time) {
-  //   if (time >= this.startTime && time < this.startTime + this.duration) {
-  //     ImageHelper.addToCanvas(...this._objects)
-  //   } else {
-  //     ImageHelper.removeFromCanvas(...this._objects)
-  //   }
-  // }
+  async cloneClearCanvas() {
+    const canvasClone = await new Promise(resolve => this.canvas.clone(resolve))
+    canvasClone.clear();
+    canvasClone.originWidth = this.canvas.originWidth
+    canvasClone.originHeight = this.canvas.originHeight
+    canvasClone.backgroundColor = this.canvas.backgroundColor
+    // canvasClone.setZoom(this.canvas.getZoom())
+    return canvasClone
+  }
+
+  get canvas() {
+    return (this._objects.find(item => !!item.canvas) || {}).canvas
+  }
 
 }

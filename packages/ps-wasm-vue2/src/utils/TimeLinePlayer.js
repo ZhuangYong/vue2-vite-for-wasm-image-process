@@ -6,6 +6,7 @@ import FrameGroup from "@/utils/FrameGroup";
 import GIF from "@/lib/gif"
 import gifWorker from '@/lib/gif.worker'
 import saveAs from "@/lib/FileSaver";
+import Canvas2Image from "@/utils/CanvasToImage";
 
 class TimeLinePlayer extends Event {
 
@@ -87,6 +88,7 @@ class TimeLinePlayer extends Event {
    */
   addObjectAsFrameGroup(obj) {
     const keyFrame = new Frame()
+    obj.ignore = true
     keyFrame.add(obj)
     keyFrame.startTime = 0
     keyFrame.duration = this.duration
@@ -102,19 +104,26 @@ class TimeLinePlayer extends Event {
     return this.frameGroups.find(group => group.includes(target))
   }
 
-  async exportAsGif() {
-    const canvasClone = await ImageHelper.cloneClearCanvas()
-    const { originWidth: width, originHeight: height } = canvasClone
-    const gif = new GIF({ workers: 2, quality: 1, width, height, workerScript: gifWorker });
-    for (let i = 0; i < this.keyFrameTime.length; i++) {
-      const time = this.keyFrameTime[i]
-      const delay = (this.keyFrameTime[i + 1] || this.duration) - time
-      const canvas = await this.timeToCanvas(time, canvasClone)
-      gif.addFrame(canvas, {delay})
-    }
-    gif.on('finished', blob => saveAs(blob, '导出' + '.gif'));
-    gif.render()
-  }
+  // /**
+  //  * 导出gif
+  //  * @returns {Promise<void>}
+  //  */
+  // async exportAsGif() {
+  //   const canvasClone = await ImageHelper.cloneClearCanvas()
+  //   const { originWidth: width, originHeight: height } = canvasClone
+  //   const gif = new GIF({ workers: 2, quality: 1, width, height, workerScript: gifWorker });
+  //   const [start, end] = this.getLimit()
+  //   for (let i = 0; i < this.keyFrameTime.length; i++) {
+  //     const time = this.keyFrameTime[i]
+  //     if (time >= start && time <= end) {
+  //       const delay = (this.keyFrameTime[i + 1] || this.duration) - time
+  //       const canvas = await this.timeToCanvas(time, canvasClone)
+  //       gif.addFrame(canvas, {delay})
+  //     }
+  //   }
+  //   gif.on('finished', blob => saveAs(blob, '导出' + '.gif'));
+  //   gif.render()
+  // }
 
   /**
    * 时间帧转为canvas对象
@@ -127,17 +136,22 @@ class TimeLinePlayer extends Event {
     const cloneList = []
     for (let i = 0; i < this.frameGroups.length; i++) {
       const frameGroup = this.frameGroups[i]
-      const frame = frameGroup.getFrameInTime(time)
-      await Promise.all(frame._objects.map(obj => new Promise(resolve => obj.clone((clone) => {
-        cloneList.push(clone)
-        resolve()
-      }))))
+      const frame = frameGroup.getFrameInTime(time, true)
+      if (frame) {
+        await Promise.all(frame._objects.map(obj => new Promise(resolve => obj.clone((clone) => {
+          cloneList.push(clone)
+          resolve()
+        }))))
+      }
     }
+    const backgroundColor = canvasClone.backgroundColor
     canvasClone.clear()
+    canvasClone.backgroundColor = backgroundColor
     canvasClone.add(...cloneList)
     // canvasClone.setZoom(1)
     canvasClone.requestRenderAll()
     const { originWidth: width, originHeight: height } = canvasClone
+    // Canvas2Image.saveAsPNG(canvasClone.toCanvasElement(1, {width, height}), width, height)
     return canvasClone.toCanvasElement(1, {width, height})
     // Canvas2Image.saveAsPNG(canvasClone.toCanvasElement(1, {width, height}), width, height)
     // return canvasClone
@@ -152,7 +166,7 @@ class TimeLinePlayer extends Event {
       time = this.currentTime
     }
     time = time || 0
-    ImageHelper.cleanCanvas()
+    // ImageHelper.cleanCanvas()
     this.frameGroups.forEach(frameGroup => frameGroup.renderFrame(time))
     this.currentTime = time
     this.trigger('requestFrame')
@@ -164,10 +178,10 @@ class TimeLinePlayer extends Event {
   requestNextFrame() {
     console.log('------- requestNextFrame')
     if (this.start) {
+      const limit = this.getLimit()
       const { currentTime, duration } = this
-      // const objects = this.canvas._objects
-      let nextTime = this.keyFrameTime.find(t => t > this.currentTime)
-      nextTime = nextTime || 0
+      let nextTime = this.keyFrameTime.find(t => t >= limit[0] && t <= limit[1] && t > this.currentTime)
+      nextTime = Math.max(nextTime || 0, limit[0])
       this.requestFrame(currentTime)
       // objects.forEach(object => object.requestNextFrame && object.requestNextFrame(this.currentTime))
       setTimeout(() => {
@@ -177,6 +191,24 @@ class TimeLinePlayer extends Event {
       }, (nextTime || duration) - currentTime)
       this.currentTime = nextTime
     }
+  }
+
+  /**
+   * 时间限制的结束时间不能为0
+   * @returns {number[]}
+   */
+  getLimit() {
+    const defaultLimit = [0, this.duration]
+    if (_.isEmpty(this.frameGroups)) {
+      return defaultLimit
+    }
+    const limit = [...(this.frameGroups[0].limit || defaultLimit)]
+    this.frameGroups.forEach(frameGroup => {
+      const [start, end] = frameGroup.limit
+      limit[0] = Math.min(start || 0, limit[0])
+      limit[1] = Math.max(end || this.duration, limit[1])
+    })
+    return limit
   }
 
   render() {

@@ -1,5 +1,6 @@
 <template>
   <div ref="stage" class="stage">
+    <waiting v-if="showWaiting" class="full-waiting" />
     <Dialogs />
     <el-container>
       <el-aside width="200px" class="left-function">
@@ -83,10 +84,12 @@ import LayerPanel from '@/components/panel/LayerPanel.vue'
 import TimeLinePanel from "@/components/panel/TimeLinePanel.vue"
 import Dialogs from '@/components/panel/Dialogs.vue'
 import AnimatePanel from "@/components/panel/AnimatePanel.vue"
+import Waiting from "@/components/Waiting.vue";
 
 export default {
   name: 'Stage',
   components: {
+    Waiting,
     FastEffect,
     Stickers,
     ObjectProps,
@@ -105,12 +108,14 @@ export default {
       getCanvas: () => this.canvas,
       getTarget: () => this.currentObject,
       // getTargetProps: () => this.targetProps,
-      getEditMode: () => this.editMode
+      getEditMode: () => this.editMode,
+      waiting: bol => this.showWaiting = bol
     }
   },
   data() {
     return {
       canvas: null,
+      showWaiting: false,
       fullscreenTarget: null,
       editMode: Const.EDIT_MODE.MOVE.value, // 编辑模式
       // targetProps: defaultProps,
@@ -168,9 +173,19 @@ export default {
 }
 .stage {
   height: 100%;
+  position: relative;
   user-select: none;
   background-color: white;
   border: 1px solid #dedede;
+  .full-waiting {
+    left: 0;
+    top: 0;
+    z-index: 999;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background: #3030300f;
+  }
   .el-container {
     height: 100%;
   }

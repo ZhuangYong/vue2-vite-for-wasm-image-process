@@ -1,9 +1,12 @@
 <template>
   <div ref="timeLinePanel" class="time-line-panel" @mousedown="onMousedown" @mouseup="onMouseup" @mousemove="onMousemove" @mouseout="onMouseout" @wheel="onWheel">
+    <!--辅助显示当前-->
     <div v-if="showTimeAssetsLine && TimeLinePlayer.duration" class="time-assets-line" :style="`transform: translateX(${timeAssetsLine.x}px)`" />
+    <!--辅助显示当前播放-->
     <div v-if="TimeLinePlayer.duration" class="time-assets-line play-time-line" :style="`transform: translateX(${playTimeLineX}px)`" />
+    <!--帧预览-->
     <div ref="timeLineContainer" class="time-line-container"  :style="`transform: translateX(${-timeLineContainer.x}px)`">
-      <div v-for="frameGroup in TimeLinePlayer.frameGroups" :key="frameGroup.UUID">
+      <div v-for="frameGroup in TimeLinePlayer.frameGroups" :key="frameGroup.UUID" class="time-line-item">
         <TimeLine :frame-group="frameGroup" />
       </div>
     </div>
@@ -169,6 +172,9 @@ export default {
     top: 0;
     left: 0;
     position: absolute;
+    .time-line-item {
+      margin-top: 4px;
+    }
   }
   .time-assets-line {
     top: 0;
@@ -180,6 +186,7 @@ export default {
     border-left: 1px solid #ebebeb;
     &.play-time-line {
       width: 4px;
+      height: 50px;
       border: none;
       border-radius: 2px;
       background-color: gray;

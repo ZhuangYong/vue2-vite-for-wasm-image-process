@@ -52,8 +52,10 @@ export default {
     onFileAdd(file) {
       imageHelper.uploadImage(file.raw)
     },
-    onDownload() {
-      imageHelper.download()
+    async onDownload() {
+      this.waiting(true)
+      await imageHelper.download()
+      this.waiting(false)
     },
     onExport() {
       imageHelper.downloadJson()

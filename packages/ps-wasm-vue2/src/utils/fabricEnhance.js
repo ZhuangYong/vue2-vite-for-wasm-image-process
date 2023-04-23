@@ -98,7 +98,7 @@ function filterHidden() {
     fabric.Canvas.prototype._chooseObjectsToRender = function () {
       let objects = fabric.Canvas.prototype._old_chooseObjectsToRender.apply(this, arguments)
       if (objects) {
-        objects = objects.filter(item => !!item.visible)
+        objects = objects.filter(item => !!item.visible && !item.ignore)
       }
       return objects
     }

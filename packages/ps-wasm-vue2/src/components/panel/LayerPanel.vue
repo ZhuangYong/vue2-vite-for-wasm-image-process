@@ -32,8 +32,8 @@ export default {
   },
   computed: {
     layers() {
-      return ((this.canvas || {})._objects || []).map(target => {
-        const { UUID, type, left, top, width, height, scaleX = 1, scaleY = 1, text } = target
+      return ((this.canvas || {})._objects || []).filter(target => !target.ignore).map(target => {
+        const { UUID, type, width, height } = target
         const result = imageHelper.watchTarget(target)
         result.type = target.type
         result._element = target._element
@@ -152,6 +152,7 @@ export default {
       image {
         x: 0!important;
         y: 0!important;
+        visibility: visible!important;
         transform: none!important;
       }
     }
