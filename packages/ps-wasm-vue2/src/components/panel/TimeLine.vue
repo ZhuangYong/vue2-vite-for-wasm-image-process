@@ -1,39 +1,72 @@
 <template>
-  <div ref="timeLine" class="time-line">
+  <div ref="timeLine" class="time-line" :style="`width: ${frameGroup.duration * scale}px`">
     <!--<div v-for="frame in frameGroup.frames" :key="frame.UUID" class="preview-item">
       <div v-for="object in frame._objects" :key="object.UUID" v-html="`<svg viewBox='0 0 ${object.width} ${object.height}'>${object.toSVG()}</svg>`" />
       &lt;!&ndash;<img :src="frame.url" alt="">&ndash;&gt;
     </div>-->
+    <!--显示时间限制，可拖动改变范围-->
     <span class="limit-panel" :style="`width: ${widthStyle}; left: ${leftStyle}`">
+      <!--左边拖动锚-->
       <span class="limit-bar left" @mousedown="onLeftMousedown" @mousemove="onMousemove" @mouseup="leaveChangeLimit" />
+      <!--右边拖动锚-->
       <span class="limit-bar right" @mousedown="onRightMousedown" @mousemove="onMousemove" @mouseup="leaveChangeLimit" />
     </span>
-    <div v-for="frame in frames" :key="frame.UUID" class="preview-item" :style="`background-image: url('${frame.snapshot}')`" />
+    <!--显示时间下截图-->
+    <div v-for="frame in frames" :key="frame.UUID" class="preview-item" :style="previewItemStyle(frame)" />
   </div>
 </template>
 
 <script>
-import TimeLinePlayer from "@/utils/TimeLinePlayer"
+import timeLinePlayer from "@/utils/timeLinePlayer"
 import ImageHelper from "@/utils/ImageHelper";
+
 export default {
   name: 'TimeLine',
+  inject: ['getContainer'],
   props: {
+    /**
+     * 片段
+     * */
     frameGroup: {
       type: Object,
       default: () => {}
     },
+    /**
+     * 缩放
+     * */
+    scale: {
+      type: Number,
+      default: 1
+    },
+    /**
+     * 缩放
+     * */
+    itemSize: {
+      type: Number,
+      default: 40
+    },
+    /**
+     * 偏移
+     * */
+    offset: {
+      type: Number,
+      default: 0
+    }
   },
   data() {
     return {
       frames: [],
       limit: {left: 0, right: 0},
-      TimeLinePlayer,
+      timeLinePlayer,
       startLimit: [],
       startLimitWay: '',
       startPoint: { x: 0 }
     }
   },
   computed: {
+    /**
+     * 限制下的宽度
+     * */
     widthStyle() {
       const limit = this.limit
       const { duration } = this.frameGroup
@@ -42,6 +75,10 @@ export default {
       }
       return `calc(100% - 4px)`
     },
+    /**
+     * 限制下的左边position
+     * @returns {string|number}
+     */
     leftStyle() {
       const limit = this.limit
       const { duration } = this.frameGroup
@@ -59,6 +96,9 @@ export default {
         this.limit.right = right
       },
       immediate: true
+    },
+    scale() {
+      this.refreshFrames()
     }
   },
   mounted() {
@@ -84,6 +124,10 @@ export default {
     leaveChangeLimit() {
       this.startLimitWay = ''
     },
+
+    /**
+     * 左侧时间限制bar
+     * */
     onLeftMousedown(e) {
       e.stopPropagation()
       e.preventDefault()
@@ -91,6 +135,10 @@ export default {
       this.startLimit = [...this.frameGroup.limit]
       this.startLimitWay = 'left'
     },
+
+    /**
+     * 右侧时间限制bar
+     * */
     onRightMousedown(e) {
       e.stopPropagation()
       e.preventDefault()
@@ -113,23 +161,52 @@ export default {
         this.limit.right = this.frameGroup.limit[1] = Math.max(Math.min(this.frameGroup.duration, newLimit), this.startLimit[0])
       }
     },
-    async refreshFrames(e) {
+
+    /**
+     * 刷新帧
+     * */
+    async refreshFrames() {
       const arr = []
-      await Promise.all(this.TimeLinePlayer.keyFrameTime.map(async (keyTime) => {
+      const viewFrameTime = this.itemSize / this.scale
+      // const { frameCount } = this.timeLinePlayer
+      const frameCount = Math.ceil(this.frameGroup.duration / viewFrameTime)
+      for (let i = 0; i < frameCount; i++) {
+        const keyTime = viewFrameTime * i
         const snapshot = await this.frameGroup.getSnapshot(keyTime)
-        arr.push({ UUID: keyTime, snapshot })
-      }))
+        arr.push({ UUID: `snapshot-${keyTime}`, index: i, keyTime, snapshot })
+      }
       this.frames = arr
+    },
+
+    reloadSnapshot() {
+
+    },
+
+    /**
+     * 截图帧样式，可视范围内渲染
+     * @param frame
+     * @returns {string}
+     */
+    previewItemStyle(frame) {
+      const boundSize = 4
+      const { width } = this.getContainer().getBoundingClientRect()
+      const count = Math.ceil(width / this.itemSize)
+      const leftCount = Math.ceil(this.offset / this.itemSize)
+      if (frame.index > leftCount - boundSize && frame.index < leftCount + count + boundSize) {
+        return `background-image: url('${frame.snapshot}')`
+      }
+      return ''
     }
   },
 }
 </script>
 
 <style lang="scss" scoped>
-$itemSize: 42px;
+$itemSize: 40px;
 $borderSize: 2px;
 $limitBarWidth: 15px;
 .time-line {
+  overflow: hidden;
   height: $itemSize;
   position: relative;
   white-space: nowrap;

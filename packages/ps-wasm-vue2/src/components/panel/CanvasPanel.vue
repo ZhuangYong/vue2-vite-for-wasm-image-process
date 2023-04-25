@@ -34,7 +34,7 @@ import {eventBus} from "@/components/BaseFabricComponent";
 fabricEnhance(fabric)
 export default {
   name: 'CanvasPanel',
-  inject: ['getEditMode'],
+  inject: ['getEditMode', 'waiting'],
   props: {
     currentSelectTarget: {
       type: Object,
@@ -156,8 +156,10 @@ export default {
       eventBus.trigger('new')
     },
 
-    onFileAdd(file) {
-      imageHelper.uploadImage(file.raw)
+    async onFileAdd(file) {
+      this.waiting(true)
+      await imageHelper.uploadImage(file.raw)
+      this.waiting(false)
     },
 
     onSelect() {
@@ -183,16 +185,17 @@ export default {
       }
     },
 
-    onStageDrop(e) {
+    async onStageDrop(e) {
       if (this.showDefault) {
         return
       }
       const { clientX, clientY } = e.originalEvent || e
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const offset = {x: clientX - canvasX, y: clientY - canvasY}
-      Array.from(e.dataTransfer.files || []).forEach(file => {
-        imageHelper.uploadImage(file, {top: offset.y, left: offset.x})
-      })
+      const files = e.dataTransfer.files || []
+      for (let i = 0; i < files.length; i++) {
+        await imageHelper.uploadImage(files[i], {top: offset.y, left: offset.x})
+      }
     },
 
     onDragResourceOver(e) {

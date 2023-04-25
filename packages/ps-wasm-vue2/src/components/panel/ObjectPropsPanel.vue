@@ -6,6 +6,10 @@
           <span class="label">画布：</span>
           {{ canvas.originWidth }} x {{ canvas.originHeight }}
         </div>
+        <div v-if="canvas.gifMode" class="props-item">
+          <span class="label">fps：</span>
+          {{ 1000 / timeLinePlayer.frameTime }}
+        </div>
       </div>
 
       <div class="props-line">
@@ -77,17 +81,17 @@
       <div class="props-line">
         <div class="props-item btn">
           <span class="label">顺序：</span>
-          <el-button size="mini">顺序</el-button>
-          <el-button size="mini">倒序</el-button>
+          <el-button size="mini" :type="!reverse ? 'primary' : ''" @click="onChangePlayReverse(false)">顺序</el-button>
+          <el-button size="mini" :type="reverse ? 'primary' : ''" @click="onChangePlayReverse(true)">倒序</el-button>
         </div>
       </div>
 
       <div class="props-line">
         <div class="props-item btn">
           <span class="label">倍速：</span>
-          <el-button size="mini">0.5x</el-button>
-          <el-button size="mini">1.0x</el-button>
-          <el-button size="mini">1.5x</el-button>
+          <el-button size="mini" :type="speed === 0.5 ? 'primary' : ''" @click="onChangePlaySpeed(0.5)">0.5x</el-button>
+          <el-button size="mini" :type="speed === 1.0 ? 'primary' : ''" @click="onChangePlaySpeed(1.0)">1.0x</el-button>
+          <el-button size="mini" :type="speed === 1.5 ? 'primary' : ''" @click="onChangePlaySpeed(1.5)">1.5x</el-button>
           <!--<el-button size="mini">2.0x</el-button>-->
         </div>
       </div>
@@ -102,6 +106,7 @@ import VisibleSwitch from "../buttons/VisibleSwitch.vue"
 import { fontOptions } from '@/utils/FontHelper'
 import imageHelper, {COMMAND_TYPES, defaultProps, scaleXtoWidth, scaleYtoHeight} from "@/utils/ImageHelper";
 import ColorPicker from "@/components/ColorPicker.vue"
+import timeLinePlayer from "@/utils/TimeLinePlayer";
 
 const watchProps = ['showWidth', 'showHeight']
 export default {
@@ -112,6 +117,7 @@ export default {
     return {
       imageHelper,
       fontOptions,
+      timeLinePlayer,
       backgroundColor: '',
       targetProps: defaultProps,
       // showProps: defaultProps
@@ -126,6 +132,12 @@ export default {
     },
     canvas() {
       return imageHelper.canvas || {}
+    },
+    reverse() {
+      return this.timeLinePlayer.reverse
+    },
+    speed() {
+      return this.timeLinePlayer.speed
     }
   },
   mounted() {
@@ -182,32 +194,44 @@ export default {
      * 修改宽
      */
     onWidthChange() {
-      if (this.target && this.target.width !== this.targetProps.width) {
+      if (this.target) {
         imageHelper.handleCommand(COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_WIDTH.key, this.target, this.targetProps.width)
       }
     },
 
     onHeightChange() {
-      if (this.target && this.target.height !== this.targetProps.height) {
+      if (this.target) {
         imageHelper.handleCommand(COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_WIDTH.key, this.target, this.targetProps.height)
       }
     },
 
     onTopChange() {
-      if (this.target && this.target.top !== this.targetProps.top) {
+      if (this.target) {
         imageHelper.handleCommand(COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_TOP.key, this.target, Number(this.targetProps.top) || 0)
       }
     },
 
     onLeftChange() {
-      if (this.target && this.target.left !== this.targetProps.left) {
+      if (this.target) {
         imageHelper.handleCommand(COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_LEFT.key, this.target, Number(this.targetProps.left) || 0)
       }
     },
 
     onAngleChange() {
-      if (this.target && this.target.angle !== this.targetProps.angle) {
+      if (this.target) {
         imageHelper.handleCommand(COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_ANGLE.key, this.target, Number(this.targetProps.angle) || 0)
+      }
+    },
+
+    onChangePlayReverse(bol) {
+      if (this.canvas) {
+        imageHelper.handleCommand(COMMAND_TYPES.CONTROL.PLAY_REVERSE.key, this.target, bol)
+      }
+    },
+
+    onChangePlaySpeed(speed) {
+      if (this.canvas) {
+        imageHelper.handleCommand(COMMAND_TYPES.CONTROL.PLAY_SPEED.key, this.target, speed)
       }
     }
   }

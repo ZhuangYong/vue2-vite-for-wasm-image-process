@@ -1,6 +1,6 @@
 <template>
   <div class="layer-panel">
-    <Draggable :list="orderList" :swap="true" :force-fallback="true" :delay="100" class="quick-pick-draggable" @sort="onSort">
+    <Draggable :list="orderList" :swap="true" :force-fallback="true" :delay="100" :sort="!timeLinePlayer.start" class="quick-pick-draggable" @sort="onSort">
       <div v-for="(layer, index) in layers" :key="`${index}_${layer.UUID}`" class="layer-item" :class="`type-${layer.type} ${layer.active && 'active'}`"  @click="onItemClick(layer)">
         <VisibleSwitch :layer="layer" />
         <div class="preview-icon" v-html="layer.preview" />
@@ -19,7 +19,8 @@ import imageHelper, {COMMAND_TYPES} from "@/utils/ImageHelper";
 import {isText} from "@/const";
 import textSvg from '@/../static/icon/text.svg'
 import {base64ToStr} from "@/utils";
-import Draggable from "@/components/Draggable";
+import Draggable from "@/components/Draggable"
+import timeLinePlayer from '@/utils/TimeLinePlayer'
 
 export default {
   name: 'LayerPanel',
@@ -27,6 +28,7 @@ export default {
   components: {VisibleSwitch, Draggable},
   data() {
     return {
+      timeLinePlayer,
       orderList: []
     }
   },
@@ -63,8 +65,10 @@ export default {
   },
   methods: {
     onItemClick(layer) {
-      this.canvas.setActiveObject(layer.target)
-      this.canvas.requestRenderAll()
+      if (!timeLinePlayer.start) {
+        this.canvas.setActiveObject(layer.target)
+        this.canvas.requestRenderAll()
+      }
     },
     onSort({ oldIndex, newIndex }) {
       imageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)

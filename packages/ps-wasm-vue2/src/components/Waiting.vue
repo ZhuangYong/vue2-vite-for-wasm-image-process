@@ -31,8 +31,8 @@ $itemDelay: 0.125s;
   margin: auto;
   width: 40rem;
   height: 40rem;
-  zoom: 0.24;
-  filter: brightness(0.6);
+  zoom: 0.12;
+  //filter: brightness(0.6);
   position: absolute;
   overflow: hidden;
 }
@@ -46,6 +46,7 @@ $itemDelay: 0.125s;
   max-width: 100%;
   position: absolute;
   //background-color: ;
+  background-color: white;
   border-radius: 0 10rem 0 10rem;
   box-shadow: inset 0 0 0 .1rem #E645D0, 0 0 1.5rem 0 #E645D0;
 }
@@ -141,7 +142,7 @@ $itemDelay: 0.125s;
 }
 
 .one {
-  animation: one $itemTime ease infinite;
+  animation: one $itemTime $itemDelay * 7 ease infinite;
 }
 
 @keyframes one {
@@ -154,7 +155,7 @@ $itemDelay: 0.125s;
 }
 
 .two {
-  animation: two $itemTime $itemDelay ease infinite;
+  animation: two $itemTime $itemDelay * 6 ease infinite;
 }
 
 @keyframes two {
@@ -167,7 +168,7 @@ $itemDelay: 0.125s;
 }
 
 .three {
-  animation: three $itemTime $itemDelay * 2 ease infinite;
+  animation: three $itemTime $itemDelay * 5 ease infinite;
 }
 
 @keyframes three {
@@ -180,7 +181,7 @@ $itemDelay: 0.125s;
 }
 
 .four {
-  animation: four $itemTime $itemDelay * 3 ease infinite;
+  animation: four $itemTime $itemDelay * 4 ease infinite;
 }
 
 @keyframes four {
@@ -193,7 +194,7 @@ $itemDelay: 0.125s;
 }
 
 .five {
-  animation: five $itemTime $itemDelay * 4 ease infinite;
+  animation: five $itemTime $itemDelay * 3 ease infinite;
 }
 
 @keyframes five {
@@ -206,7 +207,7 @@ $itemDelay: 0.125s;
 }
 
 .six {
-  animation: six $itemTime $itemDelay * 5 ease infinite;
+  animation: six $itemTime $itemDelay * 2 ease infinite;
 }
 
 @keyframes six {
@@ -219,7 +220,7 @@ $itemDelay: 0.125s;
 }
 
 .seven {
-  animation: seven $itemTime $itemDelay * 6 ease infinite;
+  animation: seven $itemTime $itemDelay * 1 ease infinite;
 }
 
 @keyframes seven {
@@ -232,7 +233,7 @@ $itemDelay: 0.125s;
 }
 
 .eight {
-  animation: eight $itemTime $itemDelay * 7 ease infinite;
+  animation: eight $itemTime ease infinite;
 }
 
 @keyframes eight {

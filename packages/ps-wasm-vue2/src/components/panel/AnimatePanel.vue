@@ -33,13 +33,15 @@ export default {
       return this.usedAnimates.find(item => item.name === name) || ''
     },
     applyAnimate(type) {
-      this.waiting(true)
-      setTimeout(() => {
-        imageHelper
-          .handleCommand(COMMAND_TYPES.ANIMATE.APPLY.key, this.target, type)
-          .then(() => this.waiting(false))
-          .catch(() => this.waiting(false))
-      }, 400)
+      if (!this.disabled) {
+        this.waiting(true)
+        setTimeout(() => {
+          imageHelper
+            .handleCommand(COMMAND_TYPES.ANIMATE.APPLY.key, this.target, type)
+            .then(() => this.waiting(false))
+            .catch(() => this.waiting(false))
+        }, 400)
+      }
     }
   }
 }

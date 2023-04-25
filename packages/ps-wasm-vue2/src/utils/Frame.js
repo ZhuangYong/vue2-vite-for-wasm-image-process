@@ -1,6 +1,4 @@
 import _ from 'lodash'
-// import ImageHelper from '@/utils/ImageHelper'
-// import {fabric} from "../lib/fabric.min";
 export default class Frame {
 
   UUID = `frame-${Math.random()}`
@@ -96,6 +94,10 @@ export default class Frame {
     })
   }
 
+  /**
+   * 从fabric中克隆对象
+   * @returns {Promise<unknown[]>}
+   */
   async cloneObjects() {
     return await Promise.all(this._objects.map(async (obj) => new Promise(resolve => obj.clone(clone => resolve(clone)))))
   }
@@ -109,16 +111,15 @@ export default class Frame {
       if (_.isEmpty(this._objects)) {
         this._snapshot = null
       } else {
-        const canvasClone = await this.cloneClearCanvas()
-        const cloneList = []
-        await Promise.all(this._objects.map(obj => new Promise(resolve => obj.clone((clone) => {
-          cloneList.push(clone)
-          resolve()
-        }))))
-        canvasClone.add(...cloneList)
-        // canvasClone.setZoom(1)
-        const { originWidth: width, originHeight: height } = canvasClone
-        this._snapshot = canvasClone.toDataURL({width, height, multiplier: 1, withoutTransform: true}) // 1, {width, height}
+        if (!this.loading) {
+          this.loading = true
+          const canvasClone = await this.cloneClearCanvas()
+          const cloneList = await this.cloneObjects()
+          canvasClone.add(...cloneList)
+          const { originWidth: width, originHeight: height } = canvasClone
+          this._snapshot = canvasClone.toDataURL({width, height, multiplier: 1, withoutTransform: true}) // 1, {width, height}
+          this.loading = false
+        }
       }
     }
     return this._snapshot

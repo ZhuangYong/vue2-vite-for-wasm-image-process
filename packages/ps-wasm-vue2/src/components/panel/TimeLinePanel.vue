@@ -1,96 +1,121 @@
 <template>
   <div ref="timeLinePanel" class="time-line-panel" @mousedown="onMousedown" @mouseup="onMouseup" @mousemove="onMousemove" @mouseout="onMouseout" @wheel="onWheel">
-    <!--辅助显示当前-->
-    <div v-if="showTimeAssetsLine && TimeLinePlayer.duration" class="time-assets-line" :style="`transform: translateX(${timeAssetsLine.x}px)`" />
-    <!--辅助显示当前播放-->
-    <div v-if="TimeLinePlayer.duration" class="time-assets-line play-time-line" :style="`transform: translateX(${playTimeLineX}px)`" />
+    <TimeLineMark :offset="timeLineContainer.x" :scale="scale || defaultScale" class="time-line-mark" />
+    <!--辅助显示当前鼠标移动刻度-->
+    <div v-if="showTimeAssetsLine && timeLinePlayer.duration" class="time-assets-line" :style="`transform: translateX(${timeAssetsLine.x}px)`" />
+    <!--辅助显示当前播放刻度-->
+    <div v-if="timeLinePlayer.duration" class="time-assets-line play-time-line" :style="`transform: translateX(${playTimeLineX}px)`" />
     <!--帧预览-->
-    <div ref="timeLineContainer" class="time-line-container"  :style="`transform: translateX(${-timeLineContainer.x}px)`">
-      <div v-for="frameGroup in TimeLinePlayer.frameGroups" :key="frameGroup.UUID" class="time-line-item">
-        <TimeLine :frame-group="frameGroup" />
+    <div ref="timeLineContainer" class="time-line-container"  :style="`transform: translate(${-timeLineContainer.x}px, ${-timeLineContainer.y}px)`">
+      <div v-for="frameGroup in timeLinePlayer.frameGroups" :key="frameGroup.UUID" class="time-line-item">
+        <TimeLine :frame-group="frameGroup" :offset="timeLineContainer.x" :item-size="itemSize" :scale="scale || defaultScale" />
       </div>
     </div>
-    <div v-if="showTimeAssetsLine && showScrollBar" class="scroll-bar" :style="`width: ${scrollBar.width}px;transform: translateX(${scrollBar.x}px)`" />
+    <div v-if="showScrollBar" class="scroll-bar" :class="scrollbarScroll === 'h' && scrollbarScroll" :style="`width: ${scrollBar.width}px; transform: translateX(${scrollBar.x}px)`" @mousedown="onScrollbarMousedown" />
+    <div v-if="showScrollBar" class="scroll-bar vertical" :class="scrollbarScroll === 'v' && scrollbarScroll" :style="`height: ${scrollBar.height}px; transform: translateY(${scrollBar.y}px)`" @mousedown="onScrollbarMousedown" />
   </div>
 </template>
 
 <script>
 import TimeLine from "@/components/panel/TimeLine.vue"
 import BaseFabricComponent from "@/components/BaseFabricComponent"
-import TimeLinePlayer from '@/utils/TimeLinePlayer'
+import timeLinePlayer from '@/utils/TimeLinePlayer'
+import TimeLineMark from "@/components/panel/TimeLineMark.vue";
+
+// 样式(TimeLine.vue)中itemSize保持一致
+const itemSize = 40
 
 export default {
   name: 'TimeLinePanel',
   mixins: [BaseFabricComponent],
-  components: { TimeLine },
+  components: { TimeLine, TimeLineMark },
+  provide() {
+    return {
+      getContainer: () => this.$refs.timeLinePanel
+    }
+  },
   data() {
     return {
+      scale: 0,
+      itemSize,
       changeTime: false, // 当前是否为修改时间状态
-      TimeLinePlayer,
+      timeLinePlayer,
+      paddingBottom: 40, // 内容底部多显示距离
+      paddingRight: 100, // 内容右侧多显示距离
       timeAssetsLine: {x: 0, y: 0},
       showTimeAssetsLine: false,
+      scrollbarScroll: '', // 滚动条拖动
       showScrollBar: false, // 显示滚动条
-      timeLineContainer: {x: 0},
-      scrollBar: { width: 0, x: 0 },
+      timeLineContainer: { x: 0, y: 0 },
+      scrollBar: { width: 0, height: 0, x: 0, y: 0, startX: 0, startY: 0, startClientX: 0, startClientY: 0 },
       playTimeLineX: 0
     }
   },
   computed: {
-    // playTimeLineX() {
-    //   console.log('>>>>>>>>>>>>>>>>>>>>>>')
-    //   if (!this.$refs.timeLineContainer) {
-    //     return 0
-    //   }
-    //   const { width } = this.$refs.timeLineContainer.getBoundingClientRect()
-    //   const { duration, currentTime } = this.TimeLinePlayer
-    //   console.log({ duration, currentTime })
-    //   return ((currentTime / duration) * width) || 0
-    // }
-    // layers() {
-    //   return ((this.canvas || {})._objects || []).filter(item => item.isGif).map(target => {
-    //     const { UUID, frames } = target
-    //     return { UUID, frames }
-    //   }).reverse()
-    // }
-  },
-  watch: {
-    'timeLineContainer.x'(x) {
-      const { timeLineContainer, timeLinePanel } = this.$refs
-      if (timeLineContainer && timeLinePanel) {
-        const { width: containerWidth } = timeLineContainer.getBoundingClientRect()
-        const { width } = timeLinePanel.getBoundingClientRect()
-        this.scrollBar.x = (width - this.scrollBar.width) * (x / (containerWidth - width))
-      } else {
-        this.scrollBar.x = 0
-      }
-      this.refreshTimeLine()
+    /**
+     * 默认缩放，放大不能超过该值
+     * */
+    defaultScale() {
+      return (itemSize / this.timeLinePlayer.frameTime) || 1
     }
   },
+  watch: {
+    // 'timeLineContainer.x'(x) {
+    //   const { timeLineContainer, timeLinePanel } = this.$refs
+    //   if (timeLineContainer && timeLinePanel) {
+    //     const { width: containerWidth } = timeLineContainer.getBoundingClientRect()
+    //     const { width } = timeLinePanel.getBoundingClientRect()
+    //     this.scrollBar.x = (width - this.scrollBar.width) * (x / ((containerWidth + this.paddingRight) - width))
+    //   } else {
+    //     this.scrollBar.x = 0
+    //   }
+    //   this.refreshTimeLine()
+    // }
+  },
   mounted() {
-    this.TimeLinePlayer.on('requestFrame', this.refreshTimeLine)
+    this.timeLinePlayer.on('requestFrame', this.refreshTimeLine)
     document.addEventListener('mouseup', this.leaveChangeTime)
-    document.addEventListener('mousemove', this.refreshPlayTime)
+    document.addEventListener('mousemove', this.onDocumentMousemove)
   },
   beforeDestroy() {
     document.removeEventListener('mouseup', this.leaveChangeTime)
-    document.removeEventListener('mousemove', this.refreshPlayTime)
+    document.removeEventListener('mousemove', this.onDocumentMousemove)
   },
   methods: {
     leaveChangeTime() {
       this.changeTime = false
+      this.scrollbarScroll = ''
     },
     refreshTimeLine() {
       if (this.$refs.timeLineContainer) {
         const { width } = this.$refs.timeLineContainer.getBoundingClientRect()
-        const { duration, currentTime } = this.TimeLinePlayer
+        const { duration, currentTime } = this.timeLinePlayer
         this.playTimeLineX = (((currentTime / duration) * width) || 0) - (this.timeLineContainer.x || 0)
       } else {
         this.playTimeLineX = 0
       }
     },
+    /**
+     * 滚动条按下
+     * */
+    onScrollbarMousedown(e) {
+      e.stopPropagation()
+      e.preventDefault()
+      this.scrollBar.startClientX = e.clientX
+      this.scrollBar.startClientY = e.clientY
+      this.scrollBar.startX = this.scrollBar.x
+      this.scrollBar.startY = this.scrollBar.y
+      console.log(e.target.classList, e.target.classList.contains('vertical'))
+      this.scrollbarScroll = e.target.classList.contains('vertical') ? 'v' : 'h'
+      // this.scrollbarScroll = true
+    },
     onMousedown(e) {
       this.changeTime = true
       this.refreshPlayTime(e)
+    },
+    onDocumentMousemove(e) {
+      this.refreshPlayTime(e)
+      this.refreshScrollbar(e)
     },
     onMousemove(e) {
       if (this.moveOutTimer) {
@@ -101,6 +126,7 @@ export default {
       }
       this.refreshTimeAssetsLine(e)
       this.refreshPlayTime(e)
+      this.refreshScrollbar(e)
     },
     onMouseup() {
       this.leaveChangeTime()
@@ -116,22 +142,38 @@ export default {
     onWheel(e) {
       e.stopPropagation()
       e.preventDefault()
-      const { wheelDelta } = e
+      const { wheelDelta, deltaY, deltaX } = e
       // todo 兼容 240、480 为放大缩小，其他可能是平移
       if (Math.abs(wheelDelta) !== 240 && Math.abs(wheelDelta) !== 480) {
         this.refreshTimeLineContainer(e)
+      } else {
+        const [min, max] = timeLinePlayer.getTimeRange()
+        const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
+        const time = max - min
+        const minScale = time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale
+        this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - deltaY * 0.0004))
+        this.refreshScrollbar(e)
       }
-      console.log('----- onwheel')
+      console.log('----- onwheel', this.scale, deltaY, deltaX)
     },
 
     /**
      * 刷新可滚动区域属性
      * */
     refreshTimeLineContainer(e) {
-      const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
-      const { width: containerWidth } = this.$refs.timeLineContainer.getBoundingClientRect()
+      const { width, height } = this.$refs.timeLinePanel.getBoundingClientRect()
+      const { width: containerWidth, height: containerHeight } = this.$refs.timeLineContainer.getBoundingClientRect()
       const left = this.timeLineContainer.x + e.deltaX * 0.1
-      this.timeLineContainer.x = Math.max(0, Math.min(left, containerWidth - width))
+      const top = this.timeLineContainer.y + e.deltaY * 0.1
+      this.timeLineContainer.x = Math.max(0, Math.min(left, containerWidth - width + this.paddingRight))
+      this.timeLineContainer.y = Math.max(0, Math.min(top, containerHeight - height + this.paddingBottom))
+      // this.scrollBar.x = (width - this.scrollBar.width) * (this.timeLineContainer.x / ((containerWidth + this.paddingRight) - width))
+      // this.scrollBar.x = this.timeLineContainer.x * (this.scrollBar.width / containerWidth)
+      // this.scrollBar.y = this.timeLineContainer.y * (this.scrollBar.height / containerHeight)
+
+      this.scrollBar.x =  this.timeLineContainer.x / ((containerWidth - width + this.paddingRight) / (width - this.scrollBar.width))
+      this.scrollBar.y =  this.timeLineContainer.y / ((containerHeight - height + this.paddingBottom) / (height - this.scrollBar.height))
+      this.refreshTimeLine()
     },
 
     /**
@@ -139,12 +181,32 @@ export default {
      * */
     refreshTimeAssetsLine(e) {
       if (this.$refs.timeLinePanel) {
-        const { x, width } = this.$refs.timeLinePanel.getBoundingClientRect()
-        const { width: containerWidth } = this.$refs.timeLineContainer.getBoundingClientRect()
-        this.showScrollBar = containerWidth > width
+        const { x, width, height } = this.$refs.timeLinePanel.getBoundingClientRect()
+        const { width: containerWidth, height: containerHeight } = this.$refs.timeLineContainer.getBoundingClientRect()
+        this.showScrollBar = (containerWidth + this.paddingRight) > width
         this.timeAssetsLine.x = Math.max(0, e.clientX - x)
-        this.scrollBar.width = width / containerWidth * width
+        this.scrollBar.width = width / (containerWidth  + this.paddingRight) * width
+        this.scrollBar.height = height / (containerHeight  + this.paddingBottom) * height
       }
+    },
+
+    refreshScrollbar(e) {
+      const { width, height } = this.$refs.timeLinePanel.getBoundingClientRect()
+      const { width: containerWidth, height: containerHeight } = this.$refs.timeLineContainer.getBoundingClientRect()
+      if (this.scrollbarScroll === 'h') {
+        const distance = e.clientX - this.scrollBar.startClientX
+        const x = this.scrollBar.startX + distance
+        this.scrollBar.x = Math.min(Math.max(0, x), width - this.scrollBar.width)
+        this.timeLineContainer.x =  this.scrollBar.x * ((containerWidth - width + this.paddingRight) / (width - this.scrollBar.width))
+      } else if (this.scrollbarScroll === 'v') {
+        const distance = e.clientY - this.scrollBar.startClientY
+        const y = this.scrollBar.startY + distance
+        this.scrollBar.y = Math.min(Math.max(0, y), height - this.scrollBar.height)
+        this.timeLineContainer.y =  this.scrollBar.y * ((containerHeight - height + this.paddingBottom) / (height - this.scrollBar.height))
+      }
+      this.scrollBar.width = width / (containerWidth  + this.paddingRight) * width
+      this.scrollBar.height = height / (containerHeight  + this.paddingBottom) * height
+      this.refreshTimeLine()
     },
 
     /**
@@ -155,8 +217,8 @@ export default {
       if (this.changeTime) {
         const {x} = this.$refs.timeLinePanel.getBoundingClientRect()
         const {width} = this.$refs.timeLineContainer.getBoundingClientRect()
-        const time = (e.clientX - x + this.timeLineContainer.x) / width * this.TimeLinePlayer.duration
-        this.TimeLinePlayer.requestFrame(Math.max(0, Math.min(time, this.TimeLinePlayer.duration)))
+        const time = (e.clientX - x + this.timeLineContainer.x) / width * this.timeLinePlayer.duration
+        this.timeLinePlayer.requestFrame(Math.max(0, Math.min(time, this.timeLinePlayer.duration)))
       }
     }
   },
@@ -171,14 +233,34 @@ export default {
   .time-line-container {
     top: 0;
     left: 0;
+    padding-top: 16px;
     position: absolute;
     .time-line-item {
-      margin-top: 4px;
+      margin-top: 10px;
+      border-radius: 4px;
+      background-color: white;
+      &:before {
+        left: 0;
+        height: 40px;
+        content: " ";
+        border-radius: 4px;
+        position: absolute;
+        background-color: #e9e9e9;
+        width: calc(100% + 800px);
+      }
     }
   }
-  .time-assets-line {
+  .time-line-mark {
     top: 0;
     left: 0;
+    z-index: 1;
+    position: absolute;
+    background-color: white;
+
+  }
+  .time-assets-line {
+    left: 0;
+    top: 16px;
     z-index: 1;
     height: 100%;
     position: absolute;
@@ -193,12 +275,29 @@ export default {
     }
   }
   .scroll-bar {
-    bottom: 0;
     z-index: 1;
     height: 8px;
+    cursor: pointer;
     border-radius: 4px;
     position: absolute;
-    background-color: rgba(0, 0, 0, .3);
+    background-color: #0000001f;
+    &:hover {
+      background-color: #0000006f;
+    }
+    &:not(.vertical) {
+      bottom: 0;
+    }
+    &:not(.h),
+    &:not(.v) {
+      transition: all ease 0.1s;
+    }
+    &.h, &.v {
+      background-color: #0000006f;
+    }
+    &.vertical {
+      width: 8px;
+      right: 0;
+    }
   }
 }
 </style>

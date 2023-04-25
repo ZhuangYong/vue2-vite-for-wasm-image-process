@@ -77,6 +77,8 @@ export const COMMAND_TYPES = {
   },
   CONTROL: {
     PLAY_OR_STOP: {key: 'playOrStrop', label: '播放/暂停', keyMap: `space`},
+    PLAY_REVERSE: {key: 'playReverse', label: '正序/倒序'},
+    PLAY_SPEED: {key: 'playSpeed', label: '倍速'},
   },
   ANIMATE: {
     APPLY: {key: 'applyAnimate', label: '应用动画'},
@@ -460,6 +462,7 @@ class ImageHelper extends Event {
         }
         break
 
+      // 修改对象旋转角度
       case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_ANGLE.key:
         if (target.canvas.getActiveObject().angle !== arg1) {
           target.canvas.getActiveObject().angle = arg1
@@ -479,6 +482,7 @@ class ImageHelper extends Event {
 
       // 播放或暂停
       case COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key:
+        this.clearActiveObjects()
         TimeLinePlayer.togglePlay()
         break
 
@@ -490,6 +494,17 @@ class ImageHelper extends Event {
           await frameGroup.applyAnimate(TimeLinePlayer.keyFrameTime, animateName).then(() => this.trigger('applyAnimate'))
         }
         break
+
+      // 播放翻转修改
+      case COMMAND_TYPES.CONTROL.PLAY_REVERSE.key:
+        TimeLinePlayer.reverse = arg1 || false
+        break
+
+      // 播放速度修改
+      case COMMAND_TYPES.CONTROL.PLAY_SPEED.key:
+        TimeLinePlayer.speed = arg1 || 1
+        break
+
     }
 
     // 如果修改过
@@ -568,47 +583,64 @@ class ImageHelper extends Event {
    */
   async uploadGif(file, option) {
     option = option || {}
+    // 解析gif
     const rawFrames = await this.splitGif(file)
-    if (!_.isEmpty(frames)) {
+    // 不为空才继续解析
+    if (!_.isEmpty(rawFrames)) {
+      // 上一帧
       let preFrame
+      // 元素帧数组
       const frames = rawFrames.map(frame => {
-        const item = {
-          UUID: Math.random(),
-          duration: frame.delay * 10,
-          url: frame.data,
-          startTime: 0
-        }
+        // 帧信息
+        const item = { UUID: Math.random(), duration: frame.delay * 10, url: frame.data, startTime: 0 }
         if (preFrame) {
+          // 开始时间为上一帧开始时间加上上一帧的持续时间
           item.startTime = preFrame.startTime + preFrame.duration
         }
         preFrame = item
         return item
       })
 
+      // 将gif解析后的url转为fabric对象
       await Promise.all(frames.map(async (frame) => {
+        // 将imageData转为base64
         frame.url = await ImageDataToBase64(frame.url)
+        // 转为fabric对象
         frame.img = await new Promise(resolve => fabric.Image.fromURL(frame.url, img => resolve(img)))
       }))
+      // 帧时间与出现次数统计对象
       const frameTimes = {}
-      frames.forEach(frame => {
-        frameTimes[frame.duration] = frameTimes[frame.duration] || 0
-        frameTimes[frame.duration] += 1
-      })
+      // 对帧时间出现次数计数
+      frames.forEach(frame => (frameTimes[frame.duration] = (frameTimes[frame.duration] || 0) + 1))
+      // 帧最多的次数
       const max = Object.values(frameTimes).sort().pop()
+      // 最多次数的帧时间，可能是数组，从中选取时间最大的
       const maxTime = Object.keys(frameTimes).filter(duration => frameTimes[duration] === max).reduce((a, b) => a > b ? a : b)
-      const frameTime = Object.keys(frameTimes).find(key => key === maxTime)
+      // 帧时间
+      const frameTime = Number(Object.keys(frameTimes).find(key => key === maxTime))
+      // 总时间
       const duration = frames.reduce((a, b) => a + b.duration, 0)
+      // 关键帧的开始时间
       const keyFrameTime = frames.map(frame => frame.startTime)
+      // 片段对象
       const frameGroup = new FrameGroup(frames.map(frame => {
+        // 一帧
         const keyFrame = new Frame()
+        // 图片初始化
         frame.img.set({...option, ignore: true, selectable: false, hoverCursor: 'default'})
+        // 帧时间
         keyFrame.duration = frame.duration
+        // 帧开始时间
         keyFrame.startTime = frame.startTime
+        // 将对象添加到帧
         keyFrame.add(frame.img)
+        // 将对象添加到舞台
         this.addToCanvas(frame.img)
         return keyFrame
       }))
+      // 重置播放
       TimeLinePlayer.reset({ frameTime, duration, keyFrameTime, frameGroups: [frameGroup] })
+      // 开启gif模式
       this.canvas.gifMode = true
     }
   }
