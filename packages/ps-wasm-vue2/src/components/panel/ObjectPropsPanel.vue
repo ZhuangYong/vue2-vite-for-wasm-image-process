@@ -27,6 +27,11 @@
           </div>
         </div>-->
         <div class="props-line">
+          <div class="props-item props-background-color">
+            <ColorPicker :color.sync="targetProps.fill" />
+          </div>
+        </div>
+        <div class="props-line">
           <div class="props-item font-family">
             <span class="label">字体：</span>
             <el-select v-model="targetProps.fontFamily" size="mini" :popper-append-to-body="false" :disabled="disabled">
@@ -36,7 +41,7 @@
           </div>
           <div class="props-item">
             <span class="label">字号：</span>
-            <el-input v-model="targetProps.fontSize" :disabled="disabled" size="mini" style="width: 30px" />
+            <el-input v-model="targetProps.fontSize" :disabled="disabled" size="mini" style="width: 30px" @blur="onFontSizeChange" @keydown.enter.native="onFontSizeChange" />
           </div>
         </div>
       </template>
@@ -100,13 +105,13 @@
 </template>
 
 <script>
-import Const from '@/const'
 import BaseFabricComponent from "../BaseFabricComponent"
 import VisibleSwitch from "../buttons/VisibleSwitch.vue"
-import { fontOptions } from '@/utils/FontHelper'
+import {fontOptions} from '@/utils/FontHelper'
 import imageHelper, {COMMAND_TYPES, defaultProps, scaleXtoWidth, scaleYtoHeight} from "@/utils/ImageHelper";
 import ColorPicker from "@/components/ColorPicker.vue"
 import timeLinePlayer from "@/utils/TimeLinePlayer";
+import {isText} from "@/utils";
 
 const watchProps = ['showWidth', 'showHeight']
 export default {
@@ -115,17 +120,18 @@ export default {
   mixins: [BaseFabricComponent],
   data() {
     return {
-      imageHelper,
-      fontOptions,
-      timeLinePlayer,
-      backgroundColor: '',
-      targetProps: defaultProps,
+      imageHelper, // 图片类
+      fontOptions, // 字体选项
+      timeLinePlayer, // 时间播放
+      backgroundColor: '', // 背景颜色
+      fontColor: '', // 字体颜色
+      targetProps: defaultProps, // 属性
       // showProps: defaultProps
     }
   },
   computed: {
     isText() {
-      return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes((this.target || {}).type)
+      return isText((this.target || {}).type)
     },
     disabled() {
       return !this.target
@@ -154,13 +160,18 @@ export default {
       this.canvas.backgroundColor = v
       imageHelper.renderAll()
     },
+    'targetProps.fill'(v) {
+      if (this.target) {
+        imageHelper.handleCommand(COMMAND_TYPES.EDIT.CHANGE_FONT_COLOR.key, this.target, v)
+      }
+    },
     'targetProps.visible'(v) {
-      if (this.target && this.target.visible !== v) {
+      if (this.target) {
         imageHelper.handleCommand(COMMAND_TYPES.EDIT.VISIBLE.key, this.target, Boolean(v))
       }
     },
     'targetProps.fontFamily'(v) {
-      if (this.target && this.target.fontFamily !== v) {
+      if (this.target) {
         imageHelper.handleCommand(COMMAND_TYPES.EDIT.CHANGE_FONT_FAMILY.key, this.target, v)
       }
     }
@@ -232,6 +243,12 @@ export default {
     onChangePlaySpeed(speed) {
       if (this.canvas) {
         imageHelper.handleCommand(COMMAND_TYPES.CONTROL.PLAY_SPEED.key, this.target, speed)
+      }
+    },
+
+    onFontSizeChange() {
+      if (this.target) {
+        imageHelper.handleCommand(COMMAND_TYPES.EDIT.CHANGE_FONT_SIZE.key, this.target, Number(this.targetProps.fontSize) || 0)
       }
     }
   }

@@ -1,11 +1,11 @@
 import moveSvg from "../static/icon/move.svg"
 import pencilSvg from "../static/icon/pencil.svg"
 import wordSvg from "../static/icon/word.svg"
-import {base64ToStr} from "./utils"
 
 const Const = {
   MAIN_STAGE_CLASS: 'main-stage',
   FABRIC_TYPE: {
+    TEXT: 'text',
     I_TEXT: 'i-text',
     TEXTBOX: 'textbox',
     IMAGE: 'image',
@@ -30,13 +30,26 @@ const Const = {
   }
 }
 
+/**
+ * base64图片内容转str
+ * @param base64
+ * @returns {string}
+ */
+export function base64ToStr(base64) {
+  try {
+    return atob(base64.split(',').pop())
+  } catch (e) {
+    return ''
+  }
+}
+
 export default Const
 
-/**
- * 是否是文本类型
- * @param type
- * @returns {boolean}
- */
-export function isText(type) {
-  return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(type)
-}
+// /**
+//  * 是否是文本类型
+//  * @param type
+//  * @returns {boolean}
+//  */
+// export function isText(type) {
+//   return [Const.FABRIC_TYPE.TEXT, Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(type)
+// }

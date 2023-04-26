@@ -1,10 +1,9 @@
-// import ImageHelper from "@/utils/ImageHelper";
-// import TimeLinePlayer from "@/utils/TimeLinePlayer";
 import _ from 'lodash'
-import Frame from "@/utils/Frame";
-import animates from "@/animate";
+import Frame from "@/utils/Frame"
+import animates from "@/animate"
+import { Event } from "@/utils/Event"
 
-export default class FrameGroup {
+export default class FrameGroup extends Event {
 
   UUID = `frame-group-${Math.random()}`
   /**
@@ -20,10 +19,10 @@ export default class FrameGroup {
   animates = []
 
   /**
-   * 延迟
+   * 总时间
    * @type {number}
    */
-  delay = 0
+  _delay = 0
 
   /**
    * 输出范围
@@ -36,6 +35,7 @@ export default class FrameGroup {
   currentFrame = null
 
   constructor(frames) {
+    super()
     this.frames = frames || []
     this.frames.forEach(frame => (frame.group = this))
     this.duration = this.frames.reduce((pre, cur) => pre + cur.duration, 0)
@@ -65,7 +65,7 @@ export default class FrameGroup {
       this.currentFrame.clearRender()
       this.canvas.requestRenderAll()
     }
-    const frame = this.getFrameInTime(time, true)
+    const frame = this.getFrameInTime(time, true, true)
     if (frame) {
       frame.render()
       this.currentFrame = frame
@@ -144,16 +144,19 @@ export default class FrameGroup {
 
   /**
    * 获取在time时间上的frame
-   * @param time
-   * @param limit
+   * @param time 指定时间
+   * @param limit 是否判断限制
+   * @param delay 是否判断延迟
    * @returns {*}
    */
-  getFrameInTime(time, limit) {
+  getFrameInTime(time, limit, delay) {
+    // 考虑延迟
+    const delayTime = delay ? this.delay : 0
     // 考虑限制时间
-    if (limit && (time < this.limit[0] || time > this.limit[1])) {
+    if (limit && (time < (this.limit[0] + delayTime) || time > (this.limit[1] + delayTime))) {
       return
     }
-    const frameInTime = this.frames.find(frame => time >= frame.startTime && time < frame.startTime + frame.duration)
+    const frameInTime = this.frames.find(frame => time >= (frame.startTime + delayTime) && time < (frame.startTime + frame.duration + delayTime))
     // 如果时间大于0，且未找到，返回最后一帧
     if (time > 0 && !frameInTime) {
       return this.frames[this.frames.length - 1]
@@ -162,6 +165,9 @@ export default class FrameGroup {
     return frameInTime
   }
 
+  /**
+   * 按开始时间排序
+   */
   sort() {
     this.frames.sort((a, b) => a.startTime - b.startTime)
   }
@@ -215,6 +221,23 @@ export default class FrameGroup {
 
   get canvas() {
     return (this.frames.find(item => !!item.canvas) || {}).canvas
+  }
+
+  /**
+   * 总时间
+   * @returns {number}
+   */
+  get totalTime() {
+    return this.delay + this.duration
+  }
+
+  get delay() {
+    return this._delay
+  }
+
+  set delay(val) {
+    this._delay = val
+    this.trigger('update:frame:time')
   }
 
 }

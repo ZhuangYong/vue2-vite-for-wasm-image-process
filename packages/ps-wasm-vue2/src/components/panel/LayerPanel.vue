@@ -16,7 +16,7 @@
 import BaseFabricComponent from "@/components/BaseFabricComponent"
 import VisibleSwitch from "@/components/buttons/VisibleSwitch.vue"
 import imageHelper, {COMMAND_TYPES} from "@/utils/ImageHelper";
-import {isText} from "@/const";
+import {isText} from "@/utils";
 import textSvg from '@/../static/icon/text.svg'
 import {base64ToStr} from "@/utils";
 import Draggable from "@/components/Draggable"
@@ -65,6 +65,7 @@ export default {
   },
   methods: {
     onItemClick(layer) {
+      console.log('-----')
       if (!timeLinePlayer.start) {
         this.canvas.setActiveObject(layer.target)
         this.canvas.requestRenderAll()

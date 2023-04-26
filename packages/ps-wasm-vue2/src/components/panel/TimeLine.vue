@@ -1,5 +1,5 @@
 <template>
-  <div ref="timeLine" class="time-line" :style="`width: ${frameGroup.duration * scale}px`">
+  <div ref="timeLine" class="time-line" :style="`transform: translateX(${frameGroup.delay * scale}px); width: ${frameGroup.duration * scale}px`" @mousedown="onMousedown" @mousemove="onMousemove" @mouseup="onMouseup">
     <!--<div v-for="frame in frameGroup.frames" :key="frame.UUID" class="preview-item">
       <div v-for="object in frame._objects" :key="object.UUID" v-html="`<svg viewBox='0 0 ${object.width} ${object.height}'>${object.toSVG()}</svg>`" />
       &lt;!&ndash;<img :src="frame.url" alt="">&ndash;&gt;
@@ -7,9 +7,9 @@
     <!--显示时间限制，可拖动改变范围-->
     <span class="limit-panel" :style="`width: ${widthStyle}; left: ${leftStyle}`">
       <!--左边拖动锚-->
-      <span class="limit-bar left" @mousedown="onLeftMousedown" @mousemove="onMousemove" @mouseup="leaveChangeLimit" />
+      <span class="limit-bar left" @mousedown="onLeftMousedown" @mousemove="onLimitMousemove" @mouseup="leaveChangeLimit" />
       <!--右边拖动锚-->
-      <span class="limit-bar right" @mousedown="onRightMousedown" @mousemove="onMousemove" @mouseup="leaveChangeLimit" />
+      <span class="limit-bar right" @mousedown="onRightMousedown" @mousemove="onLimitMousemove" @mouseup="leaveChangeLimit" />
     </span>
     <!--显示时间下截图-->
     <div v-for="frame in frames" :key="frame.UUID" class="preview-item" :style="previewItemStyle(frame)" />
@@ -17,8 +17,8 @@
 </template>
 
 <script>
-import timeLinePlayer from "@/utils/timeLinePlayer"
-import ImageHelper from "@/utils/ImageHelper";
+import timeLinePlayer from "@/utils/TimeLinePlayer"
+import imageHelper from "@/utils/ImageHelper"
 
 export default {
   name: 'TimeLine',
@@ -102,27 +102,49 @@ export default {
     }
   },
   mounted() {
-    ImageHelper.canvas.on('object:removed', this.refreshFrames)
-    ImageHelper.canvas.on('object:added', this.refreshFrames)
-    ImageHelper.canvas.on('object:modified', this.refreshFrames)
-    ImageHelper.canvas.on('update:snapshot', this.refreshFrames)
-    ImageHelper.on('applyAnimate', this.refreshFrames)
-    document.addEventListener('mouseup', this.leaveChangeLimit)
+    imageHelper.canvas.on('object:removed', this.refreshFrames)
+    imageHelper.canvas.on('object:added', this.refreshFrames)
+    imageHelper.canvas.on('object:modified', this.refreshFrames)
+    imageHelper.canvas.on('update:snapshot', this.refreshFrames)
+    imageHelper.on('applyAnimate', this.refreshFrames)
+    document.addEventListener('mouseup', this.onMouseup)
     document.addEventListener('mousemove', this.onMousemove)
     this.refreshFrames()
   },
   beforeDestroy() {
-    ImageHelper.canvas.off('object:removed', this.refreshFrames)
-    ImageHelper.canvas.off('object:added', this.refreshFrames)
-    ImageHelper.canvas.off('object:modified', this.refreshFrames)
-    ImageHelper.canvas.off('update:snapshot', this.refreshFrames)
-    ImageHelper.off('applyAnimate', this.refreshFrames)
-    document.removeEventListener('mouseup', this.leaveChangeLimit)
+    imageHelper.canvas.off('object:removed', this.refreshFrames)
+    imageHelper.canvas.off('object:added', this.refreshFrames)
+    imageHelper.canvas.off('object:modified', this.refreshFrames)
+    imageHelper.canvas.off('update:snapshot', this.refreshFrames)
+    imageHelper.off('applyAnimate', this.refreshFrames)
+    document.removeEventListener('mouseup', this.onMouseup)
     document.removeEventListener('mousemove', this.onMousemove)
   },
   methods: {
     leaveChangeLimit() {
       this.startLimitWay = ''
+    },
+
+    onMousedown(e) {
+      this.startDelay = true
+      this.preClientX = e.clientX
+      this.preDelay = this.frameGroup.delay
+    },
+
+    onMousemove(e) {
+      if (this.startDelay) {
+        const distance = e.clientX - this.preClientX
+        this.frameGroup.delay = Math.max(0, this.preDelay + distance)
+        timeLinePlayer.resetCurrentTime()
+        console.log('----- onMousemove', this.frameGroup.delay, distance)
+        // this.preClientX = e.clientX
+      }
+      this.onLimitMousemove(e)
+    },
+
+    onMouseup() {
+      this.startDelay = false
+      this.leaveChangeLimit()
     },
 
     /**
@@ -146,7 +168,7 @@ export default {
       this.startLimit = [...this.frameGroup.limit]
       this.startLimitWay = 'right'
     },
-    onMousemove(e) {
+    onLimitMousemove(e) {
       if (!this.startLimitWay || !this.$refs.timeLine) {
         return
       }
@@ -156,9 +178,11 @@ export default {
       if (this.startLimitWay === 'left') {
         const newLimit = this.startLimit[0] + distance
         this.limit.left = this.frameGroup.limit[0] = Math.min(Math.max(0, newLimit), this.startLimit[1])
+        timeLinePlayer.resetCurrentTime(this.limit.left)
       } else if (this.startLimitWay === 'right') {
         const newLimit = this.startLimit[1] + distance
         this.limit.right = this.frameGroup.limit[1] = Math.max(Math.min(this.frameGroup.duration, newLimit), this.startLimit[0])
+        timeLinePlayer.resetCurrentTime(this.limit.right)
       }
     },
 
@@ -191,7 +215,7 @@ export default {
       const boundSize = 4
       const { width } = this.getContainer().getBoundingClientRect()
       const count = Math.ceil(width / this.itemSize)
-      const leftCount = Math.ceil(this.offset / this.itemSize)
+      const leftCount = Math.ceil((this.offset - this.frameGroup.delay) / this.itemSize)
       if (frame.index > leftCount - boundSize && frame.index < leftCount + count + boundSize) {
         return `background-image: url('${frame.snapshot}')`
       }
@@ -206,6 +230,7 @@ $itemSize: 40px;
 $borderSize: 2px;
 $limitBarWidth: 15px;
 .time-line {
+  cursor: move;
   overflow: hidden;
   height: $itemSize;
   position: relative;

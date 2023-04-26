@@ -1,13 +1,13 @@
 <template>
-  <div ref="timeLinePanel" class="time-line-panel" @mousedown="onMousedown" @mouseup="onMouseup" @mousemove="onMousemove" @mouseout="onMouseout" @wheel="onWheel">
-    <TimeLineMark :offset="timeLineContainer.x" :scale="scale || defaultScale" class="time-line-mark" />
+  <div ref="timeLinePanel" class="time-line-panel" @mousedown="onMousedown" @mouseup="onMouseup" @mousemove="onMousemove" @wheel="onWheel">
+    <TimeLineMark :offset="timeLineContainer.x" :scale="scale || defaultScale" class="time-line-mark" @mousedown.native="onMarkMousedown" @mousemove.native="onMarkMousemove" @mouseout.native="onMarkMouseout" />
     <!--辅助显示当前鼠标移动刻度-->
     <div v-if="showTimeAssetsLine && timeLinePlayer.duration" class="time-assets-line" :style="`transform: translateX(${timeAssetsLine.x}px)`" />
     <!--辅助显示当前播放刻度-->
     <div v-if="timeLinePlayer.duration" class="time-assets-line play-time-line" :style="`transform: translateX(${playTimeLineX}px)`" />
     <!--帧预览-->
     <div ref="timeLineContainer" class="time-line-container"  :style="`transform: translate(${-timeLineContainer.x}px, ${-timeLineContainer.y}px)`">
-      <div v-for="frameGroup in timeLinePlayer.frameGroups" :key="frameGroup.UUID" class="time-line-item">
+      <div v-for="frameGroup in timeLinePlayer.frameGroups" :key="frameGroup.UUID" class="time-line-item" :style="`width: ${(frameGroup.duration + frameGroup.delay) * (scale || 1)}px`">
         <TimeLine :frame-group="frameGroup" :offset="timeLineContainer.x" :item-size="itemSize" :scale="scale || defaultScale" />
       </div>
     </div>
@@ -46,7 +46,7 @@ export default {
       showTimeAssetsLine: false,
       scrollbarScroll: '', // 滚动条拖动
       showScrollBar: false, // 显示滚动条
-      timeLineContainer: { x: 0, y: 0 },
+      timeLineContainer: { x: 0, y: 0 }, // 帧预览面板
       scrollBar: { width: 0, height: 0, x: 0, y: 0, startX: 0, startY: 0, startClientX: 0, startClientY: 0 },
       playTimeLineX: 0
     }
@@ -110,6 +110,8 @@ export default {
       // this.scrollbarScroll = true
     },
     onMousedown(e) {
+    },
+    onMarkMousedown(e) {
       this.changeTime = true
       this.refreshPlayTime(e)
     },
@@ -117,28 +119,33 @@ export default {
       this.refreshPlayTime(e)
       this.refreshScrollbar(e)
     },
-    onMousemove(e) {
-      if (this.moveOutTimer) {
-        clearTimeout(this.moveOutTimer)
-      }
+    onMarkMousemove(e) {
       if (!this.showTimeAssetsLine) {
         this.showTimeAssetsLine = true
       }
       this.refreshTimeAssetsLine(e)
       this.refreshPlayTime(e)
+    },
+    onMousemove(e) {
+      // if (this.moveOutTimer) {
+      //   clearTimeout(this.moveOutTimer)
+      // }
       this.refreshScrollbar(e)
     },
     onMouseup() {
       this.leaveChangeTime()
     },
-    onMouseout() {
-      if (this.moveOutTimer) {
-        clearTimeout(this.moveOutTimer)
-      }
-      this.moveOutTimer = setTimeout(() => {
-        this.showTimeAssetsLine = false
-      }, 400)
+    onMarkMouseout() {
+      this.showTimeAssetsLine = false
     },
+    // onMouseout() {
+    //   if (this.moveOutTimer) {
+    //     clearTimeout(this.moveOutTimer)
+    //   }
+    //   this.moveOutTimer = setTimeout(() => {
+    //     this.showTimeAssetsLine = false
+    //   }, 400)
+    // },
     onWheel(e) {
       e.stopPropagation()
       e.preventDefault()
@@ -167,9 +174,6 @@ export default {
       const top = this.timeLineContainer.y + e.deltaY * 0.1
       this.timeLineContainer.x = Math.max(0, Math.min(left, containerWidth - width + this.paddingRight))
       this.timeLineContainer.y = Math.max(0, Math.min(top, containerHeight - height + this.paddingBottom))
-      // this.scrollBar.x = (width - this.scrollBar.width) * (this.timeLineContainer.x / ((containerWidth + this.paddingRight) - width))
-      // this.scrollBar.x = this.timeLineContainer.x * (this.scrollBar.width / containerWidth)
-      // this.scrollBar.y = this.timeLineContainer.y * (this.scrollBar.height / containerHeight)
 
       this.scrollBar.x =  this.timeLineContainer.x / ((containerWidth - width + this.paddingRight) / (width - this.scrollBar.width))
       this.scrollBar.y =  this.timeLineContainer.y / ((containerHeight - height + this.paddingBottom) / (height - this.scrollBar.height))
@@ -260,15 +264,15 @@ export default {
   }
   .time-assets-line {
     left: 0;
-    top: 16px;
+    top: 0;
     z-index: 1;
     height: 100%;
     position: absolute;
     pointer-events: none;
     border-left: 1px solid #ebebeb;
     &.play-time-line {
-      width: 4px;
-      height: 50px;
+      width: 1px;
+      height: 100%;
       border: none;
       border-radius: 2px;
       background-color: gray;
@@ -277,7 +281,6 @@ export default {
   .scroll-bar {
     z-index: 1;
     height: 8px;
-    cursor: pointer;
     border-radius: 4px;
     position: absolute;
     background-color: #0000001f;

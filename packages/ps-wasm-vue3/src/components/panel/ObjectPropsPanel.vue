@@ -59,6 +59,7 @@
 <script>
 import {Const, FontHelper, BaseFabricComponent, ImageHelper} from "ps-wasm-vue2"
 import VisibleSwitch from "@/components/buttons/VisibleSwitch.vue"
+import {isText} from "@vue/compiler-core";
 
 const watchProps = ['showWidth', 'showHeight']
 export default {
@@ -74,7 +75,7 @@ export default {
   },
   computed: {
     isText() {
-      return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes((this.target || {}).type)
+      return isText((this.target || {}).type)
     },
     disabled() {
       return !this.target

@@ -26,6 +26,7 @@
 <script>
 import {Const, ImageHelper, fabric, Event as eventBus} from "ps-wasm-vue2"
 import transparentSvg from "@/../static/icon/transparent.svg"
+import {isText} from "@vue/compiler-core";
 
 export default {
   name: 'CanvasPanel',
@@ -190,7 +191,7 @@ export default {
     onStageClick(e) {
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const currentMouseDownPoint = {x: e.clientX - canvasX, y: e.clientY - canvasY}
-      if ((!this.currentObject || (this.currentObject && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type))) && this.editMode === Const.EDIT_MODE.TEXT.value) {
+      if ((!this.currentObject || (this.currentObject && !isText(this.currentObject.type))) && this.editMode === Const.EDIT_MODE.TEXT.value) {
         console.log('------ addText')
         eventBus.trigger('addText', currentMouseDownPoint)
       }

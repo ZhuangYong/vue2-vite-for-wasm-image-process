@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import {cloneCanvas} from "@/utils/CanvasUtils";
 export default class Frame {
 
   UUID = `frame-${Math.random()}`
@@ -126,13 +127,7 @@ export default class Frame {
   }
 
   async cloneClearCanvas() {
-    const canvasClone = await new Promise(resolve => this.canvas.clone(resolve))
-    canvasClone.clear();
-    canvasClone.originWidth = this.canvas.originWidth
-    canvasClone.originHeight = this.canvas.originHeight
-    canvasClone.backgroundColor = this.canvas.backgroundColor
-    // canvasClone.setZoom(this.canvas.getZoom())
-    return canvasClone
+    return await cloneCanvas(this.canvas, true)
   }
 
   get canvas() {

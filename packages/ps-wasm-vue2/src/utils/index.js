@@ -40,7 +40,7 @@ export function isSvgByBase64(src) {
  * @returns {boolean}
  */
 export function isText(type) {
-  return [Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(type)
+  return [Const.FABRIC_TYPE.TEXT, Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(type)
 }
 
 /**

@@ -30,6 +30,7 @@ import {fabric} from "@/lib/fabric.min";
 import fabricEnhance from "@/utils/fabricEnhance";
 import transparentSvg from "@/../static/icon/transparent.svg"
 import {eventBus} from "@/components/BaseFabricComponent";
+import {isText} from "@/utils";
 
 fabricEnhance(fabric)
 export default {
@@ -164,7 +165,7 @@ export default {
 
     onSelect() {
       this.currentObject = this.canvas.getActiveObject()
-      if (this.currentObject && this.editMode === Const.EDIT_MODE.TEXT.value && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type)) {
+      if (this.currentObject && this.editMode === Const.EDIT_MODE.TEXT.value && !isText(this.currentObject.type)) {
         this.canvas.discardActiveObject()
       } else {
         imageHelper.currentTarget = this.currentObject

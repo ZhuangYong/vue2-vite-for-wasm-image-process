@@ -1,14 +1,12 @@
 import _ from 'lodash'
 import {Event} from '@/utils/Event'
-import ImageHelper from "@/utils/ImageHelper"
 import Frame from "@/utils/Frame";
 import FrameGroup from "@/utils/FrameGroup";
-import GIF from "@/lib/gif"
-import gifWorker from '@/lib/gif.worker'
-import saveAs from "@/lib/FileSaver";
-import Canvas2Image from "@/utils/CanvasToImage";
+import {cloneCanvas} from "@/utils/CanvasUtils";
 
 class TimeLinePlayer extends Event {
+
+  UUID = `time-line-player-${Math.random()}`
 
   /**
    * 循环播放
@@ -38,7 +36,7 @@ class TimeLinePlayer extends Event {
    * 持续时间
    * @type {number}
    */
-  duration = 0
+  // duration = 0
 
   /**
    * 每一帧持续时间
@@ -70,6 +68,10 @@ class TimeLinePlayer extends Event {
    */
   frameGroups = []
 
+  constructor() {
+    super()
+  }
+
   /**
    * 重置时间轴
    * @param options
@@ -79,24 +81,60 @@ class TimeLinePlayer extends Event {
     this.start = false
     this.startTime = 0
     this.currentTime = 0
-    this.frameGroups = options.frameGroups
+    this.frameGroups = []
     this.frameTime = options.frameTime || 0
-    this.duration = options.duration || 0
-    const keyFrameTime = options.keyFrameTime || []
-    const frameCount = this.frameCount
-    // 修正总时间
-    this.duration = frameCount * this.frameTime
-    // 插入关键帧
-    for (let i = 0; i < frameCount; i++) {
-      const frameTimeIndex = i * this.frameTime
-      if (!keyFrameTime.includes(frameTimeIndex)) {
-        keyFrameTime.push(frameTimeIndex)
-      }
+
+    if (!_.isEmpty(options.frameGroups)) {
+      options.frameGroups.forEach(frameGroup => this.addFrameGroup(frameGroup))
     }
+    // this.duration = options.duration || 0
+    // const keyFrameTime = options.keyFrameTime || []
+    // const frameCount = this.frameCount
+    // 修正总时间
+    // this.duration = frameCount * this.frameTime
+    // 插入关键帧
+    // for (let i = 0; i < frameCount; i++) {
+    //   const frameTimeIndex = i * this.frameTime
+    //   if (!keyFrameTime.includes(frameTimeIndex)) {
+    //     keyFrameTime.push(frameTimeIndex)
+    //   }
+    // }
     // 排序
-    this.keyFrameTime = keyFrameTime.sort((a, b) => a - b)
+    // this.keyFrameTime = keyFrameTime.sort((a, b) => a - b)
+
+    this.refreshKeyFrameTimes()
     // 渲染
     this.requestFrame()
+  }
+
+  /**
+   * 重置当前播放帧
+   */
+  resetCurrentTime(time) {
+    console.log('====>>> resetCurrentTime')
+    if (time === undefined) {
+      time = this.getLimit()[0]
+    }
+    this.currentTime = time
+    this.requestFrame(time)
+  }
+
+  refreshKeyFrameTimes() {
+    const times = []
+    const { frameCount } = this
+    // 插入普通关键帧
+    for (let i = 0; i < frameCount; i++) {
+      const frameTimeIndex = i * this.frameTime
+      times.push(frameTimeIndex)
+    }
+    // 特殊关键帧
+    this.frameGroups.forEach(group =>
+      group.frames.forEach(frame => {
+        if (!times.includes(frame.startTime)) {
+          times.push(frame.startTime)
+        }
+      }))
+    this.keyFrameTime = times.sort((a, b) => a - b)
   }
 
   /**
@@ -113,6 +151,7 @@ class TimeLinePlayer extends Event {
   }
 
   addFrameGroup(frameGroup) {
+    frameGroup.on('update:frame:time', this.refreshKeyFrameTimes.bind(this))
     this.frameGroups.push(frameGroup)
     this.requestFrame()
   }
@@ -121,27 +160,6 @@ class TimeLinePlayer extends Event {
     return this.frameGroups.find(group => group.includes(target))
   }
 
-  // /**
-  //  * 导出gif
-  //  * @returns {Promise<void>}
-  //  */
-  // async exportAsGif() {
-  //   const canvasClone = await ImageHelper.cloneClearCanvas()
-  //   const { originWidth: width, originHeight: height } = canvasClone
-  //   const gif = new GIF({ workers: 2, quality: 1, width, height, workerScript: gifWorker });
-  //   const [start, end] = this.getLimit()
-  //   for (let i = 0; i < this.keyFrameTime.length; i++) {
-  //     const time = this.keyFrameTime[i]
-  //     if (time >= start && time <= end) {
-  //       const delay = (this.keyFrameTime[i + 1] || this.duration) - time
-  //       const canvas = await this.timeToCanvas(time, canvasClone)
-  //       gif.addFrame(canvas, {delay})
-  //     }
-  //   }
-  //   gif.on('finished', blob => saveAs(blob, '导出' + '.gif'));
-  //   gif.render()
-  // }
-
   /**
    * 时间帧转为canvas对象
    * @param time
@@ -149,7 +167,7 @@ class TimeLinePlayer extends Event {
    * @returns {Promise<void>}
    */
   async timeToCanvas(time, canvasClone) {
-    canvasClone = canvasClone || await ImageHelper.cloneClearCanvas()
+    canvasClone = canvasClone || await cloneCanvas(this.canvas, true)
     const cloneList = []
     for (let i = 0; i < this.frameGroups.length; i++) {
       const frameGroup = this.frameGroups[i]
@@ -193,10 +211,10 @@ class TimeLinePlayer extends Event {
    * 渲染下一帧
    */
   requestNextFrame() {
-    console.log('------- requestNextFrame')
+    console.log('------- requestNextFrame', this.currentTime)
     if (this.start) {
       const { currentTime } = this
-      const nextTime = this.reverse ? this.getPreTime(this.currentTime) : this.getNextTime(this.currentTime)
+      const nextTime = this.reverse ? this.getPreTime(currentTime) : this.getNextTime(currentTime)
       this.requestFrame(currentTime)
       const between = this.getTimeToNextFrame(currentTime)
       setTimeout(() => {
@@ -233,13 +251,14 @@ class TimeLinePlayer extends Event {
   }
 
   /**
-   * 获取指定时间到下一帧时间间隔
+   * 获取指定时间到下一帧时间的开始时间
    * @param time
    * @returns {number}
    */
   getNextTime(time) {
+    const keyFrameTime = this.keyFrameTime
     const limit = this.getLimit()
-    let nextTime = this.keyFrameTime.find(t => t >= limit[0] && t <= limit[1] && t > time)
+    let nextTime = keyFrameTime.find(t => t >= limit[0] && t <= limit[1] && t > time)
     if (nextTime === undefined) {
       nextTime =  0
     }
@@ -252,24 +271,30 @@ class TimeLinePlayer extends Event {
    * @returns {number}
    */
   getPreTime(time) {
+    const keyFrameTime = this.keyFrameTime
     const limit = this.getLimit()
-    let preTime = [...this.keyFrameTime].reverse().find(t => t >= limit[0] && t <= limit[1] && t < time)
+    let preTime = [...keyFrameTime].reverse().find(t => t >= limit[0] && t <= limit[1] && t < time)
     if (preTime === undefined) {
-      preTime = this.keyFrameTime[this.keyFrameTime.length - 1]
+      preTime = keyFrameTime[keyFrameTime.length - 1]
     }
     return Math.min(limit[1], preTime)
   }
 
   /**
-   * 获取时间有效范围
+   * 获取时间有效范围，不判断时间限制，除去delay，只看内容
    */
   getTimeRange() {
-    const limit = [0, 0]
+    const limit = []
     this.frameGroups.forEach(frameGroup => {
       const start = frameGroup.delay
-      const end = frameGroup.duration - frameGroup.delay
-      limit[0] = Math.min(start, limit[0])
-      limit[1] = Math.max(end, limit[1])
+      const end = frameGroup.duration + frameGroup.delay
+      if (limit[0] === undefined) {
+        limit[0] = start
+        limit[1] = end
+      } else {
+        limit[0] = Math.min(start, limit[0])
+        limit[1] = Math.max(end, limit[1])
+      }
     })
     return limit
   }
@@ -284,30 +309,44 @@ class TimeLinePlayer extends Event {
       return defaultLimit
     }
     const limit = [...(this.frameGroups[0].limit || defaultLimit)]
+    limit[0] += this.frameGroups[0].delay
+    limit[1] += this.frameGroups[0].delay
     this.frameGroups.forEach(frameGroup => {
       const [start, end] = frameGroup.limit
-      limit[0] = Math.min(start || 0, limit[0])
-      limit[1] = Math.max(end || this.duration, limit[1])
+      limit[0] = Math.min((start + frameGroup.delay) || 0, limit[0])
+      limit[1] = Math.max((end + frameGroup.delay) || this.duration, limit[1])
     })
     return limit
   }
 
+  /**
+   * 渲染
+   */
   render() {
-    this.requestNextFrame()
+    // this.requestNextFrame()
     // this.start && fabric.util.requestAnimFrame(() => this.render())
   }
 
+  /**
+   * 播放
+   */
   play() {
     if (!_.isEmpty(this.frameGroups)) {
       this.start = true
-      this.render()
+      this.requestNextFrame()
     }
   }
 
+  /**
+   * 暂停
+   */
   stop() {
     this.start = false
   }
 
+  /**
+   * 播放或暂停
+   */
   togglePlay() {
     this.start = !this.start
     this.start && this.play()
@@ -322,6 +361,19 @@ class TimeLinePlayer extends Event {
     return Math.ceil(this.duration / this.frameTime)
   }
 
-}
+  /**
+   * 持续时间
+   * @returns {*}
+   */
+  get duration() {
+    return (this.frameGroups || []).reduce((pre, cur) => Math.max(pre, cur.totalTime), 0)
+  }
 
-export default new TimeLinePlayer()
+  get canvas() {
+    return (this.frameGroups.find(frameGroup => !!frameGroup.canvas) || {}).canvas
+  }
+
+}
+const timeLinePlayer = new TimeLinePlayer()
+
+export default timeLinePlayer

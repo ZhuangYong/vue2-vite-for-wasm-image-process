@@ -9,12 +9,13 @@ import Canvas2Image from "@/utils/CanvasToImage";
 import saveAs from "@/lib/FileSaver";
 import testImg from "../../static/images/effect/e1.jpg"
 import LibGif from '@/lib/libgif'
-import TimeLinePlayer from '@/utils/TimeLinePlayer'
+import timeLinePlayer from '@/utils/TimeLinePlayer'
 import Frame from "@/utils/Frame"
 import FrameGroup from "@/utils/FrameGroup"
 import {Event} from "@/utils/Event"
 import GIF from "@/lib/gif";
-import gifWorker from "@/lib/gif.worker";
+import gifWorker from "@/lib/gif.worker"
+import {cloneCanvas} from "@/utils/CanvasUtils"
 
 /**
  * 对象默认属性
@@ -42,6 +43,7 @@ export const defaultProps = {
   angle: 0,
   text: '',
   // type: '',
+  fill: '#000000',
   fontSize: 0,
   fontFamily: '',
   visible: true
@@ -66,6 +68,8 @@ export const COMMAND_TYPES = {
     DELETE: {key: 'delete', label: '删除', keyMap: 'del, Backspace', disabled: () => !imageHelper.currentTarget},
     VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: '', disabled: () => !imageHelper.currentTarget},
     SWITCH_INDEX: {key: 'switchIndex', label: '交换位置', keyMap: '', hidden: true},
+    CHANGE_FONT_COLOR: {key: 'changeFontColor', label: '修改字体颜色', keyMap: '', hidden: true},
+    CHANGE_FONT_SIZE: {key: 'changeFontSize', label: '修改字体大小', keyMap: '', hidden: true},
     CHANGE_FONT_FAMILY: {key: 'changeFontFamily', label: '修改字体', keyMap: '', hidden: true}
   },
   RESIZE: {
@@ -480,29 +484,48 @@ class ImageHelper extends Event {
         }
         break
 
+      // 修改文字颜色
+      case COMMAND_TYPES.EDIT.CHANGE_FONT_COLOR.key:
+        const oldColor = target.fill
+        if (oldColor !== arg1) {
+          target.set('fill', arg1)
+          this.recordHistory({ back: () => target.fill = oldColor, redo: () => target.fill = arg1 })
+          modifyObject = true
+        }
+        break
+      // 修改文字大小
+      case COMMAND_TYPES.EDIT.CHANGE_FONT_SIZE.key:
+        const oldSize = target.fontSize
+        if (oldSize !== arg1) {
+          target.set('fontSize', arg1)
+          this.recordHistory({ back: () => target.fontSize = oldSize, redo: () => target.fontSize = arg1 })
+          modifyObject = true
+        }
+        break
+
       // 播放或暂停
       case COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key:
         this.clearActiveObjects()
-        TimeLinePlayer.togglePlay()
+        timeLinePlayer.togglePlay()
         break
 
       // 应用动画
       case COMMAND_TYPES.ANIMATE.APPLY.key:
         const animateName = arg1
-        const frameGroup = TimeLinePlayer.findGroupByTarget(target)
+        const frameGroup = timeLinePlayer.findGroupByTarget(target)
         if (frameGroup) {
-          await frameGroup.applyAnimate(TimeLinePlayer.keyFrameTime, animateName).then(() => this.trigger('applyAnimate'))
+          await frameGroup.applyAnimate(timeLinePlayer.keyFrameTime, animateName).then(() => this.trigger('applyAnimate'))
         }
         break
 
       // 播放翻转修改
       case COMMAND_TYPES.CONTROL.PLAY_REVERSE.key:
-        TimeLinePlayer.reverse = arg1 || false
+        timeLinePlayer.reverse = arg1 || false
         break
 
       // 播放速度修改
       case COMMAND_TYPES.CONTROL.PLAY_SPEED.key:
-        TimeLinePlayer.speed = arg1 || 1
+        timeLinePlayer.speed = arg1 || 1
         break
 
     }
@@ -550,7 +573,7 @@ class ImageHelper extends Event {
 
           this.addToCanvas(shape)
           if (this.canvas.gifMode) {
-            TimeLinePlayer.addObjectAsFrameGroup(shape)
+            timeLinePlayer.addObjectAsFrameGroup(shape)
           } else {
             this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
           }
@@ -566,10 +589,10 @@ class ImageHelper extends Event {
    */
   addText(text, option) {
     option = option || {}
-    const textBox = new fabric.Textbox(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option })
+    const textBox = new fabric.Text(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option })
     this.addToCanvas(textBox)
     if (this.canvas.gifMode) {
-      TimeLinePlayer.addObjectAsFrameGroup(textBox)
+      timeLinePlayer.addObjectAsFrameGroup(textBox)
     } else {
       this.recordHistory({ back: () => this.removeFromCanvas(textBox), redo: () => this.addToCanvas(textBox) })
     }
@@ -621,7 +644,7 @@ class ImageHelper extends Event {
       // 总时间
       const duration = frames.reduce((a, b) => a + b.duration, 0)
       // 关键帧的开始时间
-      const keyFrameTime = frames.map(frame => frame.startTime)
+      // const keyFrameTime = frames.map(frame => frame.startTime)
       // 片段对象
       const frameGroup = new FrameGroup(frames.map(frame => {
         // 一帧
@@ -639,7 +662,7 @@ class ImageHelper extends Event {
         return keyFrame
       }))
       // 重置播放
-      TimeLinePlayer.reset({ frameTime, duration, keyFrameTime, frameGroups: [frameGroup] })
+      timeLinePlayer.reset({ frameTime, duration, frameGroups: [frameGroup] })
       // 开启gif模式
       this.canvas.gifMode = true
     }
@@ -662,7 +685,7 @@ class ImageHelper extends Event {
           img.set(option)
           this.addToCanvas(img)
           if (this.canvas.gifMode) {
-            TimeLinePlayer.addObjectAsFrameGroup(img)
+            timeLinePlayer.addObjectAsFrameGroup(img)
           } else {
             this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
           }
@@ -831,12 +854,12 @@ class ImageHelper extends Event {
     const canvasClone = await this.cloneClearCanvas()
     const { originWidth: width, originHeight: height } = canvasClone
     const gif = new GIF({ workers: 2, quality: 1, width, height, workerScript: gifWorker, background: canvasClone.backgroundColor });
-    const [start, end] = TimeLinePlayer.getLimit()
-    for (let i = 0; i < TimeLinePlayer.keyFrameTime.length; i++) {
-      const time = TimeLinePlayer.keyFrameTime[i]
+    const [start, end] = timeLinePlayer.getLimit()
+    for (let i = 0; i < timeLinePlayer.keyFrameTime.length; i++) {
+      const time = timeLinePlayer.keyFrameTime[i]
       if (time >= start && time <= end) {
-        const delay = (TimeLinePlayer.keyFrameTime[i + 1] || TimeLinePlayer.duration) - time
-        const canvas = await TimeLinePlayer.timeToCanvas(time, canvasClone)
+        const delay = (timeLinePlayer.keyFrameTime[i + 1] || timeLinePlayer.duration) - time
+        const canvas = await timeLinePlayer.timeToCanvas(time, canvasClone)
         gif.addFrame(canvas, {delay})
       }
     }
@@ -1071,14 +1094,12 @@ class ImageHelper extends Event {
     this.canvas.setDimensions({ width: width * viewScale, height: height * viewScale })
   }
 
+  /**
+   * 拷贝canvas实例
+   * @returns {Promise<unknown>}
+   */
   async cloneClearCanvas() {
-    const canvasClone = await new Promise(resolve => this.canvas.clone(resolve))
-    canvasClone.clear();
-    canvasClone.originWidth = this.canvas.originWidth
-    canvasClone.originHeight = this.canvas.originHeight
-    canvasClone.backgroundColor = this.canvas.backgroundColor
-    // canvasClone.setZoom(this.canvas.getZoom())
-    return canvasClone
+    return await cloneCanvas(this.canvas, true)
   }
 
   /**
