@@ -53,7 +53,8 @@
         </el-main>
 
         <!--底部贴纸-->
-        <div style="padding: 0 6px;">
+        <div class="bottom-container">
+          <PlayStatus />
           <el-tabs v-model="activeResourceName" type="card" class="bottom-function-tabs">
             <el-tab-pane label="贴纸" name="stickers">
               <Stickers />
@@ -84,7 +85,8 @@ import LayerPanel from '@/components/panel/LayerPanel.vue'
 import TimeLinePanel from "@/components/panel/TimeLinePanel.vue"
 import Dialogs from '@/components/panel/Dialogs.vue'
 import AnimatePanel from "@/components/panel/AnimatePanel.vue"
-import Waiting from "@/components/Waiting.vue";
+import Waiting from "@/components/Waiting.vue"
+import PlayStatus from "@/components/panel/PlayStatus.vue"
 
 export default {
   name: 'Stage',
@@ -101,7 +103,8 @@ export default {
     LayerPanel,
     TimeLinePanel,
     Dialogs,
-    AnimatePanel
+    AnimatePanel,
+    PlayStatus
   },
   provide() {
     return {
@@ -239,5 +242,15 @@ export default {
 }
 .import-file {
   display: inline-block;
+}
+.bottom-container {
+  padding: 0 6px;
+  position: relative;
+  .play-status {
+    top: 4px;
+    left: 166px;
+    z-index: 2;
+    position: absolute;
+  }
 }
 </style>

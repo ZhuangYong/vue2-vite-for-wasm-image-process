@@ -642,7 +642,7 @@ class ImageHelper extends Event {
       // 帧时间
       const frameTime = Number(Object.keys(frameTimes).find(key => key === maxTime))
       // 总时间
-      const duration = frames.reduce((a, b) => a + b.duration, 0)
+      // const duration = frames.reduce((a, b) => a + b.duration, 0)
       // 关键帧的开始时间
       // const keyFrameTime = frames.map(frame => frame.startTime)
       // 片段对象
@@ -662,7 +662,7 @@ class ImageHelper extends Event {
         return keyFrame
       }))
       // 重置播放
-      timeLinePlayer.reset({ frameTime, duration, frameGroups: [frameGroup] })
+      timeLinePlayer.reset({ frameTime, frameGroups: [frameGroup] })
       // 开启gif模式
       this.canvas.gifMode = true
     }

@@ -19,7 +19,7 @@ export default class FrameGroup extends Event {
   animates = []
 
   /**
-   * 总时间
+   * 延时，负数代表跳过的时间
    * @type {number}
    */
   _delay = 0
@@ -30,8 +30,16 @@ export default class FrameGroup extends Event {
    */
   limit = []
 
+  /**
+   * 有效时间
+   * @type {number}
+   */
   duration = 0
 
+  /**
+   * 当前帧
+   * @type {null}
+   */
   currentFrame = null
 
   constructor(frames) {
@@ -219,12 +227,21 @@ export default class FrameGroup extends Event {
     return !!this.findFrameByTarget(target)
   }
 
+  /**
+   * 是否相等
+   * @param frameGroup
+   * @returns {boolean}
+   */
+  equals(frameGroup) {
+    return (frameGroup || {}).UUID === this.UUID
+  }
+
   get canvas() {
     return (this.frames.find(item => !!item.canvas) || {}).canvas
   }
 
   /**
-   * 总时间
+   * 总时间, 从0算
    * @returns {number}
    */
   get totalTime() {

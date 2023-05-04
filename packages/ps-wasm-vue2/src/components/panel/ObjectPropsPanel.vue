@@ -8,7 +8,7 @@
         </div>
         <div v-if="canvas.gifMode" class="props-item">
           <span class="label">fps：</span>
-          {{ 1000 / timeLinePlayer.frameTime }}
+          {{ fps }}
         </div>
       </div>
 
@@ -144,6 +144,9 @@ export default {
     },
     speed() {
       return this.timeLinePlayer.speed
+    },
+    fps() {
+      return (1000 / this.timeLinePlayer.frameTime).toFixed(0)
     }
   },
   mounted() {

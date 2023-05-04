@@ -68,6 +68,18 @@ class TimeLinePlayer extends Event {
    */
   frameGroups = []
 
+  /**
+   * 输出时间限制
+   * @type {[]}
+   */
+  outputLimit = []
+
+  /**
+   * 是否开启输出时间限制
+   * @type {boolean}
+   */
+  enabledOutputLimit = true
+
   constructor() {
     super()
   }
@@ -87,6 +99,7 @@ class TimeLinePlayer extends Event {
     if (!_.isEmpty(options.frameGroups)) {
       options.frameGroups.forEach(frameGroup => this.addFrameGroup(frameGroup))
     }
+    this.outputLimit = [0, this.duration]
     // this.duration = options.duration || 0
     // const keyFrameTime = options.keyFrameTime || []
     // const frameCount = this.frameCount
@@ -223,6 +236,7 @@ class TimeLinePlayer extends Event {
         }
       }, between * (1 / this.speed))
       this.currentTime = nextTime
+      this.trigger('update:current:time')
     }
   }
 
@@ -362,10 +376,11 @@ class TimeLinePlayer extends Event {
   }
 
   /**
-   * 持续时间
+   * 持续时间，从0算起
    * @returns {*}
    */
   get duration() {
+    // 找到frameGroup中最大的totalTime
     return (this.frameGroups || []).reduce((pre, cur) => Math.max(pre, cur.totalTime), 0)
   }
 

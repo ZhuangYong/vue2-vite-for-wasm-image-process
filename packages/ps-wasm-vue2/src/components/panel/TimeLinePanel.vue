@@ -1,14 +1,20 @@
 <template>
   <div ref="timeLinePanel" class="time-line-panel" @mousedown="onMousedown" @mouseup="onMouseup" @mousemove="onMousemove" @wheel="onWheel">
+    <!--时间刻度-->
     <TimeLineMark :offset="timeLineContainer.x" :scale="scale || defaultScale" class="time-line-mark" @mousedown.native="onMarkMousedown" @mousemove.native="onMarkMousemove" @mouseout.native="onMarkMouseout" />
+    <!--时间限制编辑-->
+    <TimeLineLimit v-if="active && timeLinePlayer.enabledOutputLimit" :output-limit="timeLinePlayer.outputLimit" :style="`top: 22px; transform: translate(${-timeLineContainer.x}px`" />
     <!--辅助显示当前鼠标移动刻度-->
     <div v-if="showTimeAssetsLine && timeLinePlayer.duration" class="time-assets-line" :style="`transform: translateX(${timeAssetsLine.x}px)`" />
     <!--辅助显示当前播放刻度-->
-    <div v-if="timeLinePlayer.duration" class="time-assets-line play-time-line" :style="`transform: translateX(${playTimeLineX}px)`" />
+    <div v-if="active" class="time-assets-line play-time-line" :style="`transform: translateX(${playTimeLineX}px)`">
+      <span class="play-time-line-head" />
+    </div>
     <!--帧预览-->
-    <div ref="timeLineContainer" class="time-line-container"  :style="`transform: translate(${-timeLineContainer.x}px, ${-timeLineContainer.y}px)`">
+    <div ref="timeLineContainer" class="time-line-container" :style="`transform: translate(${-timeLineContainer.x}px, ${-timeLineContainer.y}px)`">
       <div v-for="frameGroup in timeLinePlayer.frameGroups" :key="frameGroup.UUID" class="time-line-item" :style="`width: ${(frameGroup.duration + frameGroup.delay) * (scale || 1)}px`">
-        <TimeLine :frame-group="frameGroup" :offset="timeLineContainer.x" :item-size="itemSize" :scale="scale || defaultScale" />
+        <TimeLine :frame-group="frameGroup" :offset="timeLineContainer.x" :item-size="itemSize"
+                  :scale="scale || defaultScale" :limit-editable="true" @click.native="onFrameGroupClick(frameGroup)"/>
       </div>
     </div>
     <div v-if="showScrollBar" class="scroll-bar" :class="scrollbarScroll === 'h' && scrollbarScroll" :style="`width: ${scrollBar.width}px; transform: translateX(${scrollBar.x}px)`" @mousedown="onScrollbarMousedown" />
@@ -20,7 +26,8 @@
 import TimeLine from "@/components/panel/TimeLine.vue"
 import BaseFabricComponent from "@/components/BaseFabricComponent"
 import timeLinePlayer from '@/utils/TimeLinePlayer'
-import TimeLineMark from "@/components/panel/TimeLineMark.vue";
+import TimeLineMark from "@/components/panel/TimeLineMark.vue"
+import TimeLineLimit from "@/components/panel/TimeLineLimit.vue"
 
 // 样式(TimeLine.vue)中itemSize保持一致
 const itemSize = 40
@@ -28,7 +35,7 @@ const itemSize = 40
 export default {
   name: 'TimeLinePanel',
   mixins: [BaseFabricComponent],
-  components: { TimeLine, TimeLineMark },
+  components: { TimeLine, TimeLineMark, TimeLineLimit },
   provide() {
     return {
       getContainer: () => this.$refs.timeLinePanel
@@ -38,12 +45,13 @@ export default {
     return {
       scale: 0,
       itemSize,
+      currentFrameGroup: null, // 当前编辑的片段
       changeTime: false, // 当前是否为修改时间状态
       timeLinePlayer,
       paddingBottom: 40, // 内容底部多显示距离
       paddingRight: 100, // 内容右侧多显示距离
       timeAssetsLine: {x: 0, y: 0},
-      showTimeAssetsLine: false,
+      showTimeAssetsLine: false, // 是否显示时间辅助线
       scrollbarScroll: '', // 滚动条拖动
       showScrollBar: false, // 显示滚动条
       timeLineContainer: { x: 0, y: 0 }, // 帧预览面板
@@ -57,6 +65,10 @@ export default {
      * */
     defaultScale() {
       return (itemSize / this.timeLinePlayer.frameTime) || 1
+    },
+
+    active() {
+      return this.timeLinePlayer.duration
     }
   },
   watch: {
@@ -73,7 +85,7 @@ export default {
     // }
   },
   mounted() {
-    this.timeLinePlayer.on('requestFrame', this.refreshTimeLine)
+    this.timeLinePlayer.on('update:current:time', this.refreshTimeLine)
     document.addEventListener('mouseup', this.leaveChangeTime)
     document.addEventListener('mousemove', this.onDocumentMousemove)
   },
@@ -109,11 +121,17 @@ export default {
       this.scrollbarScroll = e.target.classList.contains('vertical') ? 'v' : 'h'
       // this.scrollbarScroll = true
     },
+
+    onFrameGroupClick(frameGroup) {
+      this.currentFrameGroup = frameGroup
+    },
+
     onMousedown(e) {
     },
     onMarkMousedown(e) {
       this.changeTime = true
       this.refreshPlayTime(e)
+      this.refreshTimeLine()
     },
     onDocumentMousemove(e) {
       this.refreshPlayTime(e)
@@ -222,7 +240,8 @@ export default {
         const {x} = this.$refs.timeLinePanel.getBoundingClientRect()
         const {width} = this.$refs.timeLineContainer.getBoundingClientRect()
         const time = (e.clientX - x + this.timeLineContainer.x) / width * this.timeLinePlayer.duration
-        this.timeLinePlayer.requestFrame(Math.max(0, Math.min(time, this.timeLinePlayer.duration)))
+        const resetTime = Math.max(0, Math.min(time, this.timeLinePlayer.duration)).toFixed(2)
+        this.timeLinePlayer.requestFrame(Number(resetTime))
       }
     }
   },
@@ -234,10 +253,10 @@ export default {
   overflow: hidden;
   position: relative;
   min-height: 100px;
+  border: 1px solid #ebeef5ff;
   .time-line-container {
-    top: 0;
+    top: 38px;
     left: 0;
-    padding-top: 16px;
     position: absolute;
     .time-line-item {
       margin-top: 10px;
@@ -245,22 +264,27 @@ export default {
       background-color: white;
       &:before {
         left: 0;
-        height: 40px;
+        height: 42px;
         content: " ";
+        margin-top: -2px;
         border-radius: 4px;
         position: absolute;
-        background-color: #e9e9e9;
         width: calc(100% + 800px);
+        border-top: 1px solid #ebeef5ff;
+        border-bottom: 1px solid #ebeef5ff;
       }
     }
   }
   .time-line-mark {
-    top: 0;
+    top: -5px;
     left: 0;
     z-index: 1;
+    border-bottom: 1px solid #ebebeb;
     position: absolute;
     background-color: white;
-
+    ::v-deep line {
+      stroke: #cccccc
+    }
   }
   .time-assets-line {
     left: 0;
@@ -271,11 +295,37 @@ export default {
     pointer-events: none;
     border-left: 1px solid #ebebeb;
     &.play-time-line {
+      top: 9px;
       width: 1px;
       height: 100%;
       border: none;
       border-radius: 2px;
       background-color: gray;
+      .play-time-line-head {
+        top: -9px;
+        width: 6px;
+        height: 6px;
+        margin-left: -4px;
+        position: absolute;
+        border: 1px solid gray;
+        border-bottom: none;
+        &:before, &:after {
+          top: 7px;
+          width: 5px;
+          height: 0;
+          content: ' ';
+          position: absolute;
+          border-top: 1px solid gray;
+        }
+        &:before {
+          margin-left: -4px;
+          transform: rotate(45deg);
+        }
+        &:after {
+          margin-left: -1px;
+          transform: rotate(-45deg);
+        }
+      }
     }
   }
   .scroll-bar {

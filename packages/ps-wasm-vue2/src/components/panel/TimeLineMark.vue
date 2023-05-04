@@ -22,7 +22,6 @@ export default {
   data() {
     return {
       length: 0,
-      markLength: 4,
       // offset: 0,
       // zeroPosition: 0,
       // stroke: '',
@@ -39,6 +38,8 @@ export default {
     stroke: { type: String, default: '#979797' },
     step: { type: Number, default: 10 },
     markStep: { type: Number, default: 5 },
+    markLength: { type: Number, default: 4 },
+    labelMarkLength: { type: Number, default: 8 },
     direction: {
       type: String,
       default: RULE_TYPE.TOP,
@@ -120,13 +121,14 @@ export default {
       if (this.isHorizontal) {
         return this.x1(i)
       } else {
-        return (this.y1(i) - this.markZeroPosition) % (this.markStep * this.step) === 0 ? this.markLength + 4 : this.markLength
+        return (this.y1(i) - this.markZeroPosition) % (this.markStep * this.step) === 0 ? this.labelMarkLength : this.markLength
       }
     },
 
     y1(i) {
       if (this.isHorizontal) {
-        return 0
+        // return 0
+        return 22 - (this.showLabel(i) ? this.markLength + 4 : this.markLength)
       } else {
         const { width, step, offset = 0 } = this
         const x1 = (i - 1) * step - offset
@@ -138,7 +140,8 @@ export default {
 
     y2(i) {
       if (this.isHorizontal) {
-        return this.showLabel(i) ? this.markLength + 4 : this.markLength
+        // return this.showLabel(i) ? this.markLength + 4 : this.markLength
+        return 22
       } else {
         return this.y1(i)
       }
