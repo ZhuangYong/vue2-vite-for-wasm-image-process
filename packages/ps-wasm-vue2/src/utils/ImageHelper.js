@@ -82,7 +82,13 @@ export const COMMAND_TYPES = {
   CONTROL: {
     PLAY_OR_STOP: {key: 'playOrStrop', label: '播放/暂停', keyMap: `space`},
     PLAY_REVERSE: {key: 'playReverse', label: '正序/倒序'},
-    PLAY_SPEED: {key: 'playSpeed', label: '倍速'},
+    PLAY_SPEED: {key: 'playSpeed', label: '倍速'}
+  },
+  TIME_LINE: {
+    FRAME_DELAY: {key: 'frameDelay', label: '帧延时'},
+    FRAME_LIMIT: {key: 'frameLimit', label: '帧限制'},
+    FRAME_DELETE: {key: 'deleteFrame', label: '删除帧'},
+    FRAME_GROUP_DELETE: {key: 'deleteFrameGroup', label: '删除片段'}
   },
   ANIMATE: {
     APPLY: {key: 'applyAnimate', label: '应用动画'},
@@ -514,7 +520,9 @@ class ImageHelper extends Event {
         const animateName = arg1
         const frameGroup = timeLinePlayer.findGroupByTarget(target)
         if (frameGroup) {
-          await frameGroup.applyAnimate(timeLinePlayer.keyFrameTime, animateName).then(() => this.trigger('applyAnimate'))
+          const animate = await frameGroup.applyAnimate(timeLinePlayer.keyFrameTime, animateName)
+          this.trigger('applyAnimate')
+          this.recordHistory({ back: () => frameGroup.removeAnimate(animate), redo: () => frameGroup.reapplyAnimate(animate) })
         }
         break
 
@@ -528,6 +536,37 @@ class ImageHelper extends Event {
         timeLinePlayer.speed = arg1 || 1
         break
 
+      // 删除片段
+      case COMMAND_TYPES.TIME_LINE.FRAME_GROUP_DELETE.key:
+        let frameGroupList = target
+        if (!frameGroupList instanceof Array) {
+          frameGroupList = [target].filter(Boolean)
+        }
+        if (!_.isEmpty(frameGroupList)) {
+          const caches = []
+          frameGroupList.forEach(frameGroup => {
+            const index = timeLinePlayer.findIndex(frameGroup)
+            if (~index) {
+              caches.push({ index, frameGroup })
+              timeLinePlayer.removeFrameGroup(frameGroup)
+            }
+          })
+          timeLinePlayer.requestFrame()
+          this.recordHistory({
+            back: () => {
+              caches.forEach(cache => {
+                timeLinePlayer.addFrameGroup(cache.frameGroup, cache.index)
+              })
+              timeLinePlayer.requestFrame()
+            }, redo: () => {
+              caches.forEach(cache => {
+                timeLinePlayer.removeFrameGroup(cache.frameGroup)
+              })
+              timeLinePlayer.requestFrame()
+            }
+          })
+        }
+        break
     }
 
     // 如果修改过

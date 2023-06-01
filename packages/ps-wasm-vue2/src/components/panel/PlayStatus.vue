@@ -1,26 +1,30 @@
 <template>
   <div class="play-status">
-    <Play :play="timeLinePlayer.start" :disabled="!timeLinePlayer.duration" @change="onPlayChange" />
+    <CutButton class="play-btn" />
+    <PreButton class="play-btn" />
+    <Play class="play-btn" />
+    <NextButton class="play-btn" />
     <span v-if="timeLinePlayer.duration">{{ timeLinePlayer.currentTime }} / {{ timeLinePlayer.duration }}</span>
   </div>
 </template>
 
 <script>
 import Play from "@/components/buttons/Play.vue"
+import CutButton from "@/components/buttons/CutButton.vue"
 import timeLinePlayer from '@/utils/TimeLinePlayer'
+import NextButton from "@/components/buttons/NextButton.vue"
+import PreButton from "@/components/buttons/PreButton.vue"
 
 export default {
   name: 'PlayStatus',
-  components: { Play },
+  components: { Play, CutButton, NextButton, PreButton },
   data() {
     return {
       timeLinePlayer
     }
   },
   methods: {
-    onPlayChange(v) {
-      v ? timeLinePlayer.play() : timeLinePlayer.stop()
-    }
+
   }
 }
 </script>
@@ -32,7 +36,8 @@ export default {
   font-size: 12px;
   height: 16px;
   align-items: center;
-  .play-button {
+  .play-btn {
+    margin-left: 0;
     margin-right: 12px;
   }
 }

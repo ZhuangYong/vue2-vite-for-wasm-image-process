@@ -47,11 +47,11 @@ export default {
   methods: {
     async onClick() {
       const el = this.el ? (this.el.$el || this.el) : null
-      if (el && el.requestFullscreen) {
+      if (el) {
         const {requestFullscreen, webkitRequestFullScreen, mozRequestFullScreen, msRequestFullscreen} = this.el
         try {
           if (!this.expand) {
-            await (requestFullscreen || webkitRequestFullScreen || mozRequestFullScreen || msRequestFullscreen).apply(this.el)
+            await (requestFullscreen || webkitRequestFullScreen || mozRequestFullScreen || msRequestFullscreen).apply(el)
           } else {
             await (document.exitFullscreen || document.webkitCancelFullScreen || document.mozCancelFullScreen || document.msExitFullscreen).apply(document)
           }

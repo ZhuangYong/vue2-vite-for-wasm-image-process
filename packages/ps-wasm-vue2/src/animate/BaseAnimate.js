@@ -1,6 +1,8 @@
 import {fabric} from "@/lib/fabric.min"
 export default class BaseAnimate {
 
+  UUID = `animate-${Math.random()}`
+
   times
 
   /**
@@ -21,6 +23,12 @@ export default class BaseAnimate {
 
   ease = fabric.util.ease.easeInOutQuad
 
+  /**
+   * 计算位移动画在时间上的位移量
+   * @param times 时间数组
+   * @param fixOffset 是否修正到中线，比如抖动，修复后将以摆动中线为中线上线摆动
+   * @returns {[{time: number, newVal: number}]}
+   */
   calcByTimes(times, fixOffset) {
     let switchWay = false
     const from = 0
@@ -43,8 +51,6 @@ export default class BaseAnimate {
       switchWay && (newVal = to - newVal)
       newVal -= offset
       time2values.push({ time, newVal })
-      // this.doAnimates.push({ time, accept: frame => frame._objects.forEach(obj => obj.top += newVal) })
-      // this.backAnimates.push({ time, accept: frame => frame._objects.forEach(obj => obj.top -= newVal) })
     })
     return time2values
   }

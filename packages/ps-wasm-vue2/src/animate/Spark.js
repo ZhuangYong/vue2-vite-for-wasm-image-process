@@ -5,6 +5,10 @@ export default class Shake extends BaseAnimate {
 
   static name = '闪烁'
 
+  /**
+   * 透明度
+   * @type {number}
+   */
   amplitude = 1
 
   ease = fabric.util.ease.easeInOutCirc

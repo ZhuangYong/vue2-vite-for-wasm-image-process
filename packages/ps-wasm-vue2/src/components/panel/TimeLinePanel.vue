@@ -3,7 +3,7 @@
     <!--时间刻度-->
     <TimeLineMark :offset="timeLineContainer.x" :scale="scale || defaultScale" class="time-line-mark" @mousedown.native="onMarkMousedown" @mousemove.native="onMarkMousemove" @mouseout.native="onMarkMouseout" />
     <!--时间限制编辑-->
-    <TimeLineLimit v-if="active && timeLinePlayer.enabledOutputLimit" :output-limit="timeLinePlayer.outputLimit" :style="`top: 22px; transform: translate(${-timeLineContainer.x}px`" />
+    <TimeLineLimit v-show="active && timeLinePlayer.enabledOutputLimit" :output-limit="timeLinePlayer.outputLimit" :style="`top: 22px; transform: translate(${-timeLineContainer.x}px`" />
     <!--辅助显示当前鼠标移动刻度-->
     <div v-if="showTimeAssetsLine && timeLinePlayer.duration" class="time-assets-line" :style="`transform: translateX(${timeAssetsLine.x}px)`" />
     <!--辅助显示当前播放刻度-->
@@ -17,8 +17,8 @@
                   :scale="scale || defaultScale" :limit-editable="true" @click.native="onFrameGroupClick(frameGroup)"/>
       </div>
     </div>
-    <div v-if="showScrollBar" class="scroll-bar" :class="scrollbarScroll === 'h' && scrollbarScroll" :style="`width: ${scrollBar.width}px; transform: translateX(${scrollBar.x}px)`" @mousedown="onScrollbarMousedown" />
-    <div v-if="showScrollBar" class="scroll-bar vertical" :class="scrollbarScroll === 'v' && scrollbarScroll" :style="`height: ${scrollBar.height}px; transform: translateY(${scrollBar.y}px)`" @mousedown="onScrollbarMousedown" />
+    <div v-show="showScrollBar" class="scroll-bar" :class="scrollbarScroll === 'h' && scrollbarScroll" :style="`width: ${scrollBar.width}px; transform: translateX(${scrollBar.x}px)`" @mousedown="onScrollbarMousedown" />
+    <div v-show="showScrollBar" class="scroll-bar vertical" :class="scrollbarScroll === 'v' && scrollbarScroll" :style="`height: ${scrollBar.height}px; transform: translateY(${scrollBar.y}px)`" @mousedown="onScrollbarMousedown" />
   </div>
 </template>
 
@@ -48,7 +48,7 @@ export default {
       currentFrameGroup: null, // 当前编辑的片段
       changeTime: false, // 当前是否为修改时间状态
       timeLinePlayer,
-      paddingBottom: 40, // 内容底部多显示距离
+      paddingBottom: 80, // 内容底部多显示距离
       paddingRight: 100, // 内容右侧多显示距离
       timeAssetsLine: {x: 0, y: 0},
       showTimeAssetsLine: false, // 是否显示时间辅助线
@@ -72,17 +72,6 @@ export default {
     }
   },
   watch: {
-    // 'timeLineContainer.x'(x) {
-    //   const { timeLineContainer, timeLinePanel } = this.$refs
-    //   if (timeLineContainer && timeLinePanel) {
-    //     const { width: containerWidth } = timeLineContainer.getBoundingClientRect()
-    //     const { width } = timeLinePanel.getBoundingClientRect()
-    //     this.scrollBar.x = (width - this.scrollBar.width) * (x / ((containerWidth + this.paddingRight) - width))
-    //   } else {
-    //     this.scrollBar.x = 0
-    //   }
-    //   this.refreshTimeLine()
-    // }
   },
   mounted() {
     this.timeLinePlayer.on('update:current:time', this.refreshTimeLine)
@@ -145,9 +134,6 @@ export default {
       this.refreshPlayTime(e)
     },
     onMousemove(e) {
-      // if (this.moveOutTimer) {
-      //   clearTimeout(this.moveOutTimer)
-      // }
       this.refreshScrollbar(e)
     },
     onMouseup() {
@@ -156,14 +142,6 @@ export default {
     onMarkMouseout() {
       this.showTimeAssetsLine = false
     },
-    // onMouseout() {
-    //   if (this.moveOutTimer) {
-    //     clearTimeout(this.moveOutTimer)
-    //   }
-    //   this.moveOutTimer = setTimeout(() => {
-    //     this.showTimeAssetsLine = false
-    //   }, 400)
-    // },
     onWheel(e) {
       e.stopPropagation()
       e.preventDefault()
@@ -179,7 +157,6 @@ export default {
         this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - deltaY * 0.0004))
         this.refreshScrollbar(e)
       }
-      console.log('----- onwheel', this.scale, deltaY, deltaX)
     },
 
     /**
@@ -255,7 +232,7 @@ export default {
   min-height: 100px;
   border: 1px solid #ebeef5ff;
   .time-line-container {
-    top: 38px;
+    top: 18px;
     left: 0;
     position: absolute;
     .time-line-item {

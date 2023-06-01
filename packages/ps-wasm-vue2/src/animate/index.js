@@ -1,6 +1,7 @@
 import Shake from "@/animate/Shake"
 import Scale from "@/animate/Scale"
 import Spark from "@/animate/Spark"
+import TypeWord from "@/animate/TypeWord"
 
 export default [
   { key: 'shake', label: Shake.name, Constructor: Shake},
@@ -8,5 +9,5 @@ export default [
   { key: 'spark', label: Spark.name, Constructor: Spark},
   // { key: '渐变', label: Shake.name, Constructor: Shake},
   // { key: '故障', label: Scale.name, Constructor: Scale},
-  // { key: '打字', label: Spark.name, Constructor: Spark}
+  { key: '打字', label: TypeWord.name, Constructor: TypeWord}
 ]

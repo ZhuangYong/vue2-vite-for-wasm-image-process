@@ -33,12 +33,6 @@ class TimeLinePlayer extends Event {
   speed = 1
 
   /**
-   * 持续时间
-   * @type {number}
-   */
-  // duration = 0
-
-  /**
    * 每一帧持续时间
    * @type {number}
    */
@@ -78,7 +72,9 @@ class TimeLinePlayer extends Event {
    * 是否开启输出时间限制
    * @type {boolean}
    */
-  enabledOutputLimit = true
+  enabledOutputLimit = false
+
+  _selectFrameGroups = []
 
   constructor() {
     super()
@@ -163,10 +159,52 @@ class TimeLinePlayer extends Event {
     this.addFrameGroup(new FrameGroup([keyFrame]))
   }
 
-  addFrameGroup(frameGroup) {
-    frameGroup.on('update:frame:time', this.refreshKeyFrameTimes.bind(this))
-    this.frameGroups.push(frameGroup)
+  /**
+   * 添加片段
+   * @param frameGroup
+   * @param index
+   */
+  addFrameGroup(frameGroup, index = -1) {
+    if (!~index) {
+      index = this.frameGroups.length
+    }
+    const refreshKeyFrameTimes = this.refreshKeyFrameTimes.bind(this)
+    frameGroup.on('update:frame:time', refreshKeyFrameTimes)
+    frameGroup.on('remove', () => frameGroup.off('update:frame:time', refreshKeyFrameTimes))
+    this.frameGroups.splice(index, 0, frameGroup)
     this.requestFrame()
+  }
+
+  /**
+   * 删除片段
+   * @param frameGroup
+   */
+  removeFrameGroup(frameGroup) {
+    if (frameGroup instanceof FrameGroup) {
+      const index = this.frameGroups.findIndex(group => group.UUID === frameGroup.UUID)
+      if (~index) {
+        frameGroup.clearRender()
+        this.frameGroups.splice(index, 1)
+        frameGroup.trigger('remove')
+      }
+
+      const indexSelect = this._selectFrameGroups.findIndex(group => group.UUID === frameGroup.UUID)
+      if (~indexSelect) {
+        this._selectFrameGroups.splice(indexSelect, 1)
+      }
+    }
+  }
+
+  /**
+   * 查找片段位置索引
+   * @param frameGroup
+   * @returns {number}
+   */
+  findIndex(frameGroup) {
+    if (!frameGroup instanceof FrameGroup) {
+      return - 1
+    }
+    this.frameGroups.findIndex(group => group.UUID === frameGroup.UUID)
   }
 
   findGroupByTarget(target) {
@@ -221,7 +259,27 @@ class TimeLinePlayer extends Event {
   }
 
   /**
-   * 渲染下一帧
+   * 仅渲染下一帧
+   * @reverse 是否反向
+   */
+  renderNextFrame(reverse = false) {
+    const { currentTime } = this
+    const nextTime = reverse ? this.getPreTime(currentTime) : this.getNextTime(currentTime)
+    this.requestFrame(nextTime)
+    this.currentTime = nextTime
+    this.trigger('update:current:time')
+  }
+
+  /**
+   * 仅渲染上一帧
+   * @reverse 是否反向
+   */
+  renderPreFrame() {
+    this.renderNextFrame(true)
+  }
+
+  /**
+   * 渲染下一帧且连续渲染
    */
   requestNextFrame() {
     console.log('------- requestNextFrame', this.currentTime)
@@ -367,6 +425,35 @@ class TimeLinePlayer extends Event {
   }
 
   /**
+   * 设置片段是否选中
+   * @param frameGroup
+   * @param bol
+   */
+  setSelectFrameGroup(frameGroup, bol) {
+    let index = -1
+    let targetGroup = frameGroup
+    if (frameGroup instanceof String) {
+      targetGroup = this.frameGroups.find(group => group.UUID === frameGroup)
+      index = this._selectFrameGroups.findIndex(group => group.UUID === frameGroup)
+    } else if (frameGroup.UUID) {
+      targetGroup = this.frameGroups.find(group => group.UUID === frameGroup.UUID)
+      index = this._selectFrameGroups.findIndex(group => group.UUID === frameGroup.UUID)
+    } else {
+      return new Error('unsupported type in first arg')
+    }
+    if (bol) {
+      if (!~index) {
+        this._selectFrameGroups.push(targetGroup)
+      }
+    } else {
+      if (~index) {
+        this._selectFrameGroups.splice(index, 1)
+      }
+    }
+
+  }
+
+  /**
    * 活动帧数
    * @returns {number}
    */
@@ -386,6 +473,10 @@ class TimeLinePlayer extends Event {
 
   get canvas() {
     return (this.frameGroups.find(frameGroup => !!frameGroup.canvas) || {}).canvas
+  }
+
+  get selectedList() {
+    return [...this._selectFrameGroups]
   }
 
 }

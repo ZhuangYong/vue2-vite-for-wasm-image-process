@@ -8,25 +8,28 @@
 </template>
 
 <script>
+import timeLinePlayer from "@/utils/TimeLinePlayer"
+
 export default {
   name: 'Play',
   props: {
-    disabled: {
-      type: Boolean,
-      default: false
-    },
     size: {
       type: Number,
       default: 12
-    },
-    play: {
-      type: Boolean,
-      default: false
     }
   },
   data() {
     return {
-      status: 'pause'
+      status: 'pause',
+      timeLinePlayer
+    }
+  },
+  computed: {
+    disabled() {
+      return !this.timeLinePlayer.duration
+    },
+    play() {
+      return this.timeLinePlayer.start
     }
   },
   watch: {
@@ -38,8 +41,9 @@ export default {
     togglePlay() {
       if (!this.disabled) {
         this.status = this.status === 'pause' ? 'play' : 'pause'
-        this.$emit('update:play', this.status === 'play')
-        this.$emit('change', this.status === 'play')
+        // this.$emit('update:play', this.status === 'play')
+        // this.$emit('change', this.status === 'play')
+        timeLinePlayer.togglePlay()
       }
     }
   },

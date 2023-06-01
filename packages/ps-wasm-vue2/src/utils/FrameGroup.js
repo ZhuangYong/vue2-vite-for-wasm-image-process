@@ -69,10 +69,7 @@ export default class FrameGroup extends Event {
    * @param time
    */
   renderFrame(time) {
-    if (this.currentFrame) {
-      this.currentFrame.clearRender()
-      this.canvas.requestRenderAll()
-    }
+    this.clearRender()
     const frame = this.getFrameInTime(time, true, true)
     if (frame) {
       frame.render()
@@ -88,6 +85,13 @@ export default class FrameGroup extends Event {
     //   // })
     // }
     // ImageHelper.requestRenderAll()
+  }
+
+  clearRender() {
+    if (this.currentFrame) {
+      this.currentFrame.clearRender()
+      this.canvas.requestRenderAll()
+    }
   }
 
   async addIfAbsentKeyFrames(keyFrameTimes) {
@@ -127,9 +131,23 @@ export default class FrameGroup extends Event {
   }
 
   /**
+   * 是否应用过动画
+   * @param animate
+   * @return {boolean}
+   */
+  hasAnimate(animate) {
+    if (animate) {
+      const animateName = typeof animate === 'string' ? animate : animate.name
+      return animateName ? this.animates.some(item => item.name === animateName) : false
+    }
+    return false
+  }
+
+  /**
    * 在关键帧上应用动画
    * @param keyFrameTimes
    * @param animateName {string}
+   * @return animate
    */
   async applyAnimate(keyFrameTimes, animateName) {
     await this.addIfAbsentKeyFrames(keyFrameTimes)
@@ -137,6 +155,33 @@ export default class FrameGroup extends Event {
     const animate = new Constructor(keyFrameTimes)
     this.animates.push(animate)
     animate.doAnimates.forEach(item => item.accept(this.findFrameByStartTime(item.time)))
+    return animate
+  }
+
+  /**
+   * 重新应用动画
+   * @param animate
+   * @return {*}
+   */
+  reapplyAnimate(animate) {
+    this.animates.push(animate)
+    animate.doAnimates.forEach(item => item.accept(this.findFrameByStartTime(item.time)))
+    return animate
+  }
+
+  /**
+   * 删除已经应用过的动画
+   * @param animate
+   * @return {*}
+   */
+  removeAnimate(animate) {
+    console.log('removeAnimate')
+    const index = this.animates.findIndex(item => item.UUID === animate.UUID)
+    if (~index) {
+      this.animates.splice(index, 1)
+      animate.backAnimates.forEach(item => item.accept(this.findFrameByStartTime(item.time)))
+      return animate
+    }
   }
 
   useEase(time, frame) {

@@ -116,6 +116,10 @@ export default {
     },
     scale() {
       this.refreshFrames()
+    },
+
+    active(v) {
+      timeLinePlayer.setSelectFrameGroup(this.frameGroup, !!v)
     }
   },
   mounted() {
@@ -145,7 +149,10 @@ export default {
     },
 
     onDocumentMousedown(e) {
-      if (!(this.$refs.timeLineLimit.contains(e.target) || this.$refs.timeLineLimit === e.target)) {
+      if (
+        !(this.$refs.timeLineLimit.contains(e.target) || this.$refs.timeLineLimit === e.target) &&
+        this.getContainer().contains(e.target)
+      ) {
         this.active = false
       }
     },
@@ -162,7 +169,7 @@ export default {
 
     onMousemove(e) {
       if (this.startDelay) {
-        const distance = (e.clientX - this.preClientX) / this.scale
+        const distance = Number(((e.clientX - this.preClientX) / this.scale).toFixed(0))
         this.frameGroup.delay = Math.max(-this.frameGroup.limit[0], this.preDelay + distance)
         timeLinePlayer.resetCurrentTime()
         console.log('----- onMousemove', this.frameGroup.delay, distance)
@@ -209,7 +216,7 @@ export default {
         return
       }
       const { width } = this.$refs.timeLine.getBoundingClientRect()
-      const distance = (e.clientX - this.startPoint.x) / width * this.frameGroup.duration
+      const distance = Number(((e.clientX - this.startPoint.x) / width * this.frameGroup.duration).toFixed(0))
 
       if (this.startLimitWay === 'left') {
         const newLimit = this.startLimit[0] + distance
