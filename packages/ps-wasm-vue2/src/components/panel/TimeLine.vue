@@ -309,6 +309,7 @@ $limitBarWidth: 3px;
       background-color: #009987;
       &:before {
         top: 33%;
+        left: 1px;
         width: 1px;
         height: 34%;
         content: " ";
@@ -325,16 +326,14 @@ $limitBarWidth: 3px;
       }
       &.left {
         left: -($borderSize + 1px);
-        border-top-left-radius: 4px;
-        border-bottom-left-radius: 4px;
+        border-radius: 3px;
         &:after {
           left: 0;
         }
       }
       &.right {
         right: -($borderSize + 1px);
-        border-top-right-radius: 4px;
-        border-bottom-right-radius: 4px;
+        border-radius: 3px;
         &:after {
           right: 0;
         }

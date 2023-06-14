@@ -7,8 +7,7 @@
 <script>
 import expandSvg from "@/../static/icon/fullscreen-expand.svg"
 import shrinkSvg from "@/../static/icon/fullscreen-shrink.svg"
-import {Utils} from "ps-wasm-vue2"
-import imageHelper from "@/utils/ImageHelper";
+import {Utils, imageHelper} from "ps-wasm-vue2"
 export default {
   name: 'FullscreenButton',
   props: {

@@ -15,7 +15,7 @@
 <script>
 import {VueDraggableNext as Draggable, Sortable} from '@/components/Draggable'
 import VisibleSwitch from "@/components/buttons/VisibleSwitch.vue"
-import {Utils, BaseFabricComponent, ImageHelper, COMMAND_TYPES, Swap} from "ps-wasm-vue2"
+import {Utils, BaseFabricComponent, imageHelper, COMMAND_TYPES, Swap} from "ps-wasm-vue2"
 import textSvg from '@/../static/icon/text.svg'
 
 Sortable.mount(new Swap())
@@ -33,7 +33,7 @@ export default {
     layers() {
       return ((this.canvas || {})._objects || []).map(target => {
         const { UUID, type, left, top, width, height, scaleX = 1, scaleY = 1, text } = target
-        const result = ImageHelper.watchTarget(target)
+        const result = imageHelper.watchTarget(target)
         result.type = target.type
         result._element = target._element
         if (Utils.isText(type)) {
@@ -67,7 +67,7 @@ export default {
     },
     onSort({ oldIndex, newIndex }) {
       console.log('>>>>> sort', { oldIndex, newIndex })
-      ImageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)
+      imageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)
       this.$nextTick(() => {
         this.orderList = ((this.canvas || {})._objects || []).map(item => item.UUID).reverse()
       })

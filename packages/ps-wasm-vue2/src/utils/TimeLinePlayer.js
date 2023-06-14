@@ -78,6 +78,7 @@ class TimeLinePlayer extends Event {
 
   constructor() {
     super()
+    console.log('create time player')
   }
 
   /**
@@ -91,6 +92,7 @@ class TimeLinePlayer extends Event {
     this.currentTime = 0
     this.frameGroups = []
     this.frameTime = options.frameTime || 0
+    this.trigger('update:frameTime', this.frameTime)
 
     if (!_.isEmpty(options.frameGroups)) {
       options.frameGroups.forEach(frameGroup => this.addFrameGroup(frameGroup))
@@ -282,7 +284,6 @@ class TimeLinePlayer extends Event {
    * 渲染下一帧且连续渲染
    */
   requestNextFrame() {
-    console.log('------- requestNextFrame', this.currentTime)
     if (this.start) {
       const { currentTime } = this
       const nextTime = this.reverse ? this.getPreTime(currentTime) : this.getNextTime(currentTime)

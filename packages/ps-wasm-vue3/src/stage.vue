@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import { Const, ImageHelper, fabric } from "ps-wasm-vue2"
+import { Const, imageHelper, fabric } from "ps-wasm-vue2"
 import CanvasPanel from "@/components/panel/CanvasPanel.vue"
 import LayerPanel from '@/components/panel/LayerPanel.vue'
 import StickersPanel from '@/components/panel/StickersPanel.vue'
@@ -105,7 +105,7 @@ export default {
     // 全屏对象
     this.fullscreenTarget = this.$refs.stage
     // 注册快捷键
-    ImageHelper.registerKeyEvent(this.$refs.stage)
+    imageHelper.registerKeyEvent(this.$refs.stage)
   },
   computed: {
   },
@@ -118,7 +118,7 @@ export default {
           });
           this.currentObject.filters.push(filter)
           this.currentObject.applyFilters()
-          ImageHelper.canvas.renderAll()
+          imageHelper.canvas.renderAll()
       }
     },
 

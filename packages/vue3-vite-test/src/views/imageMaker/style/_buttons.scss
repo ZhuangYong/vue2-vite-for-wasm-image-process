@@ -1,0 +1,12 @@
+@import 'var';
+.plain-green-light{
+  --el-button-text-color: #{$activeColor};
+  --el-button-bg-color: #E4F0F3;
+  --el-button-hover-text-color: #{$activeColor};
+  --el-button-hover-border-color: #{lighten($activeColor, 6%)};
+  --el-button-hover-bg-color: #E4F0F3;
+  --el-button-border-color: transparent;
+  --el-button-active-text-color: white;
+  --el-button-active-border-color: #{$activeColor};
+  --el-button-active-bg-color: #{$activeColor};
+}

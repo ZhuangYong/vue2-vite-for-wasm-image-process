@@ -9,7 +9,7 @@ import Canvas2Image from "@/utils/CanvasToImage";
 import saveAs from "@/lib/FileSaver";
 import testImg from "../../static/images/effect/e1.jpg"
 import LibGif from '@/lib/libgif'
-import timeLinePlayer from '@/utils/TimeLinePlayer'
+import timeLinePlayerInstance from '@/utils/TimeLinePlayer'
 import Frame from "@/utils/Frame"
 import FrameGroup from "@/utils/FrameGroup"
 import {Event} from "@/utils/Event"
@@ -142,6 +142,8 @@ class ImageHelper extends Event {
   currentMouseMoveEvent
 
   defaultProps = defaultProps
+
+  timeLinePlayer = timeLinePlayerInstance
 
   // 画笔
   brushes = { vLinePatternBrush: null, hLinePatternBrush: null,squarePatternBrush: null,diamondPatternBrush: null,texturePatternBrush: null }
@@ -512,15 +514,15 @@ class ImageHelper extends Event {
       // 播放或暂停
       case COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key:
         this.clearActiveObjects()
-        timeLinePlayer.togglePlay()
+        this.timeLinePlayer.togglePlay()
         break
 
       // 应用动画
       case COMMAND_TYPES.ANIMATE.APPLY.key:
         const animateName = arg1
-        const frameGroup = timeLinePlayer.findGroupByTarget(target)
+        const frameGroup = this.timeLinePlayer.findGroupByTarget(target)
         if (frameGroup) {
-          const animate = await frameGroup.applyAnimate(timeLinePlayer.keyFrameTime, animateName)
+          const animate = await frameGroup.applyAnimate(this.timeLinePlayer.keyFrameTime, animateName)
           this.trigger('applyAnimate')
           this.recordHistory({ back: () => frameGroup.removeAnimate(animate), redo: () => frameGroup.reapplyAnimate(animate) })
         }
@@ -528,12 +530,12 @@ class ImageHelper extends Event {
 
       // 播放翻转修改
       case COMMAND_TYPES.CONTROL.PLAY_REVERSE.key:
-        timeLinePlayer.reverse = arg1 || false
+        this.timeLinePlayer.reverse = arg1 || false
         break
 
       // 播放速度修改
       case COMMAND_TYPES.CONTROL.PLAY_SPEED.key:
-        timeLinePlayer.speed = arg1 || 1
+        this.timeLinePlayer.speed = arg1 || 1
         break
 
       // 删除片段
@@ -545,24 +547,24 @@ class ImageHelper extends Event {
         if (!_.isEmpty(frameGroupList)) {
           const caches = []
           frameGroupList.forEach(frameGroup => {
-            const index = timeLinePlayer.findIndex(frameGroup)
+            const index = this.timeLinePlayer.findIndex(frameGroup)
             if (~index) {
               caches.push({ index, frameGroup })
-              timeLinePlayer.removeFrameGroup(frameGroup)
+              this.timeLinePlayer.removeFrameGroup(frameGroup)
             }
           })
-          timeLinePlayer.requestFrame()
+          this.timeLinePlayer.requestFrame()
           this.recordHistory({
             back: () => {
               caches.forEach(cache => {
-                timeLinePlayer.addFrameGroup(cache.frameGroup, cache.index)
+                this.timeLinePlayer.addFrameGroup(cache.frameGroup, cache.index)
               })
-              timeLinePlayer.requestFrame()
+              this.timeLinePlayer.requestFrame()
             }, redo: () => {
               caches.forEach(cache => {
-                timeLinePlayer.removeFrameGroup(cache.frameGroup)
+                this.timeLinePlayer.removeFrameGroup(cache.frameGroup)
               })
-              timeLinePlayer.requestFrame()
+              this.timeLinePlayer.requestFrame()
             }
           })
         }
@@ -612,7 +614,7 @@ class ImageHelper extends Event {
 
           this.addToCanvas(shape)
           if (this.canvas.gifMode) {
-            timeLinePlayer.addObjectAsFrameGroup(shape)
+            this.timeLinePlayer.addObjectAsFrameGroup(shape)
           } else {
             this.recordHistory({ back: () => this.removeFromCanvas(shape), redo: () => this.addToCanvas(shape) })
           }
@@ -631,7 +633,7 @@ class ImageHelper extends Event {
     const textBox = new fabric.Text(text, { left: 50, top: 50, fontSize: 30, cornerSize: 7, ...option })
     this.addToCanvas(textBox)
     if (this.canvas.gifMode) {
-      timeLinePlayer.addObjectAsFrameGroup(textBox)
+      this.timeLinePlayer.addObjectAsFrameGroup(textBox)
     } else {
       this.recordHistory({ back: () => this.removeFromCanvas(textBox), redo: () => this.addToCanvas(textBox) })
     }
@@ -701,7 +703,7 @@ class ImageHelper extends Event {
         return keyFrame
       }))
       // 重置播放
-      timeLinePlayer.reset({ frameTime, frameGroups: [frameGroup] })
+      this.timeLinePlayer.reset({ frameTime, frameGroups: [frameGroup] })
       // 开启gif模式
       this.canvas.gifMode = true
     }
@@ -724,7 +726,7 @@ class ImageHelper extends Event {
           img.set(option)
           this.addToCanvas(img)
           if (this.canvas.gifMode) {
-            timeLinePlayer.addObjectAsFrameGroup(img)
+            this.timeLinePlayer.addObjectAsFrameGroup(img)
           } else {
             this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
           }
@@ -893,12 +895,12 @@ class ImageHelper extends Event {
     const canvasClone = await this.cloneClearCanvas()
     const { originWidth: width, originHeight: height } = canvasClone
     const gif = new GIF({ workers: 2, quality: 1, width, height, workerScript: gifWorker, background: canvasClone.backgroundColor });
-    const [start, end] = timeLinePlayer.getLimit()
-    for (let i = 0; i < timeLinePlayer.keyFrameTime.length; i++) {
-      const time = timeLinePlayer.keyFrameTime[i]
+    const [start, end] = this.timeLinePlayer.getLimit()
+    for (let i = 0; i < this.timeLinePlayer.keyFrameTime.length; i++) {
+      const time = this.timeLinePlayer.keyFrameTime[i]
       if (time >= start && time <= end) {
-        const delay = (timeLinePlayer.keyFrameTime[i + 1] || timeLinePlayer.duration) - time
-        const canvas = await timeLinePlayer.timeToCanvas(time, canvasClone)
+        const delay = (this.timeLinePlayer.keyFrameTime[i + 1] || this.timeLinePlayer.duration) - time
+        const canvas = await this.timeLinePlayer.timeToCanvas(time, canvasClone)
         gif.addFrame(canvas, {delay})
       }
     }

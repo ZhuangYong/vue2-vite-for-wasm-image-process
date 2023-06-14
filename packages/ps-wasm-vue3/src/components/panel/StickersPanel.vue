@@ -10,7 +10,7 @@
         <p @click="showPick" class="more-button">更多</p>
       </div>
     </el-scrollbar>
-    <el-dialog title="点击选择贴纸" :visible.sync="pickDialogVisible">
+    <el-dialog title="点击选择贴纸1" v-model:visible="pickDialogVisible">
       <el-tabs v-model="activeName" type="card" class="left-function-tabs">
         <el-tab-pane label="甜点铺子" name="dessert">
           <div v-for="item in svgList" :key="item.key" class="sticker-item sticker-big-item" @click="addToStage(item)">
@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import {Utils, BaseFabricComponent, ImageHelper} from "ps-wasm-vue2"
+import {Utils, BaseFabricComponent, imageHelper} from "ps-wasm-vue2"
 import {VueDraggableNext as Draggable} from '@/components/Draggable'
 const svg = require.context('../../../static/svg/', true, /\.svg$/)
 const svgList = svg.keys().map(key => ({ key: key.split('/').pop().split('.').shift(), value: svg(key)}))
@@ -64,7 +64,7 @@ export default {
     onDragend(e) {
       if (this.startDrag === true) {
         this.startDrag = false
-        ImageHelper.addStroke(e)
+        imageHelper.addStroke(e)
       }
     },
     onDragstart(e) {
@@ -81,7 +81,7 @@ export default {
     },
     addToStage(item) {
       this.closePick()
-      ImageHelper.addStroke(item.value)
+      imageHelper.addStroke(item.value)
     }
   }
 }

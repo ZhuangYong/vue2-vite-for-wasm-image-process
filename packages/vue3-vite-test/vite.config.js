@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
+import { createSvgIconsPlugin } from "vite-plugin-svg-icons"
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), createSvgIconsPlugin({ symbolId: '[name]', iconDirs: [path.resolve(process.cwd(), 'src/assets/svg')] })],
   pwa: {
     iconPaths: {
       favicon32: 'favicon.ico',
@@ -18,13 +18,13 @@ export default defineConfig({
   server:{
     host:"localhost",
     port:8080,
-    hot:true,  // 自动更新 
+    hot:true,  // 自动更新
   },
 
-  // 别名  @ => src 
+  // 别名  @ => src
   resolve:{
     alias:{
-      "@":path.resolve(__dirname,'src')
+      "@": path.resolve(__dirname,'src')
     }
   }
 })

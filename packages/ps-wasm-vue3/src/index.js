@@ -1,3 +1,5 @@
 import stage from "@/stage.vue"
-console.log(stage)
-export { stage }
+import TimeLinePanel from "@/components/panel/TimeLinePanel.vue"
+
+export { stage, TimeLinePanel }
+export * from 'ps-wasm-vue2'

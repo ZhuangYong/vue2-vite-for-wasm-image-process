@@ -1,16 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import ErrorRoute from '@/views/errors/route'
-import Login from '@/views/login/route'
-import Mains from '@/views/mains/router.js'
 
 const routes = [
   {
     path: '/',
-    redirect: { name: 'login' }
+    redirect: { name: 'mine' }
   },
-  ...Login,
-  ...ErrorRoute,
-  ...Mains,
+  {
+    path: "/mine",
+    name: "mine",
+    component: () => import('@/views/imageMaker/index.vue'),
+  },
   {
     path: "/:pathMathch(.*)",
     redirect: { name: '404' }

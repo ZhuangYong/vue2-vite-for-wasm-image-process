@@ -1,0 +1,18 @@
+$borderColor: #EBEEF5;
+$border: 1px solid $borderColor;
+
+
+$itemWidth: 46px;
+$itemHeight: 62px;
+$fontSize: 14px;
+$mainFontColor: #333333;
+$secondaryColor: #666666;
+$activeColor: #009983;
+$backgroundHover: #00998310;
+$lightGrayBackgroundColor: #F3F5F7;
+
+@mixin flex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

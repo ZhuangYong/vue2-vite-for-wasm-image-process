@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import {Const, FontHelper, BaseFabricComponent, ImageHelper} from "ps-wasm-vue2"
+import {Const, FontHelper, BaseFabricComponent, imageHelper} from "ps-wasm-vue2"
 import VisibleSwitch from "@/components/buttons/VisibleSwitch.vue"
 import {isText} from "@vue/compiler-core";
 
@@ -69,7 +69,7 @@ export default {
   data() {
     return {
       fontOptions: FontHelper.fontOptions,
-      targetProps: ImageHelper.defaultProps,
+      targetProps: imageHelper.defaultProps,
       // showProps: defaultProps
     }
   },
@@ -83,7 +83,7 @@ export default {
   },
   watch: {
     target(v) {
-      this.targetProps = ImageHelper.watchTarget(v)
+      this.targetProps = imageHelper.watchTarget(v)
     }
   },
   methods: {

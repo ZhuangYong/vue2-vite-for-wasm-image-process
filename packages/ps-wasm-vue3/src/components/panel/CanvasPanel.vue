@@ -4,12 +4,12 @@
       <div :style="`transform: matrix(1, 0, 0, 1, ${viewPort.x}, ${viewPort.y});`">
         <div v-if="showDefault" class="default">
           <el-upload action="" accept="application/json" :auto-upload="false" :show-file-list="false" :on-change="onImport">
-            <el-button size="mini" type="warning">导入</el-button>
+            <el-button size="small" type="warning">导入</el-button>
           </el-upload>
           <el-upload action="" accept="image/*" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" style="margin-left: 12px;">
-            <el-button size="mini" type="primary">打开</el-button>
+            <el-button size="small" type="primary">打开</el-button>
           </el-upload>
-          <el-button size="mini" type="primary" style="margin-left: 12px;" @click="onNew">新建</el-button>
+          <el-button size="small" type="primary" style="margin-left: 12px;" @click="onNew">新建</el-button>
         </div>
         <canvas
           ref="imgRect"
@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import {Const, ImageHelper, fabric, Event as eventBus} from "ps-wasm-vue2"
+import {Const, imageHelper, fabric, Event as eventBus} from "ps-wasm-vue2"
 import transparentSvg from "@/../static/icon/transparent.svg"
 import {isText} from "@vue/compiler-core";
 
@@ -109,14 +109,14 @@ export default {
           currentState[key] = target[key]
         })
         // 修改back和redo
-        ImageHelper.recordHistory({
+        imageHelper.recordHistory({
           back: () => fabric.util.object.extend(target, previewState),
           redo: () => fabric.util.object.extend(target, currentState)
         })
       })
       canvas.isDrawingMode = false
       this.canvas = canvas
-      ImageHelper.canvas = this.canvas
+      imageHelper.canvas = this.canvas
       canvas.renderAll()
       this.$emit('initialized', canvas)
       // this.$refs.main.addEventListener('wheel', e => {
@@ -136,14 +136,14 @@ export default {
     async onImport(file) {
       console.log(file)
       const text = await file.raw.text()
-      ImageHelper.importFromJson(text)
+      imageHelper.importFromJson(text)
     },
     onNew() {
       eventBus.trigger('new')
     },
 
     onFileAdd(file) {
-      ImageHelper.uploadImage(file.raw)
+      imageHelper.uploadImage(file.raw)
     },
 
     onSelect() {
@@ -151,7 +151,7 @@ export default {
       if (this.currentObject && this.editMode === Const.EDIT_MODE.TEXT.value && ![Const.FABRIC_TYPE.I_TEXT, Const.FABRIC_TYPE.TEXTBOX].includes(this.currentObject.type)) {
         this.canvas.discardActiveObject()
       } else {
-        ImageHelper.currentTarget = this.currentObject
+        imageHelper.currentTarget = this.currentObject
         this.$emit('update:currentSelectTarget', this.currentObject)
       }
 
@@ -177,7 +177,7 @@ export default {
       const { x: canvasX, y: canvasY } = this.canvas.lowerCanvasEl.getBoundingClientRect()
       const offset = {x: clientX - canvasX, y: clientY - canvasY}
       Array.from(e.dataTransfer.files || []).forEach(file => {
-        ImageHelper.uploadImage(file, {top: offset.y, left: offset.x})
+        imageHelper.uploadImage(file, {top: offset.y, left: offset.x})
       })
     },
 
