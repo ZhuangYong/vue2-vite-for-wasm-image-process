@@ -2,7 +2,7 @@
   <ContentPanel title="画笔及颜色" class="props-panel">
     <div class="props-line">
       <div class="props-item">
-        <el-select v-model="drawMode" size="mini" :popper-append-to-body="false" :disabled="disabled" placeholder="请选择" @change="onChange">
+        <el-select v-model="drawMode" :teleported="false" :disabled="disabled" placeholder="请选择" @change="onChange">
           <el-option v-for="item in drawModeOptions" :key="item.label" :label="item.value" :value="item.label" />
         </el-select>
       </div>

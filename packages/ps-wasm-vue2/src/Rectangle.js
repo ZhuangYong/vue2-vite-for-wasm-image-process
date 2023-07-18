@@ -47,6 +47,6 @@ export default class Rectangle {
     if (!(rect instanceof Rectangle)) {
       throw new Error('in valid type')
     }
-    new fabric.Polygon(rect.toPoints()).intersectsWithObject(new fabric.Polygon(this.toPoints()))
+    return new fabric.Polygon(rect.toPoints()).intersectsWithObject(new fabric.Polygon(this.toPoints()))
   }
 }

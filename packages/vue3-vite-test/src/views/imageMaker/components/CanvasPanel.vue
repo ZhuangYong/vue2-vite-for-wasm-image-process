@@ -1,7 +1,7 @@
 <template>
   <div ref="main" :class="mainStageClass" style="width: 100%; height: 100%;">
     <div class="canvas-panel" @drop.stop.prevent="onStageDrop" @dragover="onDragResourceOver" @mousedown.capture="onStageClick" @wheel.prevent="onWheel">
-      <div :style="`transform: matrix(1, 0, 0, 1, ${viewPort.x}, ${viewPort.y});`">
+      <div class="canvas-container" :style="`transform: matrix(1, 0, 0, 1, ${viewPort.x}, ${viewPort.y});`">
         <div v-if="showDefault" class="default">
           <el-upload action="" accept="application/json" :auto-upload="false" :show-file-list="false" :on-change="onImport">
             <el-button size="small" type="warning">导入</el-button>
@@ -11,6 +11,7 @@
           </el-upload>
           <el-button size="small" type="primary" style="margin-left: 12px;" @click="onNew">新建</el-button>
         </div>
+        <div v-if="tipDragArea" class="show-drag-tip" :style="tipAreaStyle" />
         <canvas
           ref="imgRect"
           :width="width"
@@ -24,9 +25,10 @@
 </template>
 
 <script>
-import {Const, imageHelper, fabric, Event as eventBus} from "ps-wasm-vue2"
+import {Const, imageHelper, fabric, Event as eventBus, Rectangle } from "ps-wasm-vue2"
 import transparentSvg from "./transparent.svg"
 import {isText} from "@vue/compiler-core";
+import {CUSTOM_EVENT} from "../utils";
 
 export default {
   name: 'CanvasPanel',
@@ -42,12 +44,15 @@ export default {
       width: 300, // 画布宽
       height: 300, // 画布高
       canDrop: false, // 拖拽是否在可释放区域
-      canvas: null, // 画布实例化对象
+      canvas: {}, // 画布实例化对象
+      _objects: [],
       transparentSvg, // 透明背景
       currentObject: null, // 当前选择的编辑对象
       viewPort: {x: 0, y: 0},
       startDragOffset: {x: 0, y:0}, // 开始拖动作用在对象上的偏移
       mainStageClass: Const.MAIN_STAGE_CLASS,
+      startDrag: false,
+      tipDragArea: null // 拖拽提示
     }
   },
   computed: {
@@ -67,13 +72,26 @@ export default {
      * 显示默认选项
      * */
     showDefault() {
-      return !(this.canvas || {}).originWidth
+      return !this.canvas.originWidth
     },
     canvasState() {
       const { viewPort, canvas } = this
       const {x, y} = viewPort || {}
       const { width, height } = canvas || {}
       return { width, height, x, y }
+    },
+
+    tipAreaStyle() {
+      if (!this.tipDragArea) {
+        return {}
+      }
+      const {x, y, width, height} = this.tipDragArea
+      return {
+        top: `${y}px`,
+        left: `${x}px`,
+        width: `${width}px`,
+        height: `${height}px`,
+      }
     }
   },
   watch: {
@@ -87,41 +105,53 @@ export default {
       // imageHelper.registerKeyEvent(this.$refs.main)
       this.createCanvas()
     })
+    window.addEventListener('mouseup', this.onResourceDrop)
+    window.addEventListener(CUSTOM_EVENT.DRAG_RESOURCE, this.onDragResourceOver)
+  },
+  unmounted() {
+    window.removeEventListener('mouseup', this.onResourceDrop)
+    window.removeEventListener(CUSTOM_EVENT.DRAG_RESOURCE, this.onDragResourceOver)
   },
   methods: {
     createCanvas() {
-      fabric.enableGLFiltering = false
-      const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
-      canvas.originWidth = 0
-      canvas.originHeight = 0
-      canvas.viewScale = 1
+      // fabric.enableGLFiltering = false
+      // const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
+      // canvas.originWidth = 0
+      // canvas.originHeight = 0
+      // canvas.viewScale = 1
+      // canvas.on('selection:updated', this.onSelect)
+      // canvas.on('selection:created', this.onSelect)
+      // canvas.on('selection:cleared', this.onSelect)
+      // canvas.on('object:removed', this.onSelect)
+      // canvas.on('dragover', this.onDragResourceOver)
+      // canvas.on('dragleave', this.onDragResourceLeave)
+      // // canvas.on('object:added', e => console.log(e))
+      // canvas.on('object:modified', ({ target, transform }) => {
+      //   const previewState = {...target._stateProperties}
+      //   const currentState = {}
+      //   Object.keys(previewState).forEach(key => {
+      //     currentState[key] = target[key]
+      //   })
+      //   // 修改back和redo
+      //   imageHelper.recordHistory({
+      //     back: () => fabric.util.object.extend(target, previewState),
+      //     redo: () => fabric.util.object.extend(target, currentState)
+      //   })
+      // })
+      // canvas.isDrawingMode = false
+
+      const canvas = imageHelper.createCanvas(this.$refs.imgRect)
       canvas.on('selection:updated', this.onSelect)
       canvas.on('selection:created', this.onSelect)
       canvas.on('selection:cleared', this.onSelect)
       canvas.on('object:removed', this.onSelect)
       canvas.on('dragover', this.onDragResourceOver)
       canvas.on('dragleave', this.onDragResourceLeave)
-      // canvas.on('object:added', e => console.log(e))
-      canvas.on('object:modified', ({ target, transform }) => {
-        const previewState = {...target._stateProperties}
-        const currentState = {}
-        Object.keys(previewState).forEach(key => {
-          currentState[key] = target[key]
-        })
-        // 修改back和redo
-        imageHelper.recordHistory({
-          back: () => fabric.util.object.extend(target, previewState),
-          redo: () => fabric.util.object.extend(target, currentState)
-        })
-      })
-      canvas.isDrawingMode = false
-      this.canvas = canvas
-      imageHelper.canvas = this.canvas
       canvas.renderAll()
+      this.canvas = canvas
+      canvas._objects = this._objects
+      imageHelper.canvas = this.canvas
       this.$emit('initialized', canvas)
-      // this.$refs.main.addEventListener('wheel', e => {
-      //
-      // })
       console.log(this.canvas, fabric)
     },
     refreshSize() {
@@ -169,6 +199,24 @@ export default {
       }
     },
 
+    onResourceDrop() {
+      if (this.tipDragArea && this.tipDragArea.resource) {
+        const { resource, width, height } = this.tipDragArea
+        console.log({ resource, width, height } )
+        if (!imageHelper.stageReady()) {
+          // this.canvas.originWidth = width
+          // this.canvas.originHeight = height
+          imageHelper.newSage({ width, height })
+        }
+        if (resource.url) {
+          imageHelper.uploadImage(resource.url, {})
+        } else {
+          imageHelper.addText(resource.label, {})
+        }
+      }
+      this.tipDragArea = null
+    },
+
     onStageDrop(e) {
       if (this.showDefault) {
         return
@@ -182,10 +230,13 @@ export default {
     },
 
     onDragResourceOver(e) {
-      console.log('onDragResourceOver')
-      this.canDrop = true
-      if (e.dataTransfer && e.dataTransfer.files) {
-        this.startDrag = true
+      if (CUSTOM_EVENT.DRAG_RESOURCE === e.type) {
+        this.refreshInStage(e)
+      } else {
+        this.canDrop = true
+        if (e.dataTransfer && e.dataTransfer.files) {
+          this.startDrag = true
+        }
       }
     },
 
@@ -245,7 +296,37 @@ export default {
           this.viewPort.y = this.viewPort.y > 0 ? boundHeight - nearSize : -(boundHeight - nearSize)
         }
       }
+    },
+
+    refreshInStage(e) {
+      const { detail } = e
+      const boundary = this.canvas.lowerCanvasEl.getBoundingClientRect()
+      const { x: canvasX, y: canvasY, width: canvasWidth, height: canvasHeight } = boundary
+      if (detail && detail.ghostInfo) {
+        const { left, top, width, height, moveX, moveY } = detail.ghostInfo
+        const x = left + moveX
+        const y = top + moveY
+        const intersect = Rectangle.from(canvasX, canvasY, canvasWidth, canvasHeight).isIntersect(Rectangle.from(x, y, width, height))
+        this.canDrop = intersect
+        if (intersect) {
+          this.tipDragArea = this.toLocalArea({ x, y, width, height }, boundary)
+          this.tipDragArea.resource = detail.resource
+          return
+        }
+      }
+      this.tipDragArea = null
+    },
+
+    toLocalArea(area, boundary) {
+      const { x: canvasX, y: canvasY } = boundary || this.canvas.lowerCanvasEl.getBoundingClientRect()
+      return {
+        x: area.x - canvasX,
+        y: area.y - canvasY,
+        width: area.width,
+        height: area.height
+      }
     }
+
   }
 }
 </script>
@@ -265,6 +346,13 @@ export default {
   box-shadow: 0 0 0 1px #acacac;
   .high-light {
     box-shadow: inset 0 0 0 1px green;
+  }
+
+  .show-drag-tip {
+    z-index: 99999;
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid #009983;
   }
   .main-canvas {
     background-color: white;

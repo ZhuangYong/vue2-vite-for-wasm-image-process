@@ -49,7 +49,8 @@ export default {
   },
   watch: {
     target(v) {
-      this.targetProps = imageHelper.watchTarget(v)
+      console.log(">>> w")
+      this.targetProps = imageHelper.watchTarget({...v, els: this.$el})
     }
   },
   methods: {

@@ -32,21 +32,26 @@ export default {
       if (!this.onDrag) {
         return {}
       }
-      const info = {}
-      const { clientX: startX, clientY: startY } = this.startInfo
+      const { clientX: startX, clientY: startY, offsetX, offsetY, width, height } = this.startInfo
       const { clientX: moveX, clientY: moveY } = this.moveInfo || {}
-      info.x = moveX - startX
-      info.y = moveY - startY
-      return info
+      return {
+        width,
+        height,
+        offsetX,
+        offsetY,
+        moveX: moveX - startX,
+        moveY: moveY - startY,
+        left: startX - offsetX,
+        top: startY - offsetY
+      }
     },
 
     ghostStyle() {
       if (!this.onDrag) {
         return {}
       }
-      const { clientX: left, clientY: top, offsetX, offsetY } = this.startInfo
-      const { x, y } = this.ghostInfo
-      return { left: `${left - offsetX}px`, top: `${top - offsetY}px`, transform: `translate(${x}px, ${y}px)` }
+      const { left, top, moveX, moveY } = this.ghostInfo
+      return { left: `${left}px`, top: `${top}px`, transform: `translate(${moveX}px, ${moveY}px)` }
     }
   },
   created() {
@@ -63,9 +68,11 @@ export default {
       this.startEvent = e
       this.onDrag = true
       const startInfo = { clientX, clientY }
-      const { x, y } = this.$refs.dragItem.getBoundingClientRect()
+      const { x, y, width, height } = this.$refs.dragItem.getBoundingClientRect()
       startInfo.offsetX = clientX - x
       startInfo.offsetY = clientY - y
+      startInfo.width = width
+      startInfo.height = height
       this.moveInfo = this.startInfo = startInfo
       this.changeCursor('copy')
     },
@@ -74,7 +81,8 @@ export default {
       const { clientX, clientY } = e
       if (this.onDrag) {
         this.moveInfo = { clientX, clientY }
-        const customEvent = new MouseEvent(CUSTOM_EVENT.DRAG_RESOURCE, {
+        const customEvent = new CustomEvent(CUSTOM_EVENT.DRAG_RESOURCE, {
+          detail: { resource: { ...this.$parent.detail }, ghostInfo: { ...this.ghostInfo } },
           bubbles: true,
           cancelable: true,
           pageX: clientX,

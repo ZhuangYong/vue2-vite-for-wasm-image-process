@@ -49,7 +49,7 @@ export default {
   },
   computed: {
     layers() {
-      return ((this.canvas || {})._objects || []).map(target => {
+      return ((this.canvas || {})._objects || []).filter(item => !item.ignore).map(target => {
         const { UUID, type, left, top, width, height, scaleX = 1, scaleY = 1, text } = target
         const result = imageHelper.watchTarget(target)
         result.type = target.type
@@ -98,6 +98,11 @@ export default {
 .layer-panel {
   padding: 1px 0;
 }
+
+.quick-pick-draggable {
+  overflow-y: auto;
+  height: calc(100% - 40px);
+}
 .layer-item {
   height: 30px!important;
   display: flex;
@@ -118,7 +123,7 @@ export default {
   &.active {
     color: white;
     background-color: #009987;
-    ::v-deep svg  {
+    :deep(svg)  {
       color: white;
     }
     .preview-icon {
@@ -161,7 +166,7 @@ export default {
     border: 0.6px dashed #b0b0b0;
     justify-content: center;
     align-items: center;
-    ::v-deep svg {
+    :deep(svg) {
       height: 20px;
       max-width: 80px;
       path, g {

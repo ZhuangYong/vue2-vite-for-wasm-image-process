@@ -1,5 +1,5 @@
 <template>
-  <div class="content-panel" :class="{bold}">
+  <div class="content-panel" :class="{bold, 'full-height': fullHeight}">
     <div v-if="title" class="title" :style="{ height: titleHeight }">
       <span>{{ title }}</span>
       <slot name="titleRight" />
@@ -25,6 +25,10 @@ export default {
     bold: {
       type: Boolean,
       default: false
+    },
+    fullHeight: {
+      type: Boolean,
+      default: false
     }
   }
 }
@@ -33,6 +37,16 @@ export default {
 <style lang="scss" scoped>
 @import "../style/var";
 .content-panel {
+  display: flex;
+  flex-direction: column;
+
+  &.full-height {
+    height: 100%;
+  }
+  .content {
+    flex: 1;
+    overflow: hidden;
+  }
   .title {
     display: flex;
     height: 50px;

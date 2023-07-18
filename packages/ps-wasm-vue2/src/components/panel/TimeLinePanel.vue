@@ -72,6 +72,9 @@ export default {
     }
   },
   watch: {
+    active() {
+      this.refreshScale()
+    }
   },
   mounted() {
     this.timeLinePlayer.on('update:current:time', this.refreshTimeLine)
@@ -150,13 +153,23 @@ export default {
       if (Math.abs(wheelDelta) !== 240 && Math.abs(wheelDelta) !== 480) {
         this.refreshTimeLineContainer(e)
       } else {
-        const [min, max] = timeLinePlayer.getTimeRange()
-        const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
-        const time = max - min
-        const minScale = time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale
-        this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - deltaY * 0.0004))
+        // const [min, max] = timeLinePlayer.getTimeRange()
+        // const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
+        // const time = max - min
+        // const minScale = Math.min(1, time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale)
+        // this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - deltaY * 0.0004))
+        this.refreshScale(e)
         this.refreshScrollbar(e)
       }
+    },
+
+    refreshScale(e) {
+      const { deltaY } = e || {}
+      const [min, max] = timeLinePlayer.getTimeRange()
+      const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
+      const time = max - min
+      const minScale = Math.min(1, time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale)
+      this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - (deltaY || 0) * 0.0004))
     },
 
     /**

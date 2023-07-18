@@ -14,7 +14,7 @@ const IMAGE_TYPES = {
  * @returns {boolean}
  */
 export function isImage(mimeType) {
-  return Object.values(IMAGE_TYPES).includes(mimeType)
+  return Object.values(IMAGE_TYPES).includes(mimeType) || Object.keys(IMAGE_TYPES).some(extName => mimeType.endsWith(extName))
 }
 
 /**

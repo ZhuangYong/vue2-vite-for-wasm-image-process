@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { timeLinePlayer } from "ps-wasm-vue2"
+import { imageHelper, timeLinePlayer, COMMAND_TYPES } from "ps-wasm-vue2"
 
 export default {
   name: 'Play',
@@ -43,7 +43,8 @@ export default {
         this.status = this.status === 'pause' ? 'play' : 'pause'
         // this.$emit('update:play', this.status === 'play')
         // this.$emit('change', this.status === 'play')
-        timeLinePlayer.togglePlay()
+        // timeLinePlayer.togglePlay()
+        imageHelper.handleCommand(COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key)
       }
     }
   },

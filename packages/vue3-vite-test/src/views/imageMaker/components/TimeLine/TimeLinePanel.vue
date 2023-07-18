@@ -23,6 +23,7 @@
 </template>
 
 <script>
+import { timeLinePlayer } from 'ps-wasm-vue2'
 import { BaseFabricComponent } from "ps-wasm-vue2"
 import TimeLine from "./TimeLine.vue"
 import TimeLineMark from "./TimeLineMark.vue"
@@ -41,10 +42,10 @@ export default {
     }
   },
   props: {
-    timeLinePlayer: {
-      type: Object,
-      default: () => {}
-    },
+    // timeLinePlayer: {
+    //   type: Object,
+    //   default: () => {}
+    // },
   },
   data() {
     return {
@@ -52,7 +53,7 @@ export default {
       itemSize,
       currentFrameGroup: null, // 当前编辑的片段
       changeTime: false, // 当前是否为修改时间状态
-      // timeLinePlayer,
+      timeLinePlayer,
       paddingBottom: 80, // 内容底部多显示距离
       paddingRight: 100, // 内容右侧多显示距离
       timeAssetsLine: {x: 0, y: 0},
@@ -82,11 +83,11 @@ export default {
     // }
   },
   watch: {
-    timeLinePlayer: {
-      handler(v) {
-        v && console.log('timeLinePlayer.duration>>', v.duration)
-      },
-      depp: true
+    "timeLinePlayer.currentTime"() {
+      this.refreshTimeLine()
+    },
+    active() {
+      this.refreshScale()
     }
   },
   created() {
@@ -166,13 +167,23 @@ export default {
       if (Math.abs(wheelDelta) !== 240 && Math.abs(wheelDelta) !== 480) {
         this.refreshTimeLineContainer(e)
       } else {
-        const [min, max] = this.timeLinePlayer.getTimeRange()
-        const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
-        const time = max - min
-        const minScale = time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale
-        this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - deltaY * 0.0004))
+        // const [min, max] = this.timeLinePlayer.getTimeRange()
+        // const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
+        // const time = max - min
+        // const minScale = time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale
+        // this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - deltaY * 0.0004))
+        this.refreshScale(e)
         this.refreshScrollbar(e)
       }
+    },
+
+    refreshScale(e) {
+      const { deltaY } = e || {}
+      const [min, max] = timeLinePlayer.getTimeRange()
+      const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
+      const time = max - min
+      const minScale = Math.min(1, time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale)
+      this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - (deltaY || 0) * 0.0004))
     },
 
     /**
@@ -262,7 +273,7 @@ export default {
         left: 0;
         height: 42px;
         content: " ";
-        margin-top: -2px;
+        margin-top: -1px;
         border-radius: 4px;
         position: absolute;
         width: calc(100% + 800px);
@@ -301,24 +312,24 @@ export default {
         top: -9px;
         width: 6px;
         height: 6px;
-        margin-left: -4px;
+        margin-left: -2.5px;
         position: absolute;
         border: 1px solid gray;
         border-bottom: none;
         &:before, &:after {
-          top: 7px;
-          width: 5px;
+          top: 6px;
+          width: 4px;
           height: 0;
           content: ' ';
           position: absolute;
           border-top: 1px solid gray;
         }
         &:before {
-          margin-left: -4px;
+          margin-left: -1px;
           transform: rotate(45deg);
         }
         &:after {
-          margin-left: -1px;
+          margin-left: 1px;
           transform: rotate(-45deg);
         }
       }

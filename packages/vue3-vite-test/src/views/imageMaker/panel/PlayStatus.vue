@@ -1,6 +1,6 @@
 <template>
   <div class="play-status">
-    <span v-if="timeLinePlayer.duration">{{ timeLinePlayer.currentTime }} / {{ timeLinePlayer.duration }}</span>
+    <span v-if="timeLinePlayer.duration" class="time-status">{{ timeLinePlayer.currentTime }} / {{ timeLinePlayer.duration }} ms</span>
     <CutButton class="play-btn" />
     <PreButton class="play-btn" />
     <Play class="play-btn" />
@@ -36,6 +36,10 @@ export default {
   font-size: 12px;
   height: 16px;
   align-items: center;
+
+  .time-status {
+    margin-right: 12px;
+  }
   .play-btn {
     margin-left: 0;
     margin-right: 12px;

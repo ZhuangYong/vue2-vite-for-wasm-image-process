@@ -122,7 +122,6 @@ class TimeLinePlayer extends Event {
    * 重置当前播放帧
    */
   resetCurrentTime(time) {
-    console.log('====>>> resetCurrentTime')
     if (time === undefined) {
       time = this.getLimit()[0]
     }

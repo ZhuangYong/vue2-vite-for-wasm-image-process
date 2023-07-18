@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { timeLinePlayer } from "ps-wasm-vue2"
+import { timeLinePlayer, imageHelper, COMMAND_TYPES } from "ps-wasm-vue2"
 
 export default {
   name: 'PreButton',
@@ -23,7 +23,8 @@ export default {
     onClick(e) {
       e.stopPropagation()
       e.preventDefault()
-      timeLinePlayer.renderPreFrame()
+      // timeLinePlayer.renderPreFrame()
+      imageHelper.handleCommand(COMMAND_TYPES.CONTROL.PLAY_PRE_STEP.key)
     }
   }
 }

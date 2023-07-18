@@ -10,6 +10,21 @@ import Draggable from '@/components/Draggable'
 import Swap from "@/components/Draggable/Swap";
 import BaseFabricComponent from '@/components/BaseFabricComponent'
 import fabricEnhance from "@/utils/fabricEnhance"
+import Rectangle from "@/Rectangle"
 
 fabricEnhance(fabric)
-export { fabric, imageHelper, timeLinePlayer, stage, FontHelper, Utils, Event, BaseFabricComponent, Draggable, Swap, Const, COMMAND_TYPES }
+export {
+  fabric,
+  imageHelper,
+  timeLinePlayer,
+  stage,
+  FontHelper,
+  Utils,
+  Event,
+  BaseFabricComponent,
+  Draggable,
+  Swap,
+  Const,
+  COMMAND_TYPES,
+  Rectangle
+}

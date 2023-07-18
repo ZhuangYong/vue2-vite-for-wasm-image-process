@@ -91,7 +91,7 @@ export default {
       if (duration) {
         left = `${(limit.left / duration) * 100}%`
         // 边框有1像素
-        width = `calc(${((limit.right - limit.left) / duration) * 100}% - 2px)`
+        width = `calc(${((limit.right - limit.left) / duration) * 100}%)`
       }
 
       return `width: ${width}; left: ${left}`
@@ -149,7 +149,7 @@ export default {
 
     onDocumentMousedown(e) {
       if (
-        !(this.$refs.timeLineLimit.contains(e.target) || this.$refs.timeLineLimit === e.target) &&
+        !((this.$refs.timeLineLimit && this.$refs.timeLineLimit.contains(e.target)) || this.$refs.timeLineLimit === e.target) &&
         this.getContainer().contains(e.target)
       ) {
         this.active = false
@@ -297,7 +297,7 @@ $limitBarWidth: 3px;
     cursor: move;
     border-radius: 4px;
     position: absolute;
-    height: $itemSize - $borderSize * 2;
+    height: $itemSize + $borderSize * 2;
     .limit-bar {
       top: 27.5%;
       height: 45%;
@@ -346,7 +346,7 @@ $limitBarWidth: 3px;
   border-radius: 4px;
   pointer-events: none;
   border: 1px solid #00998333;
-  height: calc(#{$itemSize} - 2px);
+  height: calc(#{$itemSize} + 2px);
   .preview-list {
     position: absolute;
     background-color: #cedcda;

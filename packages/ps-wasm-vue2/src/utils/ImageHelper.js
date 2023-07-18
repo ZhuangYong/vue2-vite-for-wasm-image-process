@@ -73,14 +73,16 @@ export const COMMAND_TYPES = {
     CHANGE_FONT_FAMILY: {key: 'changeFontFamily', label: '修改字体', keyMap: '', hidden: true}
   },
   RESIZE: {
-    ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', label: '修改对象宽'},
-    ACTIVE_OBJECT_HEIGHT: {key: 'activeObjectHeight', label: '修改对象高'},
-    ACTIVE_OBJECT_LEFT: {key: 'activeObjectLeft', label: '修改对象左边距'},
-    ACTIVE_OBJECT_TOP: {key: 'activeObjectTop', label: '修改对象上边距'},
-    ACTIVE_OBJECT_ANGLE: {key: 'activeObjectAngle', label: '修改对象角度'},
+    ACTIVE_OBJECT_WIDTH: {key: 'activeObjectWidth', objectKey: 'width', label: '修改对象宽'},
+    ACTIVE_OBJECT_HEIGHT: {key: 'activeObjectHeight', objectKey: 'height', label: '修改对象高'},
+    ACTIVE_OBJECT_LEFT: {key: 'activeObjectLeft', objectKey: 'left', label: '修改对象左边距'},
+    ACTIVE_OBJECT_TOP: {key: 'activeObjectTop', objectKey: 'top', label: '修改对象上边距'},
+    ACTIVE_OBJECT_ANGLE: {key: 'activeObjectAngle', objectKey: 'angle', label: '修改对象角度'},
   },
   CONTROL: {
     PLAY_OR_STOP: {key: 'playOrStrop', label: '播放/暂停', keyMap: `space`},
+    PLAY_PRE_STEP: {key: 'playPreStrop', label: '上一帧'},
+    PLAY_NEXT_STEP: {key: 'playNextStrop', label: '下一帧'},
     PLAY_REVERSE: {key: 'playReverse', label: '正序/倒序'},
     PLAY_SPEED: {key: 'playSpeed', label: '倍速'}
   },
@@ -306,6 +308,16 @@ class ImageHelper extends Event {
     }
   }
 
+  clearBack() {
+    while(!_.isEmpty(this.back)) {
+      this.back.pop()
+    }
+  }
+  clearRedo() {
+    while(!_.isEmpty(this.redo)) {
+      this.redo.pop()
+    }
+  }
 
   async handleCommand() {
     let modifyObject = false
@@ -460,24 +472,13 @@ class ImageHelper extends Event {
 
       // 修改对象顶部距离
       case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_TOP.key:
-        if (target.canvas.getActiveObject().top !== arg1) {
-          target.canvas.getActiveObject().top = arg1
-          modifyObject = true
-        }
-        break
-
       // 修改对象左边距离
       case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_LEFT.key:
-        if (target.canvas.getActiveObject().left !== arg1) {
-          target.canvas.getActiveObject().left = arg1
-          modifyObject = true
-        }
-        break
-
       // 修改对象旋转角度
       case COMMAND_TYPES.RESIZE.ACTIVE_OBJECT_ANGLE.key:
-        if (target.canvas.getActiveObject().angle !== arg1) {
-          target.canvas.getActiveObject().angle = arg1
+        const { objectKey } = Object.values(COMMAND_TYPES.RESIZE).find(item => item.key === command)
+        if (target.canvas.getActiveObject()[objectKey] !== arg1) {
+          target.canvas.getActiveObject()[objectKey] = arg1
           modifyObject = true
         }
         break
@@ -515,6 +516,18 @@ class ImageHelper extends Event {
       case COMMAND_TYPES.CONTROL.PLAY_OR_STOP.key:
         this.clearActiveObjects()
         this.timeLinePlayer.togglePlay()
+        break
+
+      // 播放上一帧
+      case COMMAND_TYPES.CONTROL.PLAY_PRE_STEP.key:
+        this.clearActiveObjects()
+        this.timeLinePlayer.renderPreFrame()
+        break
+
+      // 播放下一帧
+      case COMMAND_TYPES.CONTROL.PLAY_NEXT_STEP.key:
+        this.clearActiveObjects()
+        this.timeLinePlayer.renderNextFrame()
         break
 
       // 应用动画
@@ -718,19 +731,22 @@ class ImageHelper extends Event {
     option = option || {}
     if (isGif(file.type)) {
       await this.uploadGif(file, option)
-    } else if (isImage(file.type)) {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = e => {
-        fabric.Image.fromURL(e.target.result, async (img) => {
-          img.set(option)
-          this.addToCanvas(img)
-          if (this.canvas.gifMode) {
-            this.timeLinePlayer.addObjectAsFrameGroup(img)
-          } else {
-            this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
-          }
-        })
+    } else if (isImage(file.type || file)) {
+      const loadImage = (url, loadOption) => fabric.Image.fromURL(url, async (img) => {
+        img.set(option)
+        this.addToCanvas(img)
+        if (this.canvas.gifMode) {
+          this.timeLinePlayer.addObjectAsFrameGroup(img)
+        } else {
+          this.recordHistory({ back: () => this.removeFromCanvas(img), redo: () => this.addToCanvas(img) })
+        }
+      }, loadOption)
+      if (typeof file === 'string') {
+        loadImage(file, { crossOrigin: true })
+      } else {
+        const reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onload = e => loadImage(e.target.result)
       }
     }
   }
@@ -812,7 +828,8 @@ class ImageHelper extends Event {
     // 计算缩放，图片宽高默认不超过最外层限制视窗
     if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
       const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
-      scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
+      // scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
+      scale = Math.min(boundWidth / width, boundHeight / height)
     }
     this.canvas.viewScale = scale
     this.canvas.setZoom(scale)
@@ -830,7 +847,9 @@ class ImageHelper extends Event {
     // 清空所有对象
     this.canvas.clear()
     // 清空历史记录
-    this.redo = this.back = []
+    // this.redo = this.back = []
+    this.clearBack()
+    this.clearRedo()
     // 刷新舞台显示大小
     this.refreshStageView()
   }
@@ -914,6 +933,7 @@ class ImageHelper extends Event {
    * 添加到canvas中
    */
   addToCanvas() {
+    console.log('add to canvas')
     // if (!_.isEmpty(arguments) && !this.canvas.originWidth) {
     //   this.initial(arguments[0])
     // }
@@ -1141,6 +1161,15 @@ class ImageHelper extends Event {
    */
   async cloneClearCanvas() {
     return await cloneCanvas(this.canvas, true)
+  }
+
+  /**
+   * 舞台是否可用
+   * @return {boolean}
+   */
+  stageReady() {
+    const { originWidth, originHeight} = this.canvas || {}
+    return !!originWidth && !!originHeight
   }
 
   /**

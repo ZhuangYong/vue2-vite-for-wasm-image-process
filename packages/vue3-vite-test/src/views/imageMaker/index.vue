@@ -8,8 +8,8 @@
         <ResourcePanel :type="resourceType" />
       </div>
       <div class="center-panel">
-        <SplitPan class="default-theme" horizontal>
-          <pane class="center-center-panel">
+        <SplitPan class="default-theme" horizontal @resize="onCanvasContainerResize">
+          <pane class="center-center-panel" size="80">
             <div class="center-top-bar-panel">
               <TopBar :full-screen-el="fullscreenTarget" v-model:edit-mode="editMode" />
             </div>
@@ -17,10 +17,10 @@
               <CanvasPanel v-model:current-select-target="currentObject" @initialized="onCanvasInitialized"  />
             </div>
           </pane>
-          <pane class="center-bottom-panel">
-            <ContentPanel title="时间轴" bold title-height="40px">
+          <pane class="center-bottom-panel" size="20">
+            <ContentPanel title="时间轴" full-height bold title-height="40px">
               <template #titleRight><PlayStatus /></template>
-              <TimeLinePanel :time-line-player="timeLinePlayer" />
+              <TimeLinePanel style="height: 100%;" />
             </ContentPanel>
           </pane>
         </SplitPan>
@@ -34,8 +34,8 @@
         </ContentPanel>
 
         <!--图层面板-->
-        <ContentPanel title="图层" bold class="bottom">
-          <LayerPanel />
+        <ContentPanel title="图层" full-height bold class="bottom">
+          <LayerPanel style="height: 100%;" />
         </ContentPanel>
       </div>
     </div>
@@ -92,7 +92,7 @@ export default {
       timeLinePlayer, // 时间轴对象
       showWaiting: false, // 显示等待
       fullscreenTarget: null, // 全屏对象
-      editMode: Const.EDIT_MODE.TEXT.key, // 编辑模式
+      editMode: Const.EDIT_MODE.MOVE.key, // 编辑模式
       currentObject: null, // 当前选择的编辑对象
     }
   },
@@ -120,6 +120,10 @@ export default {
 
     onCanvasInitialized(canvas) {
       this.canvas = canvas
+    },
+
+    onCanvasContainerResize() {
+      imageHelper.refreshStageView()
     }
   },
 }
@@ -145,7 +149,8 @@ $topHeight: 110px;
     display: flex;
 
     .left-panel {
-      flex: 280px 0;
+      flex: 0;
+      min-width: 280px;
       border-left: $border;
     }
 
@@ -156,16 +161,22 @@ $topHeight: 110px;
     }
 
     .right-panel {
-      flex: 340px 0;
-
+      flex: 0;
+      display: flex;
+      min-width: 340px;
+      overflow: hidden;
+      flex-direction: column;
       .top {
-        height: 340px;
-
-        ::v-deep >.content {
+        min-height: 340px;
+        :deep(.content) {
           overflow-y: scroll;
           padding-bottom: 20px;
           height: calc(100% - 50px);
         }
+      }
+      .bottom {
+        flex: 1;
+        overflow: hidden;
       }
     }
   }

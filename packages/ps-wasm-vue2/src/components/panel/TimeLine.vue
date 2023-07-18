@@ -150,7 +150,7 @@ export default {
 
     onDocumentMousedown(e) {
       if (
-        !(this.$refs.timeLineLimit.contains(e.target) || this.$refs.timeLineLimit === e.target) &&
+        !((this.$refs.timeLineLimit && this.$refs.timeLineLimit.contains(e.target)) || this.$refs.timeLineLimit === e.target) &&
         this.getContainer().contains(e.target)
       ) {
         this.active = false
@@ -354,6 +354,7 @@ $limitBarWidth: 3px;
     .preview-item {
       width: $itemSize;
       height: $itemSize;
+      margin-top: -$borderSize;
       display: inline-block;
       background-size: contain;
       background-position: center;

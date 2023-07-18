@@ -21,11 +21,11 @@
 
       <!--操作-->
       <div class="operator-list bar-part">
-        <el-link :underline="false" @click="operate(COMMAND_TYPES.EDIT.BACK)" title="撤销一步操作">
+        <el-link :underline="false" :disabled="disabledBack" @click="operate(COMMAND_TYPES.EDIT.BACK)" title="撤销一步操作">
           <svg-icon name="editor-redo" size="16px" style="transform: rotateY(-180deg)" />
           <span>后撤</span>
         </el-link>
-        <el-link :underline="false" @click="operate(COMMAND_TYPES.EDIT.REDO)" title="重做上一步操作">
+        <el-link :underline="false" :disabled="disabledRedo" @click="operate(COMMAND_TYPES.EDIT.REDO)" title="重做上一步操作">
           <svg-icon name="editor-redo" size="16px" />
           <span>重做</span>
         </el-link>
@@ -51,7 +51,7 @@
         </el-form-item>
 
         <el-form-item label="画布大小：">
-          240 * 240
+          {{ canvasSize }}
         </el-form-item>
       </el-form>
     </div>
@@ -59,6 +59,7 @@
 </template>
 
 <script>
+import _ from 'lodash'
 import ColorPicker from '../ColorPicker.vue'
 import FullscreenButton from "../buttons/FullscreenButton.vue"
 import { Back, Right, Position, EditPen } from '@element-plus/icons-vue'
@@ -87,6 +88,8 @@ export default {
   },
   data() {
     return {
+      back: [],
+      redo: [],
       COMMAND_TYPES,
       detail: { name: '' },
       backgroundColor: ''
@@ -94,7 +97,11 @@ export default {
   },
   computed: {
     disabledBack() {
-      return this.data;
+      return _.isEmpty(this.back)
+    },
+
+    disabledRedo() {
+      return _.isEmpty(this.redo)
     },
 
     /**
@@ -102,6 +109,11 @@ export default {
      * */
     editModes() {
       return Const.EDIT_MODE
+    },
+
+    canvasSize() {
+      let { originWidth, originHeight } = this.canvas || {}
+      return `${originWidth} * ${originHeight}`
     }
   },
   watch: {
@@ -110,9 +122,13 @@ export default {
       imageHelper.renderAll()
     },
   },
+  created() {
+    imageHelper.back = this.back
+    imageHelper.redo = this.redo
+  },
   mounted() {
     imageHelper.on('initialized', this.refreshBackgroundColor.bind(this))
-    imageHelper.on('object:modified', this.refreshProps)
+    // imageHelper.on('object:modified', this.refreshProps)
     this.refreshBackgroundColor()
   },
   methods: {
@@ -178,6 +194,7 @@ $barHeight: 50px;
     &.detail {
       .bar-part .el-form-item {
         margin-right: 60px;
+        white-space: nowrap;
       }
     }
     .bar-part {
