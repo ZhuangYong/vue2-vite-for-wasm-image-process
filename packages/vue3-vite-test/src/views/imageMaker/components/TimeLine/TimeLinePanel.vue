@@ -93,6 +93,7 @@ export default {
   created() {
   },
   mounted() {
+    this.refreshScale()
     document.addEventListener('mouseup', this.leaveChangeTime)
     document.addEventListener('mousemove', this.onDocumentMousemove)
   },
@@ -178,12 +179,14 @@ export default {
     },
 
     refreshScale(e) {
-      const { deltaY } = e || {}
-      const [min, max] = timeLinePlayer.getTimeRange()
-      const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
-      const time = max - min
-      const minScale = Math.min(1, time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale)
-      this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - (deltaY || 0) * 0.0004))
+      if (this.$refs.timeLinePanel) {
+        const { deltaY } = e || {}
+        const [min, max] = timeLinePlayer.getTimeRange()
+        const { width } = this.$refs.timeLinePanel.getBoundingClientRect()
+        const time = max - min
+        const minScale = Math.min(1, time * this.defaultScale > width ? ((width - 40) / time * this.defaultScale) : this.defaultScale)
+        this.scale = Math.max(minScale, Math.min(this.defaultScale, (this.scale || this.defaultScale) - (deltaY || 0) * 0.0004))
+      }
     },
 
     /**

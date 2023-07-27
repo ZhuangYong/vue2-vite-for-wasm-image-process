@@ -148,9 +148,10 @@ export default {
     },
 
     onDocumentMousedown(e) {
+      const container = this.getContainer()
       if (
         !((this.$refs.timeLineLimit && this.$refs.timeLineLimit.contains(e.target)) || this.$refs.timeLineLimit === e.target) &&
-        this.getContainer().contains(e.target)
+        container && container.contains(e.target)
       ) {
         this.active = false
       }
@@ -171,7 +172,6 @@ export default {
         const distance = Number(((e.clientX - this.preClientX) / this.scale).toFixed(0))
         this.frameGroup.delay = Math.max(-this.frameGroup.limit[0], this.preDelay + distance)
         timeLinePlayer.resetCurrentTime()
-        console.log('----- onMousemove', this.frameGroup.delay, distance)
         // this.preClientX = e.clientX
       }
       this.onLimitMousemove(e)

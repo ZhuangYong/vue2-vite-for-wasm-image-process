@@ -268,7 +268,7 @@ export default {
         this.canvas.setDimensions({ width, height })
         this.canvas.viewScale = scale
         // this.canvas.zoomToPoint(new fabric.Point(clientX - canvasX, clientY - canvasY), Math.max(0.1, zoom - deltaY * 0.04))
-        console.log(this.canvas.getZoom(), { width, height }, e)
+        // console.log(this.canvas.getZoom(), { width, height }, e)
       } else {
         this.viewPort.x += -deltaX * 0.1
         this.viewPort.y += -deltaY * 0.1

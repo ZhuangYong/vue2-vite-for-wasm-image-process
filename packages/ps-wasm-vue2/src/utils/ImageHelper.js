@@ -288,7 +288,8 @@ class ImageHelper extends Event {
   recordHistory(operate, clearRedo = true) {
     this.back.push(operate)
     if (clearRedo) {
-      this.redo = []
+      // this.redo = []
+      this.clearRedo()
     }
   }
 
@@ -742,7 +743,7 @@ class ImageHelper extends Event {
         }
       }, loadOption)
       if (typeof file === 'string') {
-        loadImage(file, { crossOrigin: true })
+        loadImage(file, { crossOrigin: 'anonymous' })
       } else {
         const reader = new FileReader()
         reader.readAsDataURL(file)

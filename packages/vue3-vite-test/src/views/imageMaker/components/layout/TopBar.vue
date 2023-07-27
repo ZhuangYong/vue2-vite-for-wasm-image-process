@@ -21,11 +21,11 @@
 
       <!--操作-->
       <div class="operator-list bar-part">
-        <el-link :underline="false" :disabled="disabledBack" @click="operate(COMMAND_TYPES.EDIT.BACK)" title="撤销一步操作">
+        <el-link :underline="false" :disabled="disabledBack" @click="operate(COMMAND_TYPES.EDIT.BACK.key)" title="撤销一步操作">
           <svg-icon name="editor-redo" size="16px" style="transform: rotateY(-180deg)" />
           <span>后撤</span>
         </el-link>
-        <el-link :underline="false" :disabled="disabledRedo" @click="operate(COMMAND_TYPES.EDIT.REDO)" title="重做上一步操作">
+        <el-link :underline="false" :disabled="disabledRedo" @click="operate(COMMAND_TYPES.EDIT.REDO.key)" title="重做上一步操作">
           <svg-icon name="editor-redo" size="16px" />
           <span>重做</span>
         </el-link>
@@ -138,8 +138,8 @@ export default {
       this.$emit('update:editMode', mode)
     },
 
-    operate() {
-      imageHelper.handleCommand(COMMAND_TYPES.TIME_LINE.FRAME_GROUP_DELETE.key, timeLinePlayer.selectedList)
+    operate(command) {
+      imageHelper.handleCommand(command, this.target)
     },
 
     /**

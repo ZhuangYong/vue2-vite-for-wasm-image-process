@@ -65,7 +65,10 @@ function filterEffect() {
         newSrc = await ImageDataToBase64(imageData)
       }
       this.setSrc(newSrc, () => imageHelper.renderAll())
-      imageHelper.recordHistory({back: () => this.setSrc(oldSrc, () => imageHelper.renderAll()), redo: () => this.setSrc(newSrc, () => imageHelper.renderAll()) })
+      imageHelper.recordHistory({
+        back: () => this.setSrc(oldSrc, () => imageHelper.renderAll(), {crossOrigin: 'anonymous'}),
+        redo: () => this.setSrc(newSrc, () => imageHelper.renderAll(), {crossOrigin: 'anonymous'})
+      })
     } else {
       let customFilter = filters.find(item => item instanceof CustomFilter)
       if (!customFilter) {

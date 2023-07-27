@@ -9,7 +9,7 @@
       </div>
       <div class="center-panel">
         <SplitPan class="default-theme" horizontal @resize="onCanvasContainerResize">
-          <pane class="center-center-panel" size="80">
+          <pane class="center-center-panel">
             <div class="center-top-bar-panel">
               <TopBar :full-screen-el="fullscreenTarget" v-model:edit-mode="editMode" />
             </div>
@@ -17,10 +17,17 @@
               <CanvasPanel v-model:current-select-target="currentObject" @initialized="onCanvasInitialized"  />
             </div>
           </pane>
-          <pane class="center-bottom-panel" size="20">
-            <ContentPanel title="时间轴" full-height bold title-height="40px">
+          <pane class="center-bottom-panel" size="30">
+            <ContentPanel full-height bold title-height="40px">
+              <template #title>
+                <el-radio-group v-model="bottomActive" class="bottom-panel-switcher">
+                  <el-radio-button v-if="gifMode" label="timeLine">时间轴</el-radio-button>
+                  <el-radio-button label="effect">特效</el-radio-button>
+                </el-radio-group>
+              </template>
               <template #titleRight><PlayStatus /></template>
-              <TimeLinePanel style="height: 100%;" />
+              <TimeLinePanel v-if="gifMode && bottomActive === 'timeLine'" style="height: 100%;" />
+              <FastEffectPanel v-if="bottomActive === 'effect'" style="height: 100%;" />
             </ContentPanel>
           </pane>
         </SplitPan>
@@ -59,6 +66,7 @@ import PlayStatus from "./panel/PlayStatus.vue"
 import PropsPanel from "./panel/PropsPanel/index.vue"
 import LayerPanel from "./panel/LayerPanel.vue"
 import Dialogs from "./panel/Dialogs.vue"
+import FastEffectPanel from "./panel/FastEffectPanel.vue"
 
 export default {
   name: 'ImageMaker',
@@ -70,6 +78,7 @@ export default {
     NavMenus,
     ResourcePanel,
     TimeLinePanel,
+    FastEffectPanel,
     RightPanel,
     ContentPanel,
     PlayStatus,
@@ -87,6 +96,7 @@ export default {
   },
   data() {
     return {
+      bottomActive: 'effect',
       resourceType: 'resource',
       canvas: null, // 画布对象
       timeLinePlayer, // 时间轴对象
@@ -97,11 +107,17 @@ export default {
     }
   },
   computed: {
+    gifMode() {
+      return (this.canvas || {}).gifMode
+    }
   },
   watch: {
     editMode(v) {
       // 如果是画笔，画布设置为可draw
       this.canvas.isDrawingMode = (v === Const.EDIT_MODE.PENCIL.key)
+    },
+    'gifMode'(v) {
+      v && (this.bottomActive = 'timeLine')
     }
   },
   mounted() {
@@ -158,6 +174,19 @@ $topHeight: 110px;
       flex: 1;
       border-left: $border;
       border-right: $border;
+
+      .center-bottom-panel {
+        .bottom-panel-switcher {
+          --el-border: none;
+          --el-fill-color-blank: transparent;
+          --el-text-color-regular: #999999;
+          :deep(.is-active) .el-radio-button__inner {
+            color: #333333;
+            box-shadow: none;
+            background-color: transparent;
+          }
+        }
+      }
     }
 
     .right-panel {

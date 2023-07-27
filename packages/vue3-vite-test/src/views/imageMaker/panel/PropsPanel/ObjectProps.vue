@@ -94,6 +94,9 @@ export default {
         // v.on('modified', () => {console.log('modified >>>>>>', this.targetProps, this.$forceUpdate())})
       },
       deep: true
+    },
+    'targetProps.visible'(v) {
+      imageHelper.handleCommand(COMMAND_TYPES.EDIT.VISIBLE.key, this.target, v)
     }
   },
   mounted() {

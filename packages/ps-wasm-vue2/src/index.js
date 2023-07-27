@@ -11,9 +11,12 @@ import Swap from "@/components/Draggable/Swap";
 import BaseFabricComponent from '@/components/BaseFabricComponent'
 import fabricEnhance from "@/utils/fabricEnhance"
 import Rectangle from "@/Rectangle"
+import * as filters from '@/filters'
+import animates from '@/animate'
 
 fabricEnhance(fabric)
 export {
+  animates,
   fabric,
   imageHelper,
   timeLinePlayer,
@@ -25,6 +28,7 @@ export {
   Draggable,
   Swap,
   Const,
+  filters,
   COMMAND_TYPES,
   Rectangle
 }

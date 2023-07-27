@@ -209,6 +209,9 @@ class TimeLinePlayer extends Event {
   }
 
   findGroupByTarget(target) {
+    if (!target) {
+      return null
+    }
     return this.frameGroups.find(group => group.includes(target))
   }
 

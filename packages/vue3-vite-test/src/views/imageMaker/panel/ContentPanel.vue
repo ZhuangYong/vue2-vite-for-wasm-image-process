@@ -1,7 +1,10 @@
 <template>
   <div class="content-panel" :class="{bold, 'full-height': fullHeight}">
-    <div v-if="title" class="title" :style="{ height: titleHeight }">
-      <span>{{ title }}</span>
+    <div v-if="title || $slots.title" class="title" :style="{ height: titleHeight }">
+      <div>
+        {{ title }}
+        <slot name="title" />
+      </div>
       <slot name="titleRight" />
     </div>
     <div class="content">
