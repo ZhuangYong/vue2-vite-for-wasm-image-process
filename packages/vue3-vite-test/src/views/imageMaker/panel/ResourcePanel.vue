@@ -15,11 +15,7 @@
     </div>
 
     <div class="resource-list" :class="`type-${type}`">
-      <DraggableResourceItem v-for="item in resourceList" :key="item.key" :detail="item">
-        <span v-if="type === 'font'" :style="`font-family: ${item.key};`">{{ item.label }}</span>
-        <img v-else :src="item.url" alt="">
-      </DraggableResourceItem>
-
+      <DraggableResourceItem v-for="item in resourceList" :key="item.key" :detail="{ type, ...item }" />
       <div v-for="index in resourceList.length % 3" :key="index" />
     </div>
   </div>

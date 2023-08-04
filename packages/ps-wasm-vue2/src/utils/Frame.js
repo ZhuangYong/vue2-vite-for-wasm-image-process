@@ -4,11 +4,15 @@ export default class Frame {
 
   UUID = `frame-${Math.random()}`
 
+  type = 'fame'
+
   group
 
   duration = 0
 
   startTime = 0
+
+  _canvas = null
 
   _objects = []
 
@@ -49,6 +53,9 @@ export default class Frame {
     //     }, 400)
     //   })
     // }))
+  }
+  getObjectByIndex(index) {
+    return (this._objects || [])[index || 0]
   }
 
   clearRender() {
@@ -130,8 +137,11 @@ export default class Frame {
     return await cloneCanvas(this.canvas, true)
   }
 
+  setCanvas(_canvas) {
+    this._canvas = _canvas
+  }
   get canvas() {
-    return (this._objects.find(item => !!item.canvas) || {}).canvas
+    return this._canvas || (this._objects.find(item => !!item.canvas) || {}).canvas
   }
 
 }

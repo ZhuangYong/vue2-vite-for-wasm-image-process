@@ -4,6 +4,7 @@
     <PencilModelProperty v-if="editModes.PENCIL.key === editMode" />
     <TextProps v-if="editModes.TEXT.key === editMode" />
     <AnimateProps v-if="(canvas || {}).gifMode" />
+    <PlayProps v-if="(canvas || {}).gifMode" />
   </div>
 </template>
 
@@ -15,11 +16,12 @@ import PencilModelProperty from "./PencilModelProperty.vue"
 import ObjectProps from "./ObjectProps.vue"
 import TextProps from "./TextProps.vue"
 import AnimateProps from "./AnimateProps.vue"
+import PlayProps from "./PlayProps.vue"
 
 const watchProps = ['showWidth', 'showHeight']
 export default {
   name: 'PropsPanel',
-  components: {VisibleSwitch, ContentPanel, PencilModelProperty, ObjectProps, TextProps, AnimateProps },
+  components: {VisibleSwitch, ContentPanel, PencilModelProperty, ObjectProps, TextProps, AnimateProps, PlayProps },
   mixins: [BaseFabricComponent],
   props: {
     editMode: {
@@ -51,7 +53,6 @@ export default {
   },
   watch: {
     target(v) {
-      console.log(">>> w")
       this.targetProps = imageHelper.watchTarget({...v, els: this.$el})
     }
   },

@@ -705,7 +705,7 @@ class ImageHelper extends Event {
         // 一帧
         const keyFrame = new Frame()
         // 图片初始化
-        frame.img.set({...option, ignore: true, selectable: false, hoverCursor: 'default'})
+        frame.img.set({...option, selectable: false, hoverCursor: 'default'})
         // 帧时间
         keyFrame.duration = frame.duration
         // 帧开始时间
@@ -713,7 +713,9 @@ class ImageHelper extends Event {
         // 将对象添加到帧
         keyFrame.add(frame.img)
         // 将对象添加到舞台
-        this.addToCanvas(frame.img)
+        // this.addToCanvas(frame.img)
+        this.initialObject(frame.img)
+        keyFrame.setCanvas(this.canvas)
         return keyFrame
       }))
       // 重置播放
@@ -1017,14 +1019,17 @@ class ImageHelper extends Event {
    * @param toIndex
    */
   changeLayer(fromIndex, toIndex) {
-    const size = this.canvas._objects.length
-    const currentIndex = size - fromIndex - 1
-    const [currentTarget] = this.canvas._objects.splice(currentIndex, 1)
-    this.canvas._objects.splice(size - toIndex - 1, 0, currentTarget)
+    if (this.canvas.gifMode) {
+      this.timeLinePlayer.changeLayer(fromIndex, toIndex)
+    } else {
+      const size = this.canvas._objects.length
+      const currentIndex = size - fromIndex - 1
+      const [currentTarget] = this.canvas._objects.splice(currentIndex, 1)
+      this.canvas._objects.splice(size - toIndex - 1, 0, currentTarget)
+    }
   }
 
   renderAll() {
-    console.log('---- renderAll')
     return this.canvas && this.canvas.renderAll()
   }
 
@@ -1184,7 +1189,7 @@ class ImageHelper extends Event {
       gifImg.style.width = '1px'
       gifImg.style.height = '1px'
       gifImg.style.opacity = '0.001'
-      gifImg.setAttribute('rel:animated_src', URL.createObjectURL(file))
+      gifImg.setAttribute('rel:animated_src', typeof file === 'string' ? file : URL.createObjectURL(file))
       gifImg.setAttribute('rel:auto_play', '0')
       document.body.appendChild(gifImg)
       const gif = new LibGif({ gif: gifImg, loadOnly: true, show_progress_bar: false })

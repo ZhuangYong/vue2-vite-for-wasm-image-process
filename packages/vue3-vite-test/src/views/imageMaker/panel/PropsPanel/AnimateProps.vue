@@ -1,7 +1,7 @@
 <template>
   <ContentPanel title="动效" class="props-panel">
     <div class="animate-list" :class="disabled && 'disabled'">
-      <div v-for="animate in animates" :key="animate.key" class="el-button--primary animate-item" :class="`${used(animate.label) && 'el-button--warning'} animate-${animate.key}`" @click="applyAnimate(animate.key)">
+      <div v-for="animate in animates" :key="animate.key" class="animate-item" :class="`${used(animate.label) && 'apply'} animate-${animate.key}`" @click="applyAnimate(animate.key)">
         {{ animate.label }}
       </div>
     </div>
@@ -32,7 +32,6 @@ export default {
   },
   watch: {
     disabled() {
-      console.log('--------this.target', this.target, (timeLinePlayer.findGroupByTarget(this.target) || {}))
       this.usedAnimates = (timeLinePlayer.findGroupByTarget(this.target) || {}).animates || []
     }
   },
@@ -75,6 +74,11 @@ export default {
     cursor: pointer;
     border-radius: 4px;
     background-color: #f5f6f8ff;
+
+    &.apply {
+      color: white;
+      background-color: #009983;
+    }
   }
 }
 </style>

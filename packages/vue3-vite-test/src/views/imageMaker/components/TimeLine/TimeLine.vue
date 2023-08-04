@@ -21,7 +21,7 @@ import { timeLinePlayer, imageHelper } from "ps-wasm-vue2"
 
 export default {
   name: 'TimeLine',
-  inject: ['getContainer'],
+  inject: ['getContainer', 'changeSwitchIndex'],
   props: {
     /**
      * 片段
@@ -37,6 +37,14 @@ export default {
     scale: {
       type: Number,
       default: 1
+    },
+
+    /**
+     * 排序
+     * */
+    index: {
+      type: Number,
+      default: 0
     },
 
     /**
@@ -67,6 +75,7 @@ export default {
     return {
       active: false,
       frames: [],
+      offsetTop: 0,
       limit: {left: 0, right: 0},
       timeLinePlayer,
       startLimit: [],
@@ -77,7 +86,7 @@ export default {
   computed: {
 
     timeLineStyle() {
-      return `transform: translateX(${this.frameGroup.delay * this.scale}px); width: ${this.frameGroup.duration * this.scale}px`
+      return `transform: translate(${this.frameGroup.delay * this.scale}px, ${this.offsetTop}px); width: ${this.frameGroup.duration * this.scale}px`
     },
 
     /**
@@ -119,6 +128,15 @@ export default {
 
     active(v) {
       timeLinePlayer.setSelectFrameGroup(this.frameGroup, !!v)
+    },
+
+    offsetTop(v) {
+      if (Math.abs(v) > this.itemSize * 1.6) {
+        const size = v / this.itemSize
+        this.changeSwitchIndex()
+      } else {
+        this.changeSwitchIndex(-1)
+      }
     }
   },
   mounted() {
@@ -163,6 +181,7 @@ export default {
       }
       this.startDelay = true
       this.preClientX = e.clientX
+      this.preClientY = e.clientY
       this.preDelay = this.frameGroup.delay
       this.changeCursor('move')
     },
@@ -172,12 +191,14 @@ export default {
         const distance = Number(((e.clientX - this.preClientX) / this.scale).toFixed(0))
         this.frameGroup.delay = Math.max(-this.frameGroup.limit[0], this.preDelay + distance)
         timeLinePlayer.resetCurrentTime()
+        this.offsetTop = e.clientY - this.preClientY
         // this.preClientX = e.clientX
       }
       this.onLimitMousemove(e)
     },
 
     onMouseup() {
+      this.offsetTop = 0
       this.startDelay = false
       this.leaveChangeLimit()
       this.resetCursor()
@@ -288,6 +309,7 @@ $limitBarWidth: 3px;
   border-radius: 4px;
   background-color: #f7f9f8;
   &.active {
+    z-index: 2;
     .limit-panel {
       border: $borderSize solid #009983;
     }

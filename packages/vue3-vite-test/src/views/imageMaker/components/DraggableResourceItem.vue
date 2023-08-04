@@ -1,6 +1,7 @@
 <template>
   <DraggableItem>
-    <slot />
+    <span v-if="detail.type === 'font'" :style="`font-family: ${detail.key};`">{{ detail.label }}</span>
+    <img ref="img" v-else :src="detail.url" alt="">
   </DraggableItem>
 </template>
 
@@ -17,6 +18,13 @@ export default {
   },
   data() {
     return {
+    }
+  },
+
+  computed: {
+    naturalSize() {
+      const { naturalHeight, naturalWidth } = this.$refs.img || {}
+      return { naturalHeight, naturalWidth }
     }
   },
 

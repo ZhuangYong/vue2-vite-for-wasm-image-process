@@ -19,9 +19,9 @@ export const testImgList = [
 ]
 
 export const testResourceList = [
-  { label: '测试资源', key: 'test', url: 'http://localhost:3333/2222.gif' },
-  { label: '测试资源1', key: 'test1', url: 'http://localhost:3333/2222.gif' },
-  { label: '测试资源2', key: 'test2', url: 'http://localhost:3333/2222.gif' },
+  { label: '测试资源', key: 'test', url: 'http://localhost:3333/2222.gif', type: 'gif' },
+  { label: '测试资源1', key: 'test1', url: 'http://localhost:3333/2222.gif', type: 'gif' },
+  { label: '测试资源2', key: 'test2', url: 'http://localhost:3333/2222.gif', type: 'gif' },
   { label: '测试资源3', key: 'test3', url: 'http://localhost:3333/2222.gif' },
   { label: '测试资源4', key: 'test4', url: 'http://localhost:3333/2222.gif' },
   { label: '测试资源5', key: 'test5', url: 'http://localhost:3333/2222.gif' },

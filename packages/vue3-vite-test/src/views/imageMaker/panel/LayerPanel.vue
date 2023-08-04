@@ -1,7 +1,7 @@
 <template>
   <div class="layer-panel">
     <div class="operator">
-      <el-link :underline="false" title="删除">
+      <el-link :underline="false" title="删除" @click="deleteLayer">
         <el-icon size="14px"><Delete /></el-icon>
       </el-link>
       <el-link :underline="false" title="置顶">
@@ -18,7 +18,7 @@
       </el-link>
     </div>
     <Draggable :list="orderList" :options="{swap: true}" :swap="true" :delay="100" :force-fallback="true" class="quick-pick-draggable" @sort="onSort">
-      <div v-for="(layer, index) in layers" :key="`${index}_${layer.UUID}`" class="layer-item" :class="`type-${layer.type} ${layer.active && 'active'}`"  @click="onItemClick(layer)">
+      <div v-for="(layer, index) in layers" :key="`${index}_${layer.UUID}`" class="layer-item" :class="`type-${layer.type} ${(layer.active || activeTarget.UUID === layer.UUID) && 'active'}`"  @click="onItemClick(layer)">
         <VisibleSwitch v-model:visible="layer.visible" />
         <div class="preview-icon" v-html="layer.preview" />
         <div class="layer-label">
@@ -32,7 +32,7 @@
 <script>
 import {VueDraggableNext as Draggable, Sortable} from '../components/Draggable'
 import VisibleSwitch from "../components/buttons/VisibleSwitch.vue"
-import {Utils, BaseFabricComponent, imageHelper, COMMAND_TYPES, Swap} from "ps-wasm-vue2"
+import {timeLinePlayer, Utils, BaseFabricComponent, imageHelper, COMMAND_TYPES, Swap} from "ps-wasm-vue2"
 import textSvg from '@/../static/icon/text.svg'
 import { Download, Top, Bottom, Delete } from '@element-plus/icons-vue'
 
@@ -44,29 +44,18 @@ export default {
   components: {VisibleSwitch, Draggable, Download, Top, Bottom, Delete},
   data() {
     return {
-      orderList: []
+      orderList: [],
+      activeTarget: {},
+      frameGroups: timeLinePlayer.frameGroups
     }
   },
   computed: {
     layers() {
-      return ((this.canvas || {})._objects || []).filter(item => !item.ignore).map(target => {
-        const { UUID, type, left, top, width, height, scaleX = 1, scaleY = 1, text } = target
-        const result = imageHelper.watchTarget(target)
-        result.type = target.type
-        result._element = target._element
-        if (Utils.isText(type)) {
-          result.preview = Utils.base64ToStr(textSvg)
-        } else {
-          result.preview = `<svg viewBox="0 0 ${width} ${height}">${target.toSVG()}</svg>`
-        }
-        if (this.target) {
-          result.active = UUID && (this.target.UUID === UUID || (this.target._objects || []).some(item => item.UUID && item.UUID === UUID))
-        } else {
-          result.active = false
-        }
-        result.target = target
-        return result
-      }).reverse()
+      const { _objects, gifMode } = this.canvas || {}
+      if (gifMode) {
+        return this.frameGroups.map(frameGroup => this.previewTarget(frameGroup.getFirstObject(), frameGroup)).reverse()
+      }
+      return (_objects || []).filter(item => !item.ignore).map(target => this.previewTarget(target)).reverse()
     }
   },
   watch: {
@@ -78,17 +67,52 @@ export default {
       }
     }
   },
+  mounted() {
+
+  },
   methods: {
     onItemClick(layer) {
-      this.canvas.setActiveObject(layer.target)
-      this.canvas.requestRenderAll()
+      const { gifMode } = this.canvas || {}
+      if (gifMode) {
+        this.activeTarget = layer
+      } else {
+        this.canvas.setActiveObject(layer.target)
+        this.canvas.requestRenderAll()
+      }
     },
     onSort({ oldIndex, newIndex }) {
-      console.log('>>>>> sort', { oldIndex, newIndex })
       imageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)
       this.$nextTick(() => {
         this.orderList = ((this.canvas || {})._objects || []).map(item => item.UUID).reverse()
       })
+      timeLinePlayer.requestFrame()
+    },
+
+    previewTarget(target, frameGroup) {
+      let { UUID, type, width, height, text } = target
+      if (frameGroup) {
+        let { UUID, type } = frameGroup
+      }
+      const result = imageHelper.watchTarget(target)
+      result._element = target._element
+      if (Utils.isText(type)) {
+        result.preview = Utils.base64ToStr(textSvg)
+      } else {
+        result.preview = `<svg viewBox="0 0 ${width} ${height}">${target.toSVG()}</svg>`
+      }
+      if (this.target) {
+        result.active = UUID && (this.target.UUID === UUID || (this.target._objects || []).some(item => item.UUID && item.UUID === UUID))
+      } else {
+        result.active = false
+      }
+      result.type = type
+      result.UUID = UUID
+      result.target = target
+      return result
+    },
+
+    deleteLayer() {
+
     }
   },
 }

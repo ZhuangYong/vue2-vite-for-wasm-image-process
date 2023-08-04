@@ -12,8 +12,8 @@
     </div>
     <!--帧预览-->
     <div ref="timeLineContainer" class="time-line-container" :style="`transform: translate(${-timeLineContainer.x}px, ${-timeLineContainer.y}px)`">
-      <div v-for="frameGroup in timeLinePlayer.frameGroups" :key="frameGroup.UUID" class="time-line-item" :style="`width: ${(frameGroup.duration + frameGroup.delay) * (scale || 1)}px`">
-        <TimeLine :frame-group="frameGroup" :offset="timeLineContainer.x" :item-size="itemSize"
+      <div v-for="frameGroup in frameGroups" :key="frameGroup.UUID" class="time-line-item" :style="`width: ${(frameGroup.duration + frameGroup.delay) * (scale || 1)}px`">
+        <TimeLine v-else :frame-group="frameGroup" :offset="timeLineContainer.x" :item-size="itemSize"
                   :scale="scale || defaultScale" :limit-editable="true" @click.native="onFrameGroupClick(frameGroup)"/>
       </div>
     </div>
@@ -38,7 +38,8 @@ export default {
   components: { TimeLine, TimeLineMark, TimeLineLimit },
   provide() {
     return {
-      getContainer: () => this.$refs.timeLinePanel
+      getContainer: () => this.$refs.timeLinePanel,
+      changeSwitchIndex: index => (this.switchOrderIndex = index)
     }
   },
   props: {
@@ -51,6 +52,7 @@ export default {
     return {
       scale: 0,
       itemSize,
+      switchOrderIndex: 0, // 修改order用
       currentFrameGroup: null, // 当前编辑的片段
       changeTime: false, // 当前是否为修改时间状态
       timeLinePlayer,
@@ -81,6 +83,13 @@ export default {
     //   console.log('>>>', this.$timeLinePlayer)
     //   return this.$timeLinePlayer || {}
     // }
+
+    frameGroups() {
+      const groups = timeLinePlayer.frameGroups
+      if (~this.switchOrderIndex) {
+        groups.splice(this.switchOrderIndex, 0, { UUID: 'ghost' })
+      }
+    }
   },
   watch: {
     "timeLinePlayer.currentTime"() {

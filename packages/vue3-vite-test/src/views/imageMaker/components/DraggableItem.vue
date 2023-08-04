@@ -82,7 +82,7 @@ export default {
       if (this.onDrag) {
         this.moveInfo = { clientX, clientY }
         const customEvent = new CustomEvent(CUSTOM_EVENT.DRAG_RESOURCE, {
-          detail: { resource: { ...this.$parent.detail }, ghostInfo: { ...this.ghostInfo } },
+          detail: { resource: { ...this.$parent.detail, naturalSize: this.$parent.naturalSize }, ghostInfo: { ...this.ghostInfo } },
           bubbles: true,
           cancelable: true,
           pageX: clientX,

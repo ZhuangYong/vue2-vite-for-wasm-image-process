@@ -90,7 +90,8 @@ class TimeLinePlayer extends Event {
     this.start = false
     this.startTime = 0
     this.currentTime = 0
-    this.frameGroups = []
+    // this.frameGroups = []
+    this.clearFrameGroup()
     this.frameTime = options.frameTime || 0
     this.trigger('update:frameTime', this.frameTime)
 
@@ -116,6 +117,12 @@ class TimeLinePlayer extends Event {
     this.refreshKeyFrameTimes()
     // 渲染
     this.requestFrame()
+  }
+
+  clearFrameGroup() {
+    while (this.frameGroups.length > 0) {
+      this.frameGroups.pop()
+    }
   }
 
   /**
@@ -153,7 +160,7 @@ class TimeLinePlayer extends Event {
    */
   addObjectAsFrameGroup(obj) {
     const keyFrame = new Frame()
-    obj.ignore = true
+    // obj.ignore = true
     keyFrame.add(obj)
     keyFrame.startTime = 0
     keyFrame.duration = this.duration
@@ -208,6 +215,14 @@ class TimeLinePlayer extends Event {
     this.frameGroups.findIndex(group => group.UUID === frameGroup.UUID)
   }
 
+  changeLayer(fromIndex, toIndex) {
+    const size = this.frameGroups.length
+    const currentIndex = size - fromIndex - 1
+    const [currentTarget] = this.frameGroups.splice(currentIndex, 1)
+    this.frameGroups.splice(size - toIndex - 1, 0, currentTarget)
+
+  }
+
   findGroupByTarget(target) {
     if (!target) {
       return null
@@ -257,7 +272,15 @@ class TimeLinePlayer extends Event {
     }
     time = time || 0
     // ImageHelper.cleanCanvas()
-    this.frameGroups.forEach(frameGroup => frameGroup.renderFrame(time))
+    // this.frameGroups.forEach(frameGroup => frameGroup.renderFrame(time))
+    this.canvas.clear()
+    const objects = []
+    this.frameGroups.forEach(frameGroup => {
+      const frame = frameGroup.getFrameInTime(time, true, true)
+      frame && !_.isEmpty(frame._objects) && objects.push(...frame._objects)
+    })
+    objects.forEach(obj => this.canvas.add(obj))
+    this.canvas.requestRenderAll()
     this.currentTime = time
     this.trigger('requestFrame')
   }

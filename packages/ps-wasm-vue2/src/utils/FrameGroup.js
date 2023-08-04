@@ -6,6 +6,9 @@ import { Event } from "@/utils/Event"
 export default class FrameGroup extends Event {
 
   UUID = `frame-group-${Math.random()}`
+
+  type = 'fameGroup'
+
   /**
    * 关键帧对象
    * @type {[]}
@@ -114,8 +117,9 @@ export default class FrameGroup extends Event {
           newFrame.duration = oldDuration - includeFrame.duration
           const objects = await includeFrame.cloneObjects()
           if (!_.isEmpty(objects)) {
-            objects.forEach(obj => (obj.ignore = true))
-            includeFrame.canvas.add(...objects)
+            // objects.forEach(obj => (obj.ignore = true))
+            // includeFrame.canvas.add(...objects)
+            newFrame.setCanvas(includeFrame.canvas)
             newFrame.add(...objects)
             // await Promise.all(includeFrame._objects.map(async (obj) => new Promise(resolve => obj.clone(clone => resolve(newFrame.add(clone))))))
             this.addFrame(newFrame)
@@ -230,6 +234,19 @@ export default class FrameGroup extends Event {
     this.sort()
   }
 
+  getFrameByIndex(index) {
+    return (this.frames || [])[index || 0]
+  }
+
+  getFirstObject() {
+    for (let i = 0; i < this.frames.length; i++) {
+      const frame = this.frames[i]
+      if (frame._objects.length) {
+        return frame._objects[0]
+      }
+    }
+  }
+
   insertBefore(frame, insert) {
     this.sort()
     const index = this.frames.findIndex(iter => iter.UUID === frame.UUID)
@@ -265,7 +282,7 @@ export default class FrameGroup extends Event {
   }
 
   findFrameByTarget(target) {
-    return this.frames.find(frame => frame._objects.includes(target))
+    return this.frames.find(frame => frame._objects.some(obj => obj.UUID === target.UUID))
   }
 
   includes(target) {

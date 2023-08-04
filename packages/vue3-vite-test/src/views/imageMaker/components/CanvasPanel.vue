@@ -184,8 +184,6 @@ export default {
         imageHelper.currentTarget = this.currentObject
         this.$emit('update:currentSelectTarget', this.currentObject)
       }
-
-      console.log('----- select object', this.currentObject)
     },
 
     /**
@@ -201,15 +199,19 @@ export default {
 
     onResourceDrop() {
       if (this.tipDragArea && this.tipDragArea.resource) {
-        const { resource, width, height } = this.tipDragArea
-        console.log({ resource, width, height } )
+        const { resource, width, height, type } = this.tipDragArea
         if (!imageHelper.stageReady()) {
           // this.canvas.originWidth = width
           // this.canvas.originHeight = height
-          imageHelper.newSage({ width, height })
+          const { naturalHeight, naturalWidth } = resource.naturalSize || {}
+          imageHelper.newSage({ width: naturalWidth || width, height: naturalHeight || height })
         }
         if (resource.url) {
-          imageHelper.uploadImage(resource.url, {})
+          if (resource.type === 'gif') {
+            imageHelper.uploadGif(resource.url, {})
+          } else {
+            imageHelper.uploadImage(resource.url, {})
+          }
         } else {
           imageHelper.addText(resource.label, {})
         }
