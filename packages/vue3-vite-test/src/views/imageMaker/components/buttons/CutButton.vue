@@ -1,5 +1,5 @@
 <template>
-  <el-link :underline="false" :disabled="!hasSelected" @click.stop="onClick">
+  <el-link :underline="false" :disabled="timeLinePlayer._selectFrameGroups <= 0" @click.stop="onClick">
     <svg-icon name="editor-cut" size="18px" />
   </el-link>
 </template>
@@ -12,11 +12,12 @@ export default {
   data() {
     return {
       timeLinePlayer,
+      selectedList: timeLinePlayer._selectFrameGroups,
     }
   },
   computed: {
     hasSelected() {
-      return (this.timeLinePlayer.selectedList || []).length > 0
+      return (this.selectedList || []).length > 0
     }
   },
   methods: {

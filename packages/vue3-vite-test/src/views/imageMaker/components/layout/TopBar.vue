@@ -55,27 +55,30 @@
         </el-form-item>
       </el-form>
     </div>
+
+    <TopTip ref="topTip" />
   </div>
 </template>
 
 <script>
 import _ from 'lodash'
 import ColorPicker from '../ColorPicker.vue'
-import FullscreenButton from "../buttons/FullscreenButton.vue"
-import { Back, Right, Position, EditPen } from '@element-plus/icons-vue'
-import { Const, imageHelper, COMMAND_TYPES, timeLinePlayer, BaseFabricComponent } from "ps-wasm-vue2"
+import FullscreenButton from '../buttons/FullscreenButton.vue'
+import { Position } from '@element-plus/icons-vue'
+import { Const, imageHelper, COMMAND_TYPES, BaseFabricComponent } from 'ps-wasm-vue2'
+import TopTip from "../TopTip.vue"
 
 export default {
   name: 'TopBar',
   mixins: [BaseFabricComponent],
-  components: { Back, Right, Position, EditPen, ColorPicker, FullscreenButton },
+  components: { Position, ColorPicker, FullscreenButton, TopTip },
   props: {
     /**
      * 全屏的对象
      * */
     fullScreenEl: {
       type: [Object, HTMLElement],
-      default: () => {}
+      default: () => ({})
     },
     /**
      * 当前编辑模式
@@ -146,21 +149,21 @@ export default {
      * 下载
      */
     download() {
-
+      //todo
     },
 
     /**
      * 收藏
      */
     favorite() {
-
+      this.$refs.topTip.pushTip(`收藏成功, 您可稍后前往“我的-我的收藏”查看, 或者 <a href="#/bbbb"><font color="#009983">立即跳转</font></a>`)
     },
 
     /**
      * 提交审核
      */
     apply() {
-
+      //todo
     },
 
     refreshBackgroundColor() {
@@ -192,6 +195,7 @@ $barHeight: 50px;
     border-bottom: 1px solid #EBEEF5;
 
     &.detail {
+      height: 60px;
       .bar-part .el-form-item {
         margin-right: 60px;
         white-space: nowrap;

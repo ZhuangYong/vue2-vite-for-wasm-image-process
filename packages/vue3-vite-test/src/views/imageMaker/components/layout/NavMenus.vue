@@ -9,7 +9,7 @@
 
 <script>
 
-import {resourceType} from "../../utils"
+import {resourceType} from '../../utils'
 
 export default {
   name: 'NavMenus',

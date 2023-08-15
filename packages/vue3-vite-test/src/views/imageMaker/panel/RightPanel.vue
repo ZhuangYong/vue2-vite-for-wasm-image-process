@@ -5,9 +5,9 @@
 </template>
 
 <script>
-import LayerPanel from "./LayerPanel.vue"
-import ObjectPropsPanel from "./ObjectPropsPanel.vue"
-import ContentPanel from "./ContentPanel.vue"
+import LayerPanel from './LayerPanel.vue'
+import ObjectPropsPanel from './ObjectPropsPanel.vue'
+import ContentPanel from './ContentPanel.vue'
 
 export default {
   name: 'RightPanel',

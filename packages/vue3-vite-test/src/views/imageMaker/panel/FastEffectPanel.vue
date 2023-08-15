@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import {filters, BaseFabricComponent} from "ps-wasm-vue2"
+import {filters, BaseFabricComponent} from 'ps-wasm-vue2'
 const doFilter = filters.default
 
 export default {

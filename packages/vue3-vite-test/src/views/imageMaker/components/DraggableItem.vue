@@ -7,7 +7,7 @@
 
 <script>
 
-import {CUSTOM_EVENT} from "../utils";
+import {CUSTOM_EVENT} from '../utils'
 
 export default {
   name: 'DraggableItem',

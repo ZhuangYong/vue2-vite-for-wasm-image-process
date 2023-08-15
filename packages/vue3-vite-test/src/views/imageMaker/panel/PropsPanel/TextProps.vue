@@ -18,9 +18,9 @@
 </template>
 
 <script>
-import ContentPanel from "../ContentPanel.vue"
-import {imageHelper, FontHelper, BaseFabricComponent} from "ps-wasm-vue2"
-import ColorPicker from "../../components/ColorPicker.vue"
+import ContentPanel from '../ContentPanel.vue'
+import {imageHelper, FontHelper, BaseFabricComponent} from 'ps-wasm-vue2'
+import ColorPicker from '../../components/ColorPicker.vue'
 
 export default {
   name: 'TextProps',

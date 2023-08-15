@@ -13,7 +13,7 @@ export default {
   props: {
     detail: {
       type: Object,
-      default: () => {}
+      default: () => ({})
     },
   },
   data() {

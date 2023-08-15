@@ -1,7 +1,7 @@
 <template>
   <div v-if="timeLinePlayer" ref="timeLinePanel" class="time-line-panel" @mousedown="onMousedown" @mouseup="onMouseup" @mousemove="onMousemove" @wheel="onWheel">
     <!--时间刻度-->
-    <TimeLineMark :offset="timeLineContainer.x" :scale="scale || defaultScale" class="time-line-mark" @mousedown.native="onMarkMousedown" @mousemove.native="onMarkMousemove" @mouseout.native="onMarkMouseout" />
+    <TimeLineMark :offset="timeLineContainer.x" :scale="scale || defaultScale" class="time-line-mark" @mousedown="onMarkMousedown" @mousemove="onMarkMousemove" @mouseout="onMarkMouseout" />
     <!--时间限制编辑-->
     <TimeLineLimit v-show="active && timeLinePlayer.enabledOutputLimit" :output-limit="timeLinePlayer.outputLimit" :style="`top: 22px; transform: translate(${-timeLineContainer.x}px`" />
     <!--辅助显示当前鼠标移动刻度-->
@@ -12,10 +12,8 @@
     </div>
     <!--帧预览-->
     <div ref="timeLineContainer" class="time-line-container" :style="`transform: translate(${-timeLineContainer.x}px, ${-timeLineContainer.y}px)`">
-      <div v-for="frameGroup in frameGroups" :key="frameGroup.UUID" class="time-line-item" :style="`width: ${(frameGroup.duration + frameGroup.delay) * (scale || 1)}px`">
-        <TimeLine v-else :frame-group="frameGroup" :offset="timeLineContainer.x" :item-size="itemSize"
-                  :scale="scale || defaultScale" :limit-editable="true" @click.native="onFrameGroupClick(frameGroup)"/>
-      </div>
+      <TimeLine v-for="frameGroup in viewFrameGroups" :key="frameGroup.UUID" :frame-group="frameGroup" :index="frameGroup.orderIndex" :offset="timeLineContainer.x" :item-size="itemSize"
+                :scale="scale || defaultScale" :limit-editable="true" @click="onFrameGroupClick(frameGroup)" @switch-index="changeSwitchIndex"/>
     </div>
     <div v-show="showScrollBar" class="scroll-bar" :class="scrollbarScroll === 'h' && scrollbarScroll" :style="`width: ${scrollBar.width}px; transform: translateX(${scrollBar.x}px)`" @mousedown="onScrollbarMousedown" />
     <div v-show="showScrollBar" class="scroll-bar vertical" :class="scrollbarScroll === 'v' && scrollbarScroll" :style="`height: ${scrollBar.height}px; transform: translateY(${scrollBar.y}px)`" @mousedown="onScrollbarMousedown" />
@@ -23,14 +21,14 @@
 </template>
 
 <script>
-import { timeLinePlayer } from 'ps-wasm-vue2'
-import { BaseFabricComponent } from "ps-wasm-vue2"
-import TimeLine from "./TimeLine.vue"
-import TimeLineMark from "./TimeLineMark.vue"
-import TimeLineLimit from "./TimeLineLimit.vue"
+import { timeLinePlayer, BaseFabricComponent, imageHelper, COMMAND_TYPES } from 'ps-wasm-vue2'
+import TimeLine from './TimeLine.vue'
+import TimeLineMark from './TimeLineMark.vue'
+import TimeLineLimit from './TimeLineLimit.vue'
 
 // 样式(TimeLine.vue)中itemSize保持一致
 const itemSize = 40
+const itemGap = 10
 
 export default {
   name: 'TimeLinePanel',
@@ -38,8 +36,7 @@ export default {
   components: { TimeLine, TimeLineMark, TimeLineLimit },
   provide() {
     return {
-      getContainer: () => this.$refs.timeLinePanel,
-      changeSwitchIndex: index => (this.switchOrderIndex = index)
+      getContainer: () => this.$refs.timeLinePanel
     }
   },
   props: {
@@ -51,8 +48,10 @@ export default {
   data() {
     return {
       scale: 0,
+      itemGap,
       itemSize,
-      switchOrderIndex: 0, // 修改order用
+      frameGroups: [],
+      switchOrderIndex: -1, // 修改order用
       currentFrameGroup: null, // 当前编辑的片段
       changeTime: false, // 当前是否为修改时间状态
       timeLinePlayer,
@@ -84,29 +83,32 @@ export default {
     //   return this.$timeLinePlayer || {}
     // }
 
-    frameGroups() {
-      const groups = timeLinePlayer.frameGroups
+    viewFrameGroups() {
+      const groups = this.frameGroups.map((item, orderIndex) => {
+        item.orderIndex = orderIndex
+        return item
+      })
       if (~this.switchOrderIndex) {
         groups.splice(this.switchOrderIndex, 0, { UUID: 'ghost' })
       }
+      return groups
     }
   },
   watch: {
-    "timeLinePlayer.currentTime"() {
+    'timeLinePlayer.currentTime'() {
       this.refreshTimeLine()
     },
     active() {
       this.refreshScale()
     }
   },
-  created() {
-  },
   mounted() {
     this.refreshScale()
+    this.frameGroups = timeLinePlayer.frameGroups
     document.addEventListener('mouseup', this.leaveChangeTime)
     document.addEventListener('mousemove', this.onDocumentMousemove)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     document.removeEventListener('mouseup', this.leaveChangeTime)
     document.removeEventListener('mousemove', this.onDocumentMousemove)
   },
@@ -262,6 +264,10 @@ export default {
         const resetTime = Math.max(0, Math.min(time, this.timeLinePlayer.duration)).toFixed(2)
         this.timeLinePlayer.requestFrame(Number(resetTime))
       }
+    },
+
+    changeSwitchIndex(index) {
+      this.switchOrderIndex = Math.min(index, timeLinePlayer.frameGroups.length)
     }
   },
 }
@@ -278,7 +284,7 @@ export default {
     left: 0;
     position: absolute;
     .time-line-item {
-      margin-top: 10px;
+      display: flex;
       border-radius: 4px;
       background-color: white;
       &:before {

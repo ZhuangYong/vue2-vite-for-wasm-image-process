@@ -46,7 +46,8 @@ export const defaultProps = {
   fill: '#000000',
   fontSize: 0,
   fontFamily: '',
-  visible: true
+  visible: true,
+  opacity: 1
 }
 
 const FUNCTION_KEY = isMac() ? {
@@ -66,6 +67,7 @@ export const COMMAND_TYPES = {
     COPY: {key: 'copy', label: '复制', keyMap: `${FUNCTION_KEY.CTRL_KEY} + c`, disabled: () => !imageHelper.currentTarget },
     PASTE: {key: 'paste', label: '粘贴', keyMap:`${FUNCTION_KEY.CTRL_KEY} + v`, disabled: () => !imageHelper.copyTarget},
     DELETE: {key: 'delete', label: '删除', keyMap: 'del, Backspace', disabled: () => !imageHelper.currentTarget},
+    OPACITY: {key: 'opacity', label: '透明度', keyMap: '', disabled: () => !imageHelper.currentTarget},
     VISIBLE: {key: 'visible', label: '显示/隐藏', keyMap: '', disabled: () => !imageHelper.currentTarget},
     SWITCH_INDEX: {key: 'switchIndex', label: '交换位置', keyMap: '', hidden: true},
     CHANGE_FONT_COLOR: {key: 'changeFontColor', label: '修改字体颜色', keyMap: '', hidden: true},
@@ -186,6 +188,7 @@ class ImageHelper extends Event {
     })
     canvas.isDrawingMode = false
     this.canvas = canvas
+    this.timeLinePlayer.canvas = canvas
     this.trigger('initialized', canvas)
     return canvas
   }
@@ -216,7 +219,7 @@ class ImageHelper extends Event {
           inputCode = inputCode.split('+').filter(keyStr => FUNCTION_KEYS.includes(keyStr)).join('+')
           const item = keyMaps[find[0]]
           this.handleCommand(item.key, this.currentTarget, e)
-          console.log('>>> found key code: ', find[0])
+          // console.log('>>> found key code: ', find[0])
         }
       }, 0.6 * 100)
     }
@@ -329,7 +332,7 @@ class ImageHelper extends Event {
     // }
     switch (command) {
       case COMMAND_TYPES.EDIT.BACK.key:
-        console.log('----back')
+        // console.log('----back')
         // const operateFromHistory = this.back.pop()
         // operateFromHistory && operateFromHistory.back.apply(this)
         // this.redo.push(operateFromHistory)
@@ -438,7 +441,8 @@ class ImageHelper extends Event {
       // 交换位置
       case COMMAND_TYPES.EDIT.SWITCH_INDEX.key:
         const fromIndex = target
-        const toIndex = target < arg1 ? arg1 - 1 : arg1
+        // const toIndex = target < arg1 ? arg1 - 1 : arg1
+        const toIndex = arg1
         this.changeLayer(fromIndex, toIndex)
         this.recordHistory({ back: () => this.changeLayer(toIndex, fromIndex), redo: () => this.changeLayer(fromIndex, toIndex) })
         break
@@ -450,6 +454,16 @@ class ImageHelper extends Event {
           target.visible = arg1
           modifyObject = true
           // this.recordHistory({ back: () => target.visible = visible, redo: () => target.visible = arg1 })
+        }
+        break
+
+      // 是否显示
+      case COMMAND_TYPES.EDIT.OPACITY.key:
+        const opacity = target.opacity
+        if (target.opacity !== arg1) {
+          target.opacity = arg1
+          modifyObject = true
+          this.recordHistory({ back: () => target.opacity = opacity, redo: () => target.opacity = arg1 })
         }
         break
 
@@ -701,11 +715,14 @@ class ImageHelper extends Event {
       // 关键帧的开始时间
       // const keyFrameTime = frames.map(frame => frame.startTime)
       // 片段对象
+      const { width, height, scaleX, scaleY } = this.initialObject(frames[0].img)
       const frameGroup = new FrameGroup(frames.map(frame => {
         // 一帧
         const keyFrame = new Frame()
+
+        this.initialObject(frame.img)
         // 图片初始化
-        frame.img.set({...option, selectable: false, hoverCursor: 'default'})
+        frame.img.set({...option, left: -frame.img.width / 2, top: -frame.img.height / 2, scaleX: 1, scaleY: 1, selectable: false, hoverCursor: 'default'})
         // 帧时间
         keyFrame.duration = frame.duration
         // 帧开始时间
@@ -714,10 +731,10 @@ class ImageHelper extends Event {
         keyFrame.add(frame.img)
         // 将对象添加到舞台
         // this.addToCanvas(frame.img)
-        this.initialObject(frame.img)
+        // this.initialObject(frame.img)
         keyFrame.setCanvas(this.canvas)
         return keyFrame
-      }))
+      }), { width, height, scaleX, scaleY })
       // 重置播放
       this.timeLinePlayer.reset({ frameTime, frameGroups: [frameGroup] })
       // 开启gif模式
@@ -817,8 +834,7 @@ class ImageHelper extends Event {
   /**
    * 刷新舞台可视尺寸
    */
-  refreshStageView() {
-    console.log('-----refreshStageView')
+  refreshStageView(margin = 30) {
     let { originWidth: width, originHeight: height } = this.canvas
     width = width || this.canvas.width
     height = height || this.canvas.height
@@ -832,7 +848,8 @@ class ImageHelper extends Event {
     if (boundEl && boundEl.classList.contains(Const.MAIN_STAGE_CLASS)) {
       const {width: boundWidth, height: boundHeight} = boundEl.getBoundingClientRect()
       // scale = Math.min(1, Math.min(boundWidth / width, boundHeight / height))
-      scale = Math.min(boundWidth / width, boundHeight / height)
+      margin = margin || 30
+      scale = Math.min((boundWidth - margin) / width, (boundHeight - margin) / height)
     }
     this.canvas.viewScale = scale
     this.canvas.setZoom(scale)
@@ -973,6 +990,9 @@ class ImageHelper extends Event {
 
   requestRenderAll() {
     this.canvas.requestRenderAll()
+    if (this.canvas.gifMode && this.timeLinePlayer) {
+      this.timeLinePlayer.requestFrame()
+    }
   }
 
   initialObject(target) {
@@ -1011,21 +1031,28 @@ class ImageHelper extends Event {
       // this.canvas.setZoom(scale)
       // this.canvas.setDimensions({ width: width * scale, height: height * scale })
     }
+    return target
   }
 
   /**
    * 交换layer
    * @param fromIndex
    * @param toIndex
+   * @param reverse
    */
-  changeLayer(fromIndex, toIndex) {
+  changeLayer(fromIndex, toIndex, reverse = false) {
     if (this.canvas.gifMode) {
-      this.timeLinePlayer.changeLayer(fromIndex, toIndex)
+      this.timeLinePlayer.changeLayer(fromIndex, toIndex, reverse)
     } else {
-      const size = this.canvas._objects.length
-      const currentIndex = size - fromIndex - 1
-      const [currentTarget] = this.canvas._objects.splice(currentIndex, 1)
-      this.canvas._objects.splice(size - toIndex - 1, 0, currentTarget)
+      if (reverse) {
+        const size = this.canvas._objects.length
+        const currentIndex = size - fromIndex - 1
+        const [currentTarget] = this.canvas._objects.splice(currentIndex, 1)
+        this.canvas._objects.splice(size - toIndex - 1, 0, currentTarget)
+      } else {
+        const [currentTarget] = this.canvas._objects.splice(fromIndex, 1)
+        this.canvas._objects.splice(toIndex, 0, currentTarget)
+      }
     }
   }
 

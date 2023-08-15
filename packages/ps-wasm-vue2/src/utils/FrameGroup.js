@@ -45,13 +45,18 @@ export default class FrameGroup extends Event {
    */
   currentFrame = null
 
-  constructor(frames) {
+  _currentObjects = []
+
+  _fabricGroup = null
+
+  constructor(frames, option = {}) {
     super()
     this.frames = frames || []
     this.frames.forEach(frame => (frame.group = this))
     this.duration = this.frames.reduce((pre, cur) => pre + cur.duration, 0)
     this.limit = [0, this.duration]
     this.sort()
+    this._fabricGroup = new fabric.Group(this._currentObjects, option)
   }
 
   /**
@@ -105,6 +110,7 @@ export default class FrameGroup extends Event {
       if (!frame) {
         const newFrame = new Frame()
         newFrame.startTime = time
+        newFrame.setCanvas(this.canvas)
         const includeFrame = this.findFrameByIncludeTime(time)
         const nextFrame = this.findNextFrameByTime(time)
         const previousFrame = this.findPreviousFrameByTime(time)
@@ -220,6 +226,30 @@ export default class FrameGroup extends Event {
       // return this.frames.reduce((pre, cur) => pre.startTime > cur.startTime ? pre : cur)
     }
     return frameInTime
+  }
+
+  /**
+   * 获取在time时间上的渲染group
+   * @param time 指定时间
+   * @param limit 是否判断限制
+   * @param delay 是否判断延迟
+   * @returns {*}
+   */
+  getViewGroupInTime(time, limit, delay) {
+    const frame = this.getFrameInTime(time, limit, delay)
+    while (!_.isEmpty(this._currentObjects)) {
+      this._currentObjects.pop()
+    }
+    // while (!_.isEmpty(this._fabricGroup._objects)) {
+    //   this._fabricGroup._objects.pop()
+    // }
+    // this._fabricGroup.dispose()
+    if (frame && !_.isEmpty(frame._objects)) {
+      // this._currentObjects.push(...frame._objects)
+      // frame._objects.forEach(obj => this._fabricGroup.addWithUpdate(obj))
+      this._fabricGroup.add(...frame._objects)
+    }
+    return this._fabricGroup
   }
 
   /**

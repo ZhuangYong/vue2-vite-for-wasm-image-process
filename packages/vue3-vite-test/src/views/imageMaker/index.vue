@@ -1,23 +1,28 @@
 <template>
   <div ref="mainPanel" v-loading="showWaiting" class="main-panel">
     <div class="nav-menu">
+      <!--左侧菜单-->
       <NavMenus v-model:type="resourceType" />
     </div>
     <div class="main">
       <div class="left-panel">
+        <!--资源面板-->
         <ResourcePanel :type="resourceType" />
       </div>
       <div class="center-panel">
         <SplitPan class="default-theme" horizontal @resize="onCanvasContainerResize">
           <pane class="center-center-panel">
             <div class="center-top-bar-panel">
-              <TopBar :full-screen-el="fullscreenTarget" v-model:edit-mode="editMode" />
+              <!--顶部-->
+              <TopBar ref="topBar" v-model:edit-mode="editMode" :full-screen-el="fullscreenTarget" />
             </div>
             <div class="center-canvas-panel">
-              <CanvasPanel v-model:current-select-target="currentObject" @initialized="onCanvasInitialized"  />
+              <!--舞台-->
+              <CanvasPanel v-model:current-select-target="currentObject" @initialized="onCanvasInitialized" />
             </div>
           </pane>
           <pane class="center-bottom-panel" size="30">
+            <!--中间面板-->
             <ContentPanel full-height bold title-height="40px">
               <template #title>
                 <el-radio-group v-model="bottomActive" class="bottom-panel-switcher">
@@ -25,8 +30,11 @@
                   <el-radio-button label="effect">特效</el-radio-button>
                 </el-radio-group>
               </template>
+              <!--播放状态-->
               <template #titleRight><PlayStatus /></template>
+              <!--时间轴-->
               <TimeLinePanel v-if="gifMode && bottomActive === 'timeLine'" style="height: 100%;" />
+              <!--特效-->
               <FastEffectPanel v-if="bottomActive === 'effect'" style="height: 100%;" />
             </ContentPanel>
           </pane>
@@ -52,21 +60,20 @@
 </template>
 
 <script>
-import { Const, imageHelper, fabric, timeLinePlayer } from "ps-wasm-vue2"
+import { Const, imageHelper, timeLinePlayer } from 'ps-wasm-vue2'
 import pane from './components/SplitPan/pane.vue'
 import TopBar from './components/layout/TopBar.vue'
 import NavMenus from './components/layout/NavMenus.vue'
 import SplitPan from './components/SplitPan/index.vue'
 import ResourcePanel from './panel/ResourcePanel.vue'
 import CanvasPanel from './components/CanvasPanel.vue'
-import TimeLinePanel from "./components/TimeLine/TimeLinePanel.vue"
-import RightPanel from "./panel/RightPanel.vue"
-import ContentPanel from "./panel/ContentPanel.vue"
-import PlayStatus from "./panel/PlayStatus.vue"
-import PropsPanel from "./panel/PropsPanel/index.vue"
-import LayerPanel from "./panel/LayerPanel.vue"
-import Dialogs from "./panel/Dialogs.vue"
-import FastEffectPanel from "./panel/FastEffectPanel.vue"
+import TimeLinePanel from './components/TimeLine/TimeLinePanel.vue'
+import ContentPanel from './panel/ContentPanel.vue'
+import PlayStatus from './panel/PlayStatus.vue'
+import PropsPanel from './panel/PropsPanel/index.vue'
+import LayerPanel from './panel/LayerPanel.vue'
+import Dialogs from './panel/Dialogs.vue'
+import FastEffectPanel from './panel/FastEffectPanel.vue'
 
 export default {
   name: 'ImageMaker',
@@ -79,7 +86,6 @@ export default {
     ResourcePanel,
     TimeLinePanel,
     FastEffectPanel,
-    RightPanel,
     ContentPanel,
     PlayStatus,
     PropsPanel,
@@ -91,13 +97,14 @@ export default {
       getCanvas: () => this.canvas, // 画布对象
       getTarget: () => this.currentObject, // 当前操作对象
       getEditMode: () => this.editMode, // 编辑模式
-      waiting: bol => this.showWaiting = bol // 是否等待
+      waiting: bol => this.showWaiting = bol, // 是否等待
+      pushTip: msg => this.$refs.topBar.$refs.topTip.pushTip(msg) // 提示信息
     }
   },
   data() {
     return {
-      bottomActive: 'effect',
-      resourceType: 'resource',
+      bottomActive: 'effect', // 底部当前显示面板：时间轴、特效
+      resourceType: 'resource', // 当前资源类型
       canvas: null, // 画布对象
       timeLinePlayer, // 时间轴对象
       showWaiting: false, // 显示等待
@@ -107,15 +114,27 @@ export default {
     }
   },
   computed: {
+    /**
+     * 是否gif模式
+     * @return {boolean}
+     */
     gifMode() {
       return (this.canvas || {}).gifMode
     }
   },
   watch: {
+    /**
+     * 编辑模式修改
+     * @param v
+     */
     editMode(v) {
       // 如果是画笔，画布设置为可draw
       this.canvas.isDrawingMode = (v === Const.EDIT_MODE.PENCIL.key)
     },
+    /**
+     * gif模式修改
+     * @param v
+     */
     'gifMode'(v) {
       v && (this.bottomActive = 'timeLine')
     }
@@ -130,14 +149,17 @@ export default {
   },
 
   methods: {
-    name() {
-
-    },
-
+    /**
+     * 当canvas初始化
+     * @param canvas
+     */
     onCanvasInitialized(canvas) {
       this.canvas = canvas
     },
 
+    /**
+     * 舞台大小修改
+     */
     onCanvasContainerResize() {
       imageHelper.refreshStageView()
     }

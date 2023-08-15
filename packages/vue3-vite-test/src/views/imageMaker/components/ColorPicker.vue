@@ -13,8 +13,8 @@
 </template>
 
 <script>
-import transparentSvg from "@/../static/icon/transparent.svg"
-import VisibleSwitch from "./buttons/VisibleSwitch.vue"
+import transparentSvg from '@/../static/icon/transparent.svg'
+import VisibleSwitch from './buttons/VisibleSwitch.vue'
 const defaultBackgroundColor = 'rgba(0, 0, 0, 0)'
 export default {
   components: { VisibleSwitch },
@@ -76,7 +76,7 @@ export default {
     },
     resetColor(channel, val) {
       const { backgroundColor } = this
-      const arr = backgroundColor.slice(5, backgroundColor.length - 1).split(",")
+      const arr = backgroundColor.slice(5, backgroundColor.length - 1).split(',')
       let [r, g, b, a] = arr
       r = r || '00'
       g = g || '00'
@@ -104,7 +104,7 @@ export default {
         return
       }
       // 将str中的数字提取出来放进数组中
-      const arr = str.slice(5, str.length - 1).split(",")
+      const arr = str.slice(5, str.length - 1).split(',')
       let c = '#'
       for (let i = 0; i < arr.length - 1; i++) {
         // Number() 函数把对象的值转换为数字

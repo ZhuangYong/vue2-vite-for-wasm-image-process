@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { imageHelper, timeLinePlayer, COMMAND_TYPES } from "ps-wasm-vue2"
+import { imageHelper, timeLinePlayer, COMMAND_TYPES } from 'ps-wasm-vue2'
 
 export default {
   name: 'Play',

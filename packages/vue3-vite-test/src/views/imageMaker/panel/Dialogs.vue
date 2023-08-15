@@ -59,7 +59,7 @@
 </template>
 
 <script>
-import { BaseFabricComponent, imageHelper, FontHelper } from "ps-wasm-vue2"
+import { BaseFabricComponent, imageHelper, FontHelper } from 'ps-wasm-vue2'
 
 export default {
   name: 'Dialogs',

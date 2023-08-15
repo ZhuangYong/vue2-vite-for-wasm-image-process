@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { timeLinePlayer } from "ps-wasm-vue2"
+import { timeLinePlayer } from 'ps-wasm-vue2'
 
 export default {
   name: 'TimeLineLimit',
@@ -87,7 +87,7 @@ export default {
     document.addEventListener('mouseup', this.onMouseup)
     document.addEventListener('mousemove', this.onMousemove)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     document.removeEventListener('mouseup', this.onMouseup)
     document.removeEventListener('mousemove', this.onMousemove)
   },

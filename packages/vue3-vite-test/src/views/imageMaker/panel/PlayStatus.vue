@@ -9,11 +9,11 @@
 </template>
 
 <script>
-import Play from "../components/buttons/Play.vue"
-import CutButton from "../components/buttons/CutButton.vue"
+import Play from '../components/buttons/Play.vue'
+import CutButton from '../components/buttons/CutButton.vue'
 import { timeLinePlayer } from 'ps-wasm-vue2'
-import NextButton from "../components/buttons/NextButton.vue"
-import PreButton from "../components/buttons/PreButton.vue"
+import NextButton from '../components/buttons/NextButton.vue'
+import PreButton from '../components/buttons/PreButton.vue'
 
 export default {
   name: 'PlayStatus',

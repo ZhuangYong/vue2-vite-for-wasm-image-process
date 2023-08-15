@@ -1,8 +1,10 @@
 <template>
   <ContentPanel title="动效" class="props-panel">
     <div class="animate-list" :class="disabled && 'disabled'">
-      <div v-for="animate in animates" :key="animate.key" class="animate-item" :class="`${used(animate.label) && 'apply'} animate-${animate.key}`" @click="applyAnimate(animate.key)">
-        {{ animate.label }}
+      <div v-for="animate in animates" :key="animate.key" class="animate-item"
+           :class="`${used(animate.label) && 'apply'} animate__${!disabled && currentKey === animate.key ? animate.key : ''}`"
+           @click="applyAnimate(animate.key)" @mouseover="currentKey = animate.key">
+      {{ animate.label }}
       </div>
     </div>
   </ContentPanel>
@@ -10,7 +12,7 @@
 
 <script>
 import {animates, imageHelper, COMMAND_TYPES, BaseFabricComponent, timeLinePlayer} from 'ps-wasm-vue2'
-import ContentPanel from "../ContentPanel.vue"
+import ContentPanel from '../ContentPanel.vue'
 
 export default {
   name: 'AnimateProps',
@@ -19,6 +21,7 @@ export default {
   data() {
     return {
       animates,
+      currentKey: '',
       usedAnimates: []
     }
   },
@@ -32,6 +35,7 @@ export default {
   },
   watch: {
     disabled() {
+      this.currentKey = ''
       this.usedAnimates = (timeLinePlayer.findGroupByTarget(this.target) || {}).animates || []
     }
   },
@@ -55,6 +59,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../style/animate";
 .animate-list {
   display: flex;
   flex-wrap: wrap;
@@ -73,10 +78,14 @@ export default {
     min-width: 52px;
     cursor: pointer;
     border-radius: 4px;
+    animation-iteration-count: 1;
+    animation-duration: 0.6s;
+    animation-fill-mode: both;
     background-color: #f5f6f8ff;
 
     &.apply {
       color: white;
+      animation-play-state: paused;
       background-color: #009983;
     }
   }

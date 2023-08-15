@@ -3,13 +3,17 @@
     <div class="canvas-panel" @drop.stop.prevent="onStageDrop" @dragover="onDragResourceOver" @mousedown.capture="onStageClick" @wheel.prevent="onWheel">
       <div class="canvas-container" :style="`transform: matrix(1, 0, 0, 1, ${viewPort.x}, ${viewPort.y});`">
         <div v-if="showDefault" class="default">
-          <el-upload action="" accept="application/json" :auto-upload="false" :show-file-list="false" :on-change="onImport">
+          <!--<el-upload action="" accept="application/json" :auto-upload="false" :show-file-list="false" :on-change="onImport">
             <el-button size="small" type="warning">导入</el-button>
           </el-upload>
           <el-upload action="" accept="image/*" :auto-upload="false" :show-file-list="false" :on-change="onFileAdd" style="margin-left: 12px;">
             <el-button size="small" type="primary">打开</el-button>
           </el-upload>
-          <el-button size="small" type="primary" style="margin-left: 12px;" @click="onNew">新建</el-button>
+          <el-button size="small" type="primary" style="margin-left: 12px;" @click="onNew">新建</el-button>-->
+          <div class="empty-tip">
+            <svg-icon name="editor-empty" size="120px" />
+            <p style="margin-top: 20px;">请从左侧选择素材进行表情的制作</p>
+          </div>
         </div>
         <div v-if="tipDragArea" class="show-drag-tip" :style="tipAreaStyle" />
         <canvas
@@ -25,10 +29,11 @@
 </template>
 
 <script>
-import {Const, imageHelper, fabric, Event as eventBus, Rectangle } from "ps-wasm-vue2"
-import transparentSvg from "./transparent.svg"
-import {isText} from "@vue/compiler-core";
-import {CUSTOM_EVENT} from "../utils";
+import _ from 'lodash'
+import {Const, imageHelper, timeLinePlayer, fabric, Event as eventBus, Rectangle } from 'ps-wasm-vue2'
+import transparentSvg from './transparent.svg'
+import {isText} from '@vue/compiler-core';
+import {CUSTOM_EVENT} from '../utils'
 
 export default {
   name: 'CanvasPanel',
@@ -36,7 +41,7 @@ export default {
   props: {
     currentSelectTarget: {
       type: Object,
-      default: () => {}
+      default: () => ({})
     }
   },
   data() {
@@ -45,7 +50,7 @@ export default {
       height: 300, // 画布高
       canDrop: false, // 拖拽是否在可释放区域
       canvas: {}, // 画布实例化对象
-      _objects: [],
+      objects: [],
       transparentSvg, // 透明背景
       currentObject: null, // 当前选择的编辑对象
       viewPort: {x: 0, y: 0},
@@ -72,7 +77,8 @@ export default {
      * 显示默认选项
      * */
     showDefault() {
-      return !this.canvas.originWidth
+      return this.canvas.gifMode ? _.isEmpty(timeLinePlayer.frameGroups) : _.isEmpty(this.canvas._objects)
+      // return !this.canvas.originWidth
     },
     canvasState() {
       const { viewPort, canvas } = this
@@ -102,7 +108,6 @@ export default {
   mounted() {
     this.refreshSize()
     this.$nextTick(() => {
-      // imageHelper.registerKeyEvent(this.$refs.main)
       this.createCanvas()
     })
     window.addEventListener('mouseup', this.onResourceDrop)
@@ -114,32 +119,6 @@ export default {
   },
   methods: {
     createCanvas() {
-      // fabric.enableGLFiltering = false
-      // const canvas = new fabric.Canvas(this.$refs.imgRect, { stateful: true, controlsAboveOverlay: true, preserveObjectStacking: true })
-      // canvas.originWidth = 0
-      // canvas.originHeight = 0
-      // canvas.viewScale = 1
-      // canvas.on('selection:updated', this.onSelect)
-      // canvas.on('selection:created', this.onSelect)
-      // canvas.on('selection:cleared', this.onSelect)
-      // canvas.on('object:removed', this.onSelect)
-      // canvas.on('dragover', this.onDragResourceOver)
-      // canvas.on('dragleave', this.onDragResourceLeave)
-      // // canvas.on('object:added', e => console.log(e))
-      // canvas.on('object:modified', ({ target, transform }) => {
-      //   const previewState = {...target._stateProperties}
-      //   const currentState = {}
-      //   Object.keys(previewState).forEach(key => {
-      //     currentState[key] = target[key]
-      //   })
-      //   // 修改back和redo
-      //   imageHelper.recordHistory({
-      //     back: () => fabric.util.object.extend(target, previewState),
-      //     redo: () => fabric.util.object.extend(target, currentState)
-      //   })
-      // })
-      // canvas.isDrawingMode = false
-
       const canvas = imageHelper.createCanvas(this.$refs.imgRect)
       canvas.on('selection:updated', this.onSelect)
       canvas.on('selection:created', this.onSelect)
@@ -149,17 +128,23 @@ export default {
       canvas.on('dragleave', this.onDragResourceLeave)
       canvas.renderAll()
       this.canvas = canvas
-      canvas._objects = this._objects
+      canvas._objects = this.objects
       imageHelper.canvas = this.canvas
       this.$emit('initialized', canvas)
+      // 初始化舞台大小
+      imageHelper.newSage({ width: 240, height: 240 })
+      setTimeout(() => imageHelper.refreshStageView(), 200)
       console.log(this.canvas, fabric)
     },
+
+    /**
+     * 初始化舞台大小
+     * */
     refreshSize() {
       if (this.$refs.main) {
         const { width, height } = this.$refs.main.getBoundingClientRect()
         this.width = width
         this.height = height
-        console.log(width, height)
       }
     },
 
@@ -344,7 +329,7 @@ export default {
   //position: relative;
   align-items: center;
   justify-content: center;
-  background-color: #acacac;
+  background-color: #f6f6f6;
   box-shadow: 0 0 0 1px #acacac;
   .high-light {
     box-shadow: inset 0 0 0 1px green;
@@ -371,6 +356,13 @@ export default {
     position: absolute;
     align-items: center;
     justify-content: center;
+    background-color: white;
+    transition: all ease 0.3s;
+    .empty-tip {
+      color: #CCCCCC;
+      font-size: 14px;
+      text-align: center;
+    }
   }
 }
 </style>

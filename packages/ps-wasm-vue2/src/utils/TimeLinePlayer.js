@@ -8,6 +8,8 @@ class TimeLinePlayer extends Event {
 
   UUID = `time-line-player-${Math.random()}`
 
+  canvas = null
+
   /**
    * 循环播放
    * @type {boolean}
@@ -164,6 +166,7 @@ class TimeLinePlayer extends Event {
     keyFrame.add(obj)
     keyFrame.startTime = 0
     keyFrame.duration = this.duration
+    keyFrame.setCanvas(this.canvas)
     this.addFrameGroup(new FrameGroup([keyFrame]))
   }
 
@@ -215,12 +218,16 @@ class TimeLinePlayer extends Event {
     this.frameGroups.findIndex(group => group.UUID === frameGroup.UUID)
   }
 
-  changeLayer(fromIndex, toIndex) {
-    const size = this.frameGroups.length
-    const currentIndex = size - fromIndex - 1
-    const [currentTarget] = this.frameGroups.splice(currentIndex, 1)
-    this.frameGroups.splice(size - toIndex - 1, 0, currentTarget)
-
+  changeLayer(fromIndex, toIndex, reverse = false) {
+    if (reverse) {
+      const size = this.frameGroups.length
+      const currentIndex = size - fromIndex - 1
+      const [currentTarget] = this.frameGroups.splice(currentIndex, 1)
+      this.frameGroups.splice(size - toIndex - 1, 0, currentTarget)
+    } else {
+      const [currentTarget] = this.frameGroups.splice(fromIndex, 1)
+      this.frameGroups.splice(toIndex, 0, currentTarget)
+    }
   }
 
   findGroupByTarget(target) {
@@ -271,13 +278,14 @@ class TimeLinePlayer extends Event {
       time = this.currentTime
     }
     time = time || 0
-    // ImageHelper.cleanCanvas()
-    // this.frameGroups.forEach(frameGroup => frameGroup.renderFrame(time))
+    const bgColor = this.canvas.backgroundColor
     this.canvas.clear()
+    this.canvas.backgroundColor = bgColor
     const objects = []
     this.frameGroups.forEach(frameGroup => {
-      const frame = frameGroup.getFrameInTime(time, true, true)
-      frame && !_.isEmpty(frame._objects) && objects.push(...frame._objects)
+      // const frame = frameGroup.getFrameInTime(time, true, true)
+      // frame && !_.isEmpty(frame._objects) && objects.push(...frame._objects)
+      objects.push(frameGroup.getViewGroupInTime(time, true, true))
     })
     objects.forEach(obj => this.canvas.add(obj))
     this.canvas.requestRenderAll()
@@ -493,13 +501,16 @@ class TimeLinePlayer extends Event {
    * @returns {*}
    */
   get duration() {
+    if (_.isEmpty(this.frameGroups)) {
+      return (this.keyFrameTime[this.keyFrameTime.length - 1] || 0) + this.frameTime
+    }
     // 找到frameGroup中最大的totalTime
-    return (this.frameGroups || []).reduce((pre, cur) => Math.max(pre, cur.totalTime), 0)
+    return this.frameGroups.reduce((pre, cur) => Math.max(pre, cur.totalTime), 0)
   }
 
-  get canvas() {
-    return (this.frameGroups.find(frameGroup => !!frameGroup.canvas) || {}).canvas
-  }
+  // get canvas() {
+  //   return (this.frameGroups.find(frameGroup => !!frameGroup.canvas) || {}).canvas
+  // }
 
   get selectedList() {
     return [...this._selectFrameGroups]

@@ -31,8 +31,8 @@
 
 <script>
 import {VueDraggableNext as Draggable, Sortable} from '../components/Draggable'
-import VisibleSwitch from "../components/buttons/VisibleSwitch.vue"
-import {timeLinePlayer, Utils, BaseFabricComponent, imageHelper, COMMAND_TYPES, Swap} from "ps-wasm-vue2"
+import VisibleSwitch from '../components/buttons/VisibleSwitch.vue'
+import {timeLinePlayer, Utils, BaseFabricComponent, imageHelper, COMMAND_TYPES, Swap} from 'ps-wasm-vue2'
 import textSvg from '@/../static/icon/text.svg'
 import { Download, Top, Bottom, Delete } from '@element-plus/icons-vue'
 
@@ -51,10 +51,10 @@ export default {
   },
   computed: {
     layers() {
-      const { _objects, gifMode } = this.canvas || {}
-      if (gifMode) {
-        return this.frameGroups.map(frameGroup => this.previewTarget(frameGroup.getFirstObject(), frameGroup)).reverse()
-      }
+      const { _objects } = this.canvas || {}
+      // if (gifMode) {
+      //   return this.frameGroups.map(frameGroup => this.previewTarget(frameGroup.getFirstObject(), frameGroup)).reverse()
+      // }
       return (_objects || []).filter(item => !item.ignore).map(target => this.previewTarget(target)).reverse()
     }
   },
@@ -67,9 +67,6 @@ export default {
       }
     }
   },
-  mounted() {
-
-  },
   methods: {
     onItemClick(layer) {
       const { gifMode } = this.canvas || {}
@@ -81,6 +78,7 @@ export default {
       }
     },
     onSort({ oldIndex, newIndex }) {
+      console.log('>>>>', { oldIndex, newIndex })
       imageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, oldIndex, newIndex)
       this.$nextTick(() => {
         this.orderList = ((this.canvas || {})._objects || []).map(item => item.UUID).reverse()
@@ -88,11 +86,8 @@ export default {
       timeLinePlayer.requestFrame()
     },
 
-    previewTarget(target, frameGroup) {
+    previewTarget(target) {
       let { UUID, type, width, height, text } = target
-      if (frameGroup) {
-        let { UUID, type } = frameGroup
-      }
       const result = imageHelper.watchTarget(target)
       result._element = target._element
       if (Utils.isText(type)) {

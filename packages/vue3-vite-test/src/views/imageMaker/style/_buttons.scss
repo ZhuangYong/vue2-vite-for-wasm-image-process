@@ -9,4 +9,14 @@
   --el-button-active-text-color: white;
   --el-button-active-border-color: #{$activeColor};
   --el-button-active-bg-color: #{$activeColor};
+
+  &.active {
+    color: var(--el-button-active-text-color);
+    border-color: var(--el-button-active-border-color);
+    background-color: var(--el-button-active-bg-color);
+    &:hover {
+      background-color: #{lighten($activeColor, 6%)};
+      border-color: #{lighten($activeColor, 6%)};
+    }
+  }
 }

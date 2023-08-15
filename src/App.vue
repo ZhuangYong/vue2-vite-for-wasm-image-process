@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <ImagePlugin />
+    <!--<Test />-->
   </div>
 </template>
 

@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { timeLinePlayer, imageHelper, COMMAND_TYPES } from "ps-wasm-vue2"
+import { timeLinePlayer, imageHelper, COMMAND_TYPES } from 'ps-wasm-vue2'
 
 export default {
   name: 'PreButton',

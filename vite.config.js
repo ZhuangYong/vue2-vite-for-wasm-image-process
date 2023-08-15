@@ -19,5 +19,6 @@ const crossOriginIsolation = () => ({
 
 export default defineConfig({
   assetsInclude: 'static',
+  server: { host:'0.0.0.0', port:9000 },
   plugins: [crossOriginIsolation(), Vue2(), ScriptSetup(), eslintPlugin()]
 })

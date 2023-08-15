@@ -121,10 +121,10 @@ function swapNodes(n1, n2, options) {
   const {insertUpClass, insertDownClass} = options
   if (n2.classList.contains(insertUpClass)) {
     p2.insertBefore(n1, p2.children[i2]);
-    console.log('insertBefore: ', n1, p2.children[i2], i2)
+    // console.log('insertBefore: ', n1, p2.children[i2], i2)
   } else if (n2.classList.contains(insertDownClass)) {
     p2.insertBefore(n1, p2.children[i2 + 1]);
-    console.log('insertBefore: ', n1, p2.children[i2 + 1], (i2 + 1))
+    // console.log('insertBefore: ', n1, p2.children[i2 + 1], (i2 + 1))
   }
   // p1.insertBefore(n2, p1.children[i1]);
   // p2.insertBefore(n1, p2.children[i2]);

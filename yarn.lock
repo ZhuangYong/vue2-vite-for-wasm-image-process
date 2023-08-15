@@ -1483,6 +1483,11 @@
   dependencies:
     vue-demi "*"
 
+"@webcontainer/api@^1.1.5":
+  version "1.1.5"
+  resolved "https://registry.npmmirror.com/@webcontainer/api/-/api-1.1.5.tgz#bb19832a75180c19d378aa4fb60678cec7450593"
+  integrity sha512-qMJyqO+A8+B8JKW/IW9KVQblAiEQwesq7ka6w8pgm6DXKWCQaPVOco4Zo7FxZ09OmBIX+lnXyfKbQzXiORLGJg==
+
 acorn-dynamic-import@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmmirror.com/acorn-dynamic-import/-/acorn-dynamic-import-4.0.0.tgz#482210140582a36b83c3e342e1cfebcaa9240948"

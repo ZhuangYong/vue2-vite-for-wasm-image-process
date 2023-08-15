@@ -3,25 +3,25 @@
     <ObjectProps v-if="editModes.MOVE.key === editMode || editModes.TEXT.key === editMode" />
     <PencilModelProperty v-if="editModes.PENCIL.key === editMode" />
     <TextProps v-if="editModes.TEXT.key === editMode" />
-    <AnimateProps v-if="(canvas || {}).gifMode" />
-    <PlayProps v-if="(canvas || {}).gifMode" />
+    <OpacityProps v-if="!gifMode" />
+    <AnimateProps v-if="gifMode" />
+    <PlayProps v-if="gifMode" />
   </div>
 </template>
 
 <script>
-import { Const, Utils, FontHelper, BaseFabricComponent, imageHelper } from "ps-wasm-vue2"
-import VisibleSwitch from "../../components/buttons/VisibleSwitch.vue"
-import ContentPanel from "../ContentPanel.vue"
-import PencilModelProperty from "./PencilModelProperty.vue"
-import ObjectProps from "./ObjectProps.vue"
-import TextProps from "./TextProps.vue"
-import AnimateProps from "./AnimateProps.vue"
-import PlayProps from "./PlayProps.vue"
+import { Const, Utils, FontHelper, BaseFabricComponent, imageHelper } from 'ps-wasm-vue2'
+import PencilModelProperty from './PencilModelProperty.vue'
+import ObjectProps from './ObjectProps.vue'
+import TextProps from './TextProps.vue'
+import AnimateProps from './AnimateProps.vue'
+import PlayProps from './PlayProps.vue'
+import OpacityProps from './OpacityProps.vue'
 
 const watchProps = ['showWidth', 'showHeight']
 export default {
   name: 'PropsPanel',
-  components: {VisibleSwitch, ContentPanel, PencilModelProperty, ObjectProps, TextProps, AnimateProps, PlayProps },
+  components: { PencilModelProperty, ObjectProps, TextProps, AnimateProps, PlayProps, OpacityProps },
   mixins: [BaseFabricComponent],
   props: {
     editMode: {
@@ -49,6 +49,9 @@ export default {
      * */
     editModes() {
       return Const.EDIT_MODE
+    },
+    gifMode() {
+      return (this.canvas || {}).gifMode
     }
   },
   watch: {

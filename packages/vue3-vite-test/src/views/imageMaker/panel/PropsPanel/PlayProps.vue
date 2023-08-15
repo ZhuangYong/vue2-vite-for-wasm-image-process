@@ -2,15 +2,17 @@
   <ContentPanel title="倍速">
     <div class="props-line">
       <div class="props-item btn">
-        <el-button v-for="change in speeds" :type="speed === change ? 'primary' : ''" @click="onChangePlaySpeed(change)">{{ change }}x</el-button>
+        <el-button v-for="change in speeds" :class="{ active: speed === change }" :key="change"
+                   class="plain-green-light" @click="onChangePlaySpeed(change)">{{ change }}x
+        </el-button>
       </div>
     </div>
   </ContentPanel>
 </template>
 
 <script>
-import {animates, imageHelper, COMMAND_TYPES, BaseFabricComponent, timeLinePlayer} from 'ps-wasm-vue2'
-import ContentPanel from "../ContentPanel.vue"
+import { imageHelper, COMMAND_TYPES, BaseFabricComponent, timeLinePlayer} from 'ps-wasm-vue2'
+import ContentPanel from '../ContentPanel.vue'
 
 export default {
   name: 'PlayProps',
@@ -38,5 +40,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-
+@import "../../style";
 </style>

@@ -1,34 +1,36 @@
 <template>
-  <div ref="timeLine" class="time-line" :class="active && 'active'" :style="timeLineStyle">
-    <!--显示时间限制，可拖动改变范围-->
-    <span ref="timeLineLimit" class="limit-panel" :style="limitStyle" @mousedown="onMousedown" @mousemove="onMousemove" @mouseup="onMouseup">
-      <!--左边拖动锚-->
-      <span v-if="active" class="limit-bar left" @mousedown="onLeftMousedown" @mousemove="onLimitMousemove" @mouseup="leaveChangeLimit" />
-      <!--右边拖动锚-->
-      <span v-if="active" class="limit-bar right" @mousedown="onRightMousedown" @mousemove="onLimitMousemove" @mouseup="leaveChangeLimit" />
-    </span>
-    <!--显示时间下截图-->
-    <div class="preview-container" :style="limitStyle">
-      <div class="preview-list" :style="previewListStyle">
-        <div v-for="frame in frames" :key="frame.UUID" class="preview-item" :style="previewItemStyle(frame)" />
+  <div class="time-line-item" :style="timeLineContainerStyle">
+    <div ref="timeLine" class="time-line" :class="active && 'active'" :style="timeLineStyle">
+      <!--显示时间限制，可拖动改变范围-->
+      <span ref="timeLineLimit" class="limit-panel" :style="limitStyle" @mousedown="onMousedown" @mouseup="onMouseup">
+        <!--左边拖动锚-->
+        <span v-if="active" class="limit-bar left" @mousedown="onLeftMousedown" @mousemove="onLimitMousemove" @mouseup="leaveChangeLimit" />
+        <!--右边拖动锚-->
+        <span v-if="active" class="limit-bar right" @mousedown="onRightMousedown" @mousemove="onLimitMousemove" @mouseup="leaveChangeLimit" />
+      </span>
+      <!--显示时间下截图-->
+      <div class="preview-container" :style="limitStyle">
+        <div class="preview-list" :style="previewListStyle">
+          <div v-for="frame in frames" :key="frame.UUID" class="preview-item" :style="previewItemStyle(frame)" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { timeLinePlayer, imageHelper } from "ps-wasm-vue2"
+import { timeLinePlayer, imageHelper, COMMAND_TYPES } from 'ps-wasm-vue2'
 
 export default {
   name: 'TimeLine',
-  inject: ['getContainer', 'changeSwitchIndex'],
+  inject: ['getContainer'],
   props: {
     /**
      * 片段
      * */
     frameGroup: {
       type: Object,
-      default: () => {}
+      default: () => ({})
     },
 
     /**
@@ -55,6 +57,11 @@ export default {
       default: 40
     },
 
+    gap: {
+      type: Number,
+      default: 10
+    },
+
     /**
      * 偏移
      * */
@@ -76,6 +83,7 @@ export default {
       active: false,
       frames: [],
       offsetTop: 0,
+      startDelay: false,
       limit: {left: 0, right: 0},
       timeLinePlayer,
       startLimit: [],
@@ -85,8 +93,22 @@ export default {
   },
   computed: {
 
+    timeLineContainerStyle() {
+      const { gap, itemSize, frameGroup, scale } = this
+      if (frameGroup.UUID === 'ghost') {
+        return `margin: ${gap}px 0; height: ${itemSize}px; width: 100%; background-color: #04630429;`
+      }
+      return `margin: ${gap}px 0; height: ${itemSize}px; width: ${(frameGroup.duration + frameGroup.delay) * (scale || 1)}px`
+    },
+
     timeLineStyle() {
-      return `transform: translate(${this.frameGroup.delay * this.scale}px, ${this.offsetTop}px); width: ${this.frameGroup.duration * this.scale}px`
+      // const { index, itemSize, gap, offsetTop } = this
+      // const styleOnOrder = ``
+      // const top = `top: ${index * (itemSize + gap) + gap}px;`
+      // const offset = `transform: translate(${this.frameGroup.delay * this.scale}px, ${this.offsetTop}px);`
+      // return `${this.startDelay ? `position: absolute;${top}` : ''} height: ${this.itemSize}px; width: ${this.frameGroup.duration * this.scale}px; ${offset}`
+      const styleMargin = ~this.orderIndex && this.orderIndex < this.index ? `margin-top: ${-(this.itemSize + this.gap)}px;` : ''
+      return `${styleMargin} transform: translate(${this.frameGroup.delay * this.scale}px, ${this.offsetTop}px); width: ${this.frameGroup.duration * this.scale}px`
     },
 
     /**
@@ -111,6 +133,22 @@ export default {
      * */
     previewListStyle() {
       return `width: ${this.frameGroup.duration * this.scale}px; left: -${this.limit.left * this.scale}px;`
+    },
+
+    orderIndex() {
+      const { offsetTop: v, itemSize, gap, index } = this
+      const maxIndex = timeLinePlayer.frameGroups.length - 1
+      if ((index <= 0 && v < 0) || (index >= maxIndex && v > 0)) {
+        return -1
+      }
+      if (Math.abs(v) > itemSize * 1.2) {
+        let size = Number((v / (itemSize + gap)).toFixed(0))
+        const newIndex = Math.max(index + size, 0)
+        // return Math.max(index + size, 0)
+        return newIndex >= 0 ? (~Math.sign(size) && Math.abs(this.index - Math.abs(newIndex)) <= 1 ? (newIndex + Math.sign(size)) : newIndex) : -1
+      } else {
+        return -1
+      }
     }
   },
   watch: {
@@ -127,16 +165,11 @@ export default {
     },
 
     active(v) {
-      timeLinePlayer.setSelectFrameGroup(this.frameGroup, !!v)
+      this.timeLinePlayer.setSelectFrameGroup(this.frameGroup, !!v)
     },
 
-    offsetTop(v) {
-      if (Math.abs(v) > this.itemSize * 1.6) {
-        const size = v / this.itemSize
-        this.changeSwitchIndex()
-      } else {
-        this.changeSwitchIndex(-1)
-      }
+    orderIndex(v) {
+      this.changeSwitchIndex(v)
     }
   },
   mounted() {
@@ -187,9 +220,10 @@ export default {
     },
 
     onMousemove(e) {
+      const { frameGroup } = this
       if (this.startDelay) {
         const distance = Number(((e.clientX - this.preClientX) / this.scale).toFixed(0))
-        this.frameGroup.delay = Math.max(-this.frameGroup.limit[0], this.preDelay + distance)
+        frameGroup.delay = Math.max(-this.frameGroup.limit[0], this.preDelay + distance)
         timeLinePlayer.resetCurrentTime()
         this.offsetTop = e.clientY - this.preClientY
         // this.preClientX = e.clientX
@@ -198,10 +232,12 @@ export default {
     },
 
     onMouseup() {
+      this.changeIndex()
       this.offsetTop = 0
       this.startDelay = false
       this.leaveChangeLimit()
       this.resetCursor()
+      this.changeSwitchIndex(-1)
     },
 
     /**
@@ -237,14 +273,14 @@ export default {
       }
       const { width } = this.$refs.timeLine.getBoundingClientRect()
       const distance = Number(((e.clientX - this.startPoint.x) / width * this.frameGroup.duration).toFixed(0))
-
+      const { frameGroup } = this
       if (this.startLimitWay === 'left') {
         const newLimit = this.startLimit[0] + distance
-        this.limit.left = this.frameGroup.limit[0] = Math.min(Math.max(0, newLimit), this.startLimit[1])
+        this.limit.left = frameGroup.limit[0] = Math.min(Math.max(0, newLimit), this.startLimit[1])
         timeLinePlayer.resetCurrentTime(this.limit.left + this.frameGroup.delay)
       } else if (this.startLimitWay === 'right') {
         const newLimit = this.startLimit[1] + distance
-        this.limit.right = this.frameGroup.limit[1] = Math.max(Math.min(this.frameGroup.duration, newLimit), this.startLimit[0])
+        this.limit.right = frameGroup.limit[1] = Math.max(Math.min(this.frameGroup.duration, newLimit), this.startLimit[0])
         timeLinePlayer.resetCurrentTime(this.limit.right + this.frameGroup.delay)
       }
     },
@@ -266,7 +302,19 @@ export default {
     },
 
     reloadSnapshot() {
+      // todo
+    },
 
+    changeIndex() {
+      const { index: from, orderIndex } = this
+      if (this.orderIndex >= 0) {
+        const to = from < orderIndex ? orderIndex -1 : orderIndex
+        this.$emit('change-index', { from, to })
+        imageHelper.handleCommand(COMMAND_TYPES.EDIT.SWITCH_INDEX.key, from, to)
+      }
+    },
+    changeSwitchIndex(index) {
+      this.$emit('switch-index', index)
     },
 
     /**

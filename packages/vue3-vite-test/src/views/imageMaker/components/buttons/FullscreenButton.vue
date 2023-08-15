@@ -7,13 +7,13 @@
 </template>
 
 <script>
-import { imageHelper } from "ps-wasm-vue2";
+import { imageHelper } from 'ps-wasm-vue2'
 export default {
   name: 'FullscreenButton',
   props: {
     el: {
       type: [Object, HTMLElement],
-      default: () => {}
+      default: () => ({})
     },
     label: {
       type: String,

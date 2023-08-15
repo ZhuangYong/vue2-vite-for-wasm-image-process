@@ -18,6 +18,8 @@ export default class Frame {
 
   _snapshot = null
 
+  snapshotSize = 40
+
   constructor() {
   }
 
@@ -81,7 +83,7 @@ export default class Frame {
   onObjModified() {
     console.log('------- on modify in frame')
     this._snapshot = null
-    this.snapshot().then(() => {
+    this.snapshot(this.snapshotSize).then(() => {
       if (this.timer) {
         clearTimeout(this.timer)
       }
@@ -114,7 +116,7 @@ export default class Frame {
    * 获取快照
    * @returns {Promise<null>}
    */
-  async snapshot() {
+  async snapshot(itemSize = 40) {
     if (!this._snapshot) {
       if (_.isEmpty(this._objects)) {
         this._snapshot = null
@@ -125,7 +127,8 @@ export default class Frame {
           const cloneList = await this.cloneObjects()
           canvasClone.add(...cloneList)
           const { originWidth: width, originHeight: height } = canvasClone
-          this._snapshot = canvasClone.toDataURL({width, height, multiplier: 1, withoutTransform: true}) // 1, {width, height}
+          const multiplier = Math.min(itemSize / width, itemSize / height)
+          this._snapshot = canvasClone.toDataURL({width, height, multiplier, withoutTransform: true}) // 1, {width, height}
           this.loading = false
         }
       }

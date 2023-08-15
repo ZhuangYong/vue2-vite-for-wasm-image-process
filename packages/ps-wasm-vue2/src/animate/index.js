@@ -1,10 +1,12 @@
-import Shake from "@/animate/Shake"
+import ShakeX from "@/animate/ShakeX"
+import ShakeY from "@/animate/ShakeY"
 import Scale from "@/animate/Scale"
 import Spark from "@/animate/Spark"
 import TypeWord from "@/animate/TypeWord"
 
 export default [
-  { key: 'shake', label: Shake.name, Constructor: Shake},
+  { key: 'shakeY', label: ShakeY.name, Constructor: ShakeY},
+  { key: 'shakeX', label: ShakeX.name, Constructor: ShakeX},
   { key: 'scale', label: Scale.name, Constructor: Scale},
   { key: 'spark', label: Spark.name, Constructor: Spark},
   // { key: '渐变', label: Shake.name, Constructor: Shake},

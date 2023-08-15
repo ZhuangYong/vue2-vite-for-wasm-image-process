@@ -3,13 +3,13 @@
     <div class="props-line">
       <div class="props-item">
         <!--<span class="label">W：</span>-->
-        <el-input v-model="targetProps.width" :data-key="types.ACTIVE_OBJECT_WIDTH.key" :disabled="disabled" @blur="onChange" @keydown.enter.native="onChange">
+        <el-input v-model="targetProps.width" :data-key="types.ACTIVE_OBJECT_WIDTH.key" :disabled="disabled" @blur="onChange" @keydown.enter="onChange">
           <template #prefix>W &nbsp;&nbsp;</template>
         </el-input>
       </div>
       <div class="props-item">
         <!--<span class="label">H：</span>-->
-        <el-input v-model="targetProps.height" :data-key="types.ACTIVE_OBJECT_HEIGHT.key" :disabled="disabled" @blur="onChange" @keydown.enter.native="onChange">
+        <el-input v-model="targetProps.height" :data-key="types.ACTIVE_OBJECT_HEIGHT.key" :disabled="disabled" @blur="onChange" @keydown.enter="onChange">
           <template #prefix>H &nbsp;&nbsp;</template>
         </el-input>
       </div>
@@ -18,13 +18,13 @@
     <div class="props-line">
       <div class="props-item">
         <!--<span class="label">X：</span>-->
-        <el-input v-model="targetProps.left" :data-key="types.ACTIVE_OBJECT_LEFT.key" :disabled="disabled" @blur="onChange" @keydown.enter.native="onChange">
+        <el-input v-model="targetProps.left" :data-key="types.ACTIVE_OBJECT_LEFT.key" :disabled="disabled" @blur="onChange" @keydown.enter="onChange">
           <template #prefix>X &nbsp;&nbsp;</template>
         </el-input>
       </div>
       <div class="props-item">
         <!--<span class="label">Y：</span>-->
-        <el-input v-model="targetProps.top" :data-key="types.ACTIVE_OBJECT_TOP.key" :disabled="disabled" @blur="onChange" @keydown.enter.native="onChange">
+        <el-input v-model="targetProps.top" :data-key="types.ACTIVE_OBJECT_TOP.key" :disabled="disabled" @blur="onChange" @keydown.enter="onChange">
           <template #prefix>Y &nbsp;&nbsp;</template>
         </el-input>
       </div>
@@ -33,7 +33,7 @@
     <div class="props-line">
       <div class="props-item">
         <!--<span class="label">∠：</span>-->
-        <el-input v-model="targetProps.angle" :data-key="types.ACTIVE_OBJECT_ANGLE.key" :disabled="disabled" @blur="onChange" @keydown.enter.native="onChange">
+        <el-input v-model="targetProps.angle" :data-key="types.ACTIVE_OBJECT_ANGLE.key" :disabled="disabled" @blur="onChange" @keydown.enter="onChange">
           <template #prefix>∠ &nbsp;&nbsp;</template>
         </el-input>
       </div>
@@ -46,9 +46,9 @@
 </template>
 
 <script>
-import { Const, Utils, FontHelper, BaseFabricComponent, imageHelper, COMMAND_TYPES } from "ps-wasm-vue2"
-import VisibleSwitch from "../../components/buttons/VisibleSwitch.vue"
-import ContentPanel from "../ContentPanel.vue"
+import { Const, Utils, FontHelper, BaseFabricComponent, imageHelper, COMMAND_TYPES } from 'ps-wasm-vue2'
+import VisibleSwitch from '../../components/buttons/VisibleSwitch.vue'
+import ContentPanel from '../ContentPanel.vue'
 
 const watchProps = ['showWidth', 'showHeight']
 const scaleXtoWidth = ({ scaleX, width }) => (scaleX * width).toFixed(2)
@@ -96,7 +96,7 @@ export default {
       deep: true
     },
     'targetProps.visible'(v) {
-      imageHelper.handleCommand(COMMAND_TYPES.EDIT.VISIBLE.key, this.target, v)
+      !this.disabled && imageHelper.handleCommand(COMMAND_TYPES.EDIT.VISIBLE.key, this.target, v)
     }
   },
   mounted() {
